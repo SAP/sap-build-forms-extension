@@ -1,0 +1,92 @@
+_schema-version: "3.2"
+ID: forms-sbpa-taskui
+version: 0.0.1
+modules:
+- name: forms-sbpa-taskui-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: forms-sbpa-taskui-destination-service
+    parameters:
+      content-target: true
+  - name: forms-sbpa-taskui_html_repo_host
+    parameters:
+      service-key:
+        name: forms-sbpa-taskui_html_repo_host-key
+  - name: uaa_forms-sbpa-taskui
+    parameters:
+      service-key:
+        name: uaa_forms-sbpa-taskui-key
+  parameters:
+    content:
+      subaccount:
+        destinations:
+        - Name: forms_sbpa_ui_forms_sbpa_ui_html_repo_host
+          ServiceInstanceName: forms-sbpa-taskui-html5-app-host-service
+          ServiceKeyName: forms-sbpa-taskui_html_repo_host-key
+          sap.cloud.service: forms-sbpa-taskui
+        - Authentication: OAuth2UserTokenExchange
+          Name: forms_sbpa_ui_uaa_forms_sbpa_ui
+          ServiceInstanceName: forms-sbpa-taskui-xsuaa-service
+          ServiceKeyName: uaa_forms-sbpa-taskui-key
+          sap.cloud.service: forms-sbpa-taskui
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+- name: forms-sbpa-taskui-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: forms-sbpa-taskui_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - formssbpauiworkflowuimodule.zip
+      name: formssbpauiworkflowuimodule
+      target-path: resources/
+- name: formssbpauiworkflowuimodule
+  type: html5
+  path: workflow-ui-module
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+resources:
+- name: forms-sbpa-taskui-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      init_data:
+        subaccount:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
+      version: 1.0.0
+    service: destination
+    service-name: forms-sbpa-taskui-destination-service
+    service-plan: lite
+- name: forms-sbpa-taskui_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: forms-sbpa-taskui-html5-app-host-service
+    service-plan: app-host
+- name: uaa_forms-sbpa-taskui
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: forms-sbpa-taskui-xsuaa-service
+    service-plan: application
+parameters:
+  deploy_mode: html5-repo

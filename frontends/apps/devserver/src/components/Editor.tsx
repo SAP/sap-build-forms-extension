@@ -1,0 +1,749 @@
+import { JSX, useEffect, useState } from "react"
+
+import { createUseStyles } from "react-jss"
+
+import {
+    Bar,
+    Button,
+    FlexBox,
+    Form,
+    FormItem,
+    Input,
+    Label,
+    MessageBox,
+    MessageBoxAction,
+    MessageBoxType,
+    Option,
+    Select,
+    Switch,
+    Tab,
+    TabContainer,
+    Title,
+} from "@ui5/webcomponents-react"
+import TreeItemBase from "@ui5/webcomponents/dist/TreeItemBase"
+import { ThemingParameters } from "@ui5/webcomponents-react-base"
+
+import { PageProvider, useMessages, Severity } from "commons"
+
+import useElementsStore from "../state/elements"
+
+import { backendDispatch } from "../utils/backend"
+import useMessagesStore from "../state/messages"
+import { Elem, Scenario, tabs, Mixin, Parent, ElementPart } from "../utils/scenarioDefinitions"
+import Structure from "./layout/StructureTab"
+import LanguagesTab from "./layout/LanguagesTab"
+import CopyDialog from "./layout/CopyDialog"
+import AddLanguageDialog from "./layout/AddLanguageDialog"
+import AddElementDialog from "./layout/AddElementDialog"
+
+const useStyles = createUseStyles({
+    selectScenarioMixin: {
+        marginTop: 20,
+        width: 300,
+        marginRight: 20,
+    },
+    selectVersion: {
+        marginTop: 20,
+    },
+    generalDataForm: {
+        alignItems: "center",
+        paddingBlock: 20,
+    },
+    button: {
+        marginLeft: 30,
+        fontSize: "medium",
+    },
+})
+
+export default function () {
+    useEffect(() => {
+        const p = backendDispatch("v1/scenarios/", "GET", undefined)
+        p.then((action: any) => {
+            if (action.status == 200) {
+                const data = action.data
+                insertElements(data)
+                setTreeItemsShown(Object.keys(data).map((key) => data[key])[0])
+                setVersion(Object.keys(data).map((key) => data[key])[0].version)
+            } else {
+                openMessageBox(
+                    MessageBoxType.Error,
+                    undefined,
+                    <>An error occurred while loading data.</>,
+                )
+            }
+        })
+
+        const p2 = backendDispatch("v1/scenarios/mixins", "GET", undefined)
+        p2.then((action: any) => {
+            if (action.status == 200) {
+                insertElementsMixin(action.data)
+            } else {
+                openMessageBox(
+                    MessageBoxType.Error,
+                    undefined,
+                    <>An error occurred while loading mixin data.</>,
+                )
+            }
+        })
+    }, [])
+
+    const classes = useStyles()
+    const treeItems: any = useElementsStore((state) => state.elements)
+    const insertElements = useElementsStore((state) => state.insertElements)
+    const insertElementsMixin = useElementsStore((state) => state.insertElementsMixin)
+    const removeElement = useElementsStore((state) => state.removeElement)
+    const removeElements = useElementsStore((state) => state.removeElements)
+    const addElement = useElementsStore((state) => state.addElement)
+    const editBaseData = useElementsStore((state) => state.editBaseData)
+    const editDetailData = useElementsStore((state) => state.editDetailData)
+    const editTexts = useElementsStore((state) => state.editTexts)
+    const deleteElementMessages = useMessagesStore((state) => state.deleteElementMessages)
+    const { toast } = useMessages()
+
+    const [scenarioMixin, setScenarioMixin] = useState("Scenario")
+    const [version, setVersion] = useState<number>(-1)
+    const [tab, setTab] = useState<string>("Structure")
+    const [treeItemsShown, setTreeItemsShown] = useState<Scenario | Mixin | null>()
+    const [element, setElement] = useState<string>()
+    const [update, setUpdate] = useState<number>(1)
+    const [renderTable, setRenderTable] = useState<number>(1)
+    const [messageBoxOpen, setMessageBoxOpen] = useState(false)
+    const [messageBoxType, setMessageBoxType] = useState<MessageBoxType>()
+    const [messageBoxAction, setMessageBoxAction] = useState<"Delete" | undefined>(undefined)
+    const [messageBoxText, setMessageBoxText] = useState<JSX.Element>(<></>)
+    const [messageBoxOnConfirm, setMessageBoxOnConfirm] = useState<{ fn: () => void } | undefined>(undefined);
+    const [addElementDialogOpen, setAddElementDialogOpen] = useState<boolean>(false)
+    const [copyDialogOpen, setCopyDialogOpen] = useState<boolean>(false)
+    const [indexesDelete, setIndexesDelete] = useState<{ indexes: string; name: string }>()
+    const [el, setEl] = useState<Elem>()
+    const [parents, setParents] = useState<Parent[]>([])
+    const [selectedTreeItem, setSelectedTreeItem] = useState<TreeItemBase>()
+    const [dialogAddLanguageOpen, setDialogAddLanguageOpen] = useState<boolean>(false)
+    const [language, setLanguage] = useState<string>(
+        treeItemsShown
+            ? "defaultLanguage" in treeItemsShown
+                ? treeItemsShown?.defaultLanguage!
+                : Object.keys(treeItemsShown?.texts!).sort()[0]
+            : "en",
+    )
+    const [copiedEl, setCopiedEl] = useState<Elem | undefined>()
+
+    useEffect(() => {
+        setEl(undefined)
+        setElement(undefined)
+        setParents([])
+        setSelectedTreeItem(undefined)
+        const treeItems1 = treeItems.filter(
+            (item: any) =>
+                item.version == version &&
+                (item.name == scenarioMixin ||
+                    (scenarioMixin == "Scenario" && item.defaultLanguage != null)),
+        )
+        if (treeItems1.length > 0) {
+            setTreeItemsShown(treeItems1[0])
+            if ("defaultLanguage" in treeItems1[0]) {
+                setLanguage(treeItems1[0].defaultLanguage!)
+            } else {
+                setLanguage(Object.keys(treeItems1[0].texts!).sort()[0])
+            }
+        } else {
+            const treeItems2 = treeItems.filter(
+                (item: any) =>
+                    item.name == scenarioMixin ||
+                    (scenarioMixin == "Scenario" && item.defaultLanguage != null),
+            )
+            if (treeItems2.length > 0) {
+                setTreeItemsShown(treeItems2[0])
+                setVersion(treeItems2[0].version)
+                if ("defaultLanguage" in treeItems2[0]) {
+                    setLanguage(treeItems2[0].defaultLanguage!)
+                } else {
+                    setLanguage(Object.keys(treeItems2[0].texts!).sort()[0])
+                }
+            }
+        }
+    }, [version, scenarioMixin])
+
+    useEffect(() => {
+        setTreeItemsShown(
+            treeItems.filter(
+                (item: any) =>
+                    item.version == version &&
+                    (item.name == scenarioMixin ||
+                        (scenarioMixin == "Scenario" && item.defaultLanguage != null)),
+            )[0],
+        )
+    }, [update])
+
+    function setNewEl(newEl: Elem) {
+        // Clear error messages for changed fields
+        if (el && newEl.name) {
+            const elementId = newEl.name.charAt(0).toUpperCase() + newEl.name.slice(1)
+
+            // Check which fields changed and clear their specific error messages
+            if (el.name !== newEl.name) {
+                deleteElementMessages(elementId, ElementPart.Name)
+            }
+            if (el.type !== newEl.type) {
+                deleteElementMessages(elementId, ElementPart.UiElementType)
+            }
+            if (el.dataType !== newEl.dataType) {
+                deleteElementMessages(elementId, ElementPart.DataType)
+            }
+        }
+
+        setEl(newEl)
+        editDetailData({
+            version: version,
+            scenarioMixinName: scenarioMixin,
+            indexes: element,
+            newEl: newEl,
+        })
+        setUpdate(update + 1)
+    }
+
+    function openMessageBox(
+        mBoxType: MessageBoxType,
+        mBoxAction: "Delete" | undefined,
+        mBoxText: JSX.Element,
+        onConfirm?: () => void
+    ) {
+        setMessageBoxType(mBoxType)
+        setMessageBoxAction(mBoxAction)
+        setMessageBoxText(mBoxText)
+        setMessageBoxOnConfirm(onConfirm ? { fn: onConfirm } : undefined)
+        setMessageBoxOpen(true)
+    }
+
+    return (
+        <>
+            <PageProvider
+                header={
+                    <Bar>
+                        <Title
+                            level="H1"
+                            style={{ fontSize: ThemingParameters.sapFontHeader3Size }}
+                        >
+                            Metadata Editor
+                        </Title>
+                    </Bar>
+                }
+                footer={
+                    <FlexBox direction="Row" justifyContent="Center">
+                        <Bar
+                            design="FloatingFooter"
+                            style={{ width: "95%" }}
+                            endContent={
+                                <>
+                                    <Button
+                                        icon="validate"
+                                        onClick={function Ta() {
+                                            const p = backendDispatch(
+                                                "v1/scenarios/check/",
+                                                "PUT",
+                                                Object.assign(
+                                                    {},
+                                                    treeItems.filter(
+                                                        (item: any) => item.defaultLanguage != null,
+                                                    ),
+                                                ),
+                                            )
+                                            p.then((action: any) => {
+                                                if (action.status == 200) {
+                                                    useMessagesStore.getState().deleteMessages()
+                                                    useMessagesStore.getState().insertMessages(action.data)
+                                                    setUpdate(update + 1)
+                                                    setRenderTable((prev) => prev + 1)
+
+                                                    // Convert response data to array
+                                                    const messages = Array.isArray(action.data)
+                                                        ? action.data
+                                                        : Object.keys(action.data).map((k) => action.data[k])
+
+                                                    // Check if there are any error or warning messages
+                                                    const hasErrors = messages.some((msg: any) =>
+                                                        msg.severity === "e" || msg.severity === "w"
+                                                    )
+
+                                                    if (hasErrors) {
+                                                        openMessageBox(
+                                                            MessageBoxType.Warning,
+                                                            undefined,
+                                                            <>Check completed with errors or warnings.</>,
+                                                        )
+                                                    } else if (messages.length > 0) {
+                                                        openMessageBox(
+                                                            MessageBoxType.Information,
+                                                            undefined,
+                                                            <>Check completed with information messages.</>,
+                                                        )
+                                                    } else {
+                                                        openMessageBox(
+                                                            MessageBoxType.Success,
+                                                            undefined,
+                                                            <>Check completed successfully.</>,
+                                                        )
+                                                    }
+                                                } else {
+                                                    openMessageBox(
+                                                        MessageBoxType.Error,
+                                                        undefined,
+                                                        <>An error occurred while checking.</>,
+                                                    )
+                                                }
+                                            })
+                                        }}
+                                        className={classes.button}
+                                        design="Default"
+                                    >
+                                        Check
+                                    </Button>
+                                    <Button
+                                        icon="save"
+                                        onClick={function Ta() {
+                                            var newItems1: any
+                                            var newItems2: any
+
+                                            const p = backendDispatch(
+                                                "v1/scenarios/",
+                                                "PUT",
+                                                Object.assign(
+                                                    {},
+                                                    treeItems.filter(
+                                                        (item: any) => item.defaultLanguage != null,
+                                                    ),
+                                                ),
+                                            )
+                                            p.then((action: any) => {
+                                                if (action.status == 200) {
+                                                    newItems1 = action.data
+                                                    const p2 = backendDispatch(
+                                                        "v1/scenarios/mixins/",
+                                                        "PUT",
+                                                        Object.assign(
+                                                            {},
+                                                            treeItems.filter(
+                                                                (item: any) =>
+                                                                    item.defaultLanguage == null,
+                                                            ),
+                                                        ),
+                                                    )
+                                                    p2.then((action: any) => {
+                                                        if (action.status == 200) {
+                                                            openMessageBox(
+                                                                MessageBoxType.Success,
+                                                                undefined,
+                                                                <>
+                                                                    Data has been saved
+                                                                    successfully.
+                                                                </>,
+                                                            )
+                                                            newItems2 = action.data
+                                                            removeElements()
+                                                            insertElements(newItems1)
+                                                            insertElementsMixin(newItems2)
+                                                            setUpdate(update + 1)
+                                                            setRenderTable((prev) => prev + 1)
+                                                        } else {
+                                                            openMessageBox(
+                                                                MessageBoxType.Error,
+                                                                undefined,
+                                                                <>
+                                                                    An error occurred while saving
+                                                                    mixins.
+                                                                </>,
+                                                            )
+                                                        }
+                                                    })
+                                                } else {
+                                                    openMessageBox(
+                                                        MessageBoxType.Error,
+                                                        undefined,
+                                                        <>
+                                                            An error occurred while saving scenario.
+                                                        </>,
+                                                    )
+                                                }
+                                            })
+                                        }}
+                                        className={classes.button}
+                                        design="Positive"
+                                    >
+                                        Save
+                                    </Button>
+                                </>
+                            }
+                        />
+                    </FlexBox>
+                }
+                content={
+                    <>
+                        <Select
+                            onChange={function Ta(e) {
+                                setScenarioMixin(e.detail.selectedOption.textContent!.toString())
+                            }}
+                            className={classes.selectScenarioMixin}
+                        >
+                            {[
+                                "Scenario",
+                                ...new Set(
+                                    treeItems
+                                        .filter(
+                                            (t1: Scenario | Mixin) => !("defaultLanguage" in t1),
+                                        )
+                                        .map((t: Scenario | Mixin) => t.name),
+                                ),
+                            ].map((item: any) => {
+                                if (item == "Scenario") {
+                                    return (
+                                        <Option
+                                            key={item}
+                                            icon="document"
+                                            selected={scenarioMixin == item}
+                                        >
+                                            {item}
+                                        </Option>
+                                    )
+                                } else {
+                                    return (
+                                        <Option
+                                            key={item}
+                                            icon="add-document"
+                                            selected={scenarioMixin == item}
+                                        >
+                                            {item}
+                                        </Option>
+                                    )
+                                }
+                            })}
+                        </Select>
+
+                        <Select
+                            onChange={function Ta(e) {
+                                setVersion(
+                                    Number(
+                                        e.detail.selectedOption
+                                            .textContent!.toString()
+                                            .substring(8),
+                                    ).valueOf(),
+                                )
+                            }}
+                            className={classes.selectVersion}
+                        >
+                            {[
+                                ...new Set(
+                                    treeItems
+                                        .filter(
+                                            (item: any) =>
+                                                item.name == scenarioMixin ||
+                                                (scenarioMixin == "Scenario" &&
+                                                    item.defaultLanguage != null),
+                                        )
+                                        .map((obj: Scenario | Mixin) => obj.version),
+                                ),
+                            ]
+                                .sort()
+                                .map((item: any) => {
+                                    return <Option key={item}>Version {item}</Option>
+                                })}
+                        </Select>
+
+                        <Form
+                            layout="S1 M1 L2 XL2"
+                            labelSpan="S10 M4 L4 XL2"
+                            className={classes.generalDataForm}
+                        >
+                            <FormItem labelContent={<Label>Name</Label>}>
+                                <Input
+                                    placeholder={treeItemsShown?.name}
+                                    value={treeItemsShown?.name}
+                                    onChange={(e) => {
+                                        editBaseData({
+                                            scenarioMixinName: scenarioMixin,
+                                            version: version,
+                                            name: e.target.attributes.getNamedItem("value")!
+                                                .nodeValue!,
+                                        })
+                                        if (scenarioMixin != "Scenario") {
+                                            setScenarioMixin(
+                                                e.target.attributes.getNamedItem("value")!
+                                                    .nodeValue!,
+                                            )
+                                        }
+                                    }}
+                                />
+                            </FormItem>
+                            {treeItemsShown && "active" in treeItemsShown && (
+                                <FormItem labelContent={<Label>Active</Label>}>
+                                    <Switch
+                                        onChange={(e) => {
+                                            editBaseData({
+                                                scenarioMixinName: scenarioMixin,
+                                                version: version,
+                                                active: e.target.checked!,
+                                            })
+                                        }}
+                                        checked={treeItemsShown?.active}
+                                    />
+                                </FormItem>
+                            )}
+                            <FormItem labelContent={<Label>Access Object</Label>}>
+                                <Input
+                                    placeholder={treeItemsShown?.accessObject}
+                                    value={treeItemsShown?.accessObject}
+                                    onChange={(e) => {
+                                        editBaseData({
+                                            scenarioMixinName: scenarioMixin,
+                                            version: version,
+                                            accessObject:
+                                                e.target.attributes.getNamedItem("value")!
+                                                    .nodeValue!,
+                                        })
+                                        setUpdate(update + 1)
+                                    }}
+                                />
+                            </FormItem>
+                            <FormItem labelContent={<Label>Base Package</Label>}>
+                                <Input
+                                    placeholder={treeItemsShown?.basePackage}
+                                    value={treeItemsShown?.basePackage}
+                                    onChange={(e) => {
+                                        editBaseData({
+                                            scenarioMixinName: scenarioMixin,
+                                            version: version,
+                                            basePackage:
+                                                e.target.attributes.getNamedItem("value")!
+                                                    .nodeValue!,
+                                        })
+                                        setUpdate(update + 1)
+                                    }}
+                                />
+                            </FormItem>
+                            {treeItemsShown && "defaultLanguage" in treeItemsShown && (
+                                <FormItem labelContent={<Label>Default Language</Label>}>
+                                    <Select
+                                        onChange={function Ta(e) {
+                                            editBaseData({
+                                                scenarioMixinName: scenarioMixin,
+                                                version: version,
+                                                defaultLanguage:
+                                                    e.detail.selectedOption.textContent!.toString(),
+                                            })
+                                            setUpdate(update + 1)
+                                        }}
+                                    >
+                                        {treeItemsShown.defaultLanguage &&
+                                            !(
+                                                Object.keys(treeItemsShown.texts!) as Array<string>
+                                            ).includes(treeItemsShown.defaultLanguage) && (
+                                                <Option
+                                                    selected={true}
+                                                    key={treeItemsShown.defaultLanguage}
+                                                >
+                                                    {treeItemsShown.defaultLanguage}
+                                                </Option>
+                                            )}
+                                        {(Object.keys(treeItemsShown.texts!) as Array<string>)
+                                            .sort()
+                                            .map((key) => {
+                                                return (
+                                                    <Option
+                                                        selected={
+                                                            key == treeItemsShown?.defaultLanguage
+                                                        }
+                                                        key={key}
+                                                    >
+                                                        {key}
+                                                    </Option>
+                                                )
+                                            })}
+                                    </Select>
+                                </FormItem>
+                            )}
+                        </Form>
+
+                        <TabContainer
+                            onTabSelect={function _a(e) {
+                                setEl(undefined)
+                                setElement(undefined)
+                                setTab(e.detail.tab.id)
+                            }}
+                            style={{ width: "100%" }}
+                        >
+                            {tabs.map((t) => {
+                                return (
+                                    <Tab
+                                        icon={t.icon}
+                                        selected={tab == t.text}
+                                        text={t.text}
+                                        key={t.text}
+                                        id={t.text}
+                                    />
+                                )
+                            })}
+                        </TabContainer>
+
+                        {tab == "Structure" && (
+                            <Structure
+                                version={version}
+                                defaultLanguage={
+                                    treeItemsShown && "defaultLanguage" in treeItemsShown
+                                        ? treeItemsShown?.defaultLanguage
+                                        : undefined
+                                }
+                                treeItemsShown={treeItemsShown}
+                                scenarioMixinName={scenarioMixin}
+                                update={update}
+                                setNewEl={setNewEl}
+                                setIndexesDelete={setIndexesDelete}
+                                setAddDialogOpen={setAddElementDialogOpen}
+                                setCopyDialogOpen={setCopyDialogOpen}
+                                setUpdate={setUpdate}
+                                openMessageBox={openMessageBox}
+                                setSelectedTreeItem={setSelectedTreeItem}
+                                el={el}
+                                setEl={setEl}
+                                element={element}
+                                setElement={setElement}
+                                parents={parents}
+                                setParents={setParents}
+                                copiedEl={copiedEl}
+                                setCopiedEl={setCopiedEl}
+                                renderTable={renderTable}
+                                setRenderTable={setRenderTable}
+                            />
+                        )}
+
+                        {tab == "Languages" && treeItemsShown && (
+                            <LanguagesTab
+                                defaultLanguage={
+                                    "defaultLanguage" in treeItemsShown
+                                        ? treeItemsShown?.defaultLanguage
+                                        : undefined
+                                }
+                                treeItemsShown={treeItemsShown}
+                                version={version}
+                                update={update}
+                                setUpdate={setUpdate}
+                                scenarioMixinName={scenarioMixin}
+                                setDialogAddLanguageOpen={setDialogAddLanguageOpen}
+                                language={language}
+                                setLanguage={setLanguage}
+                                openMessageBox={openMessageBox}
+                            />
+                        )}
+                    </>
+                }
+            />
+            <AddElementDialog
+                dialogOpen={addElementDialogOpen}
+                update={update}
+                element={element}
+                el={el}
+                parentEl={parents.length > 1 ? parents[parents.length - 2].elem : undefined}
+                treeItemsShown={treeItemsShown}
+                selectedTreeItem={selectedTreeItem}
+                scenarioMixinName={scenarioMixin}
+                setEl={setEl}
+                setElement={setElement}
+                setUpdate={setUpdate}
+                setDialogOpen={setAddElementDialogOpen}
+                version={version}
+            />
+            <AddLanguageDialog
+                dialogAddLanguageOpen={dialogAddLanguageOpen}
+                languages={
+                    treeItemsShown && treeItemsShown.texts
+                        ? Object.keys(treeItemsShown.texts).concat(
+                            "defaultLanguage" in treeItemsShown &&
+                                !Object.keys(treeItemsShown.texts).includes(
+                                    treeItemsShown.defaultLanguage!,
+                                )
+                                ? [treeItemsShown.defaultLanguage!]
+                                : [],
+                        )
+                        : treeItemsShown && "defaultLanguage" in treeItemsShown
+                            ? [treeItemsShown.defaultLanguage!]
+                            : []
+                }
+                language={language}
+                treeItemsShown={treeItemsShown}
+                version={version}
+                scenarioMixinName={scenarioMixin}
+                update={update}
+                setDialogAddLanguageOpen={setDialogAddLanguageOpen}
+                setLanguages={() => { }}
+                setLanguage={setLanguage}
+                setUpdate={setUpdate}
+            />
+            <CopyDialog
+                dialogOpen={copyDialogOpen}
+                update={update}
+                setUpdate={setUpdate}
+                setDialogOpen={setCopyDialogOpen}
+                version={version}
+                treeItemsShown={treeItemsShown}
+                scenarioMixinName={scenarioMixin}
+                el={el}
+                element={element}
+                parentEl={parents.length > 1 ? parents[parents.length - 2].elem : undefined}
+                copiedEl={copiedEl}
+            />
+            <MessageBox
+                type={messageBoxType}
+                open={messageBoxOpen}
+                onClose={(action, escPressed) => {
+                    if (action == MessageBoxAction.OK) {
+                        if (messageBoxType == MessageBoxType.Confirm) {
+                            if (messageBoxAction == "Delete") {
+                                removeElement({
+                                    indexes: indexesDelete!.indexes
+                                        .split("x")
+                                        .filter((item) => item)
+                                        .join("x"),
+                                    version: version,
+                                    scenarioMixinName: scenarioMixin,
+                                })
+
+                                var texts: any = JSON.parse(JSON.stringify(treeItemsShown?.texts!))
+                                var oldName = indexesDelete!.name
+
+                                Object.keys(texts).forEach((key) => {
+                                    if (texts![key][`${oldName}.short` as any] != undefined) {
+                                        delete texts![key][`${oldName}.short`]
+                                    }
+                                    if (texts![key][`${oldName}.long` as any] != undefined) {
+                                        delete texts![key][`${oldName}.long`]
+                                    }
+                                    if (texts![key][`${oldName}.title` as any] != undefined) {
+                                        delete texts![key][`${oldName}.title`]
+                                    }
+                                    if (texts![key][`${oldName}.doc` as any] != undefined) {
+                                        delete texts[key][`${oldName}.doc`]
+                                    }
+                                })
+                                editTexts({
+                                    version: version,
+                                    texts: texts,
+                                    scenarioMixinName: scenarioMixin,
+                                })
+
+                                // Show toast notification
+                                toast(Severity.None, "element_deleted")
+
+                                setUpdate(update + 1)
+
+                            } else if (messageBoxOnConfirm) {
+                                messageBoxOnConfirm.fn();
+                            }
+                        }
+                    }
+                    setMessageBoxOpen(false)
+                    setMessageBoxOnConfirm(undefined)
+                }}
+            >
+                {messageBoxText}
+            </MessageBox>
+        </>
+    )
+}

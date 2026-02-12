@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package com.sap.bfx.valuehelp.grpc;
+
+/* import "google/protobuf/timestamp.proto"; */
+
+/*-------------------------------------------------------------------------------------*/
+
+service ValueHelpsService {
+  rpc GetValueHelp(GetValueHelpRequest) returns (GetValueHelpResponse);
+  rpc GetValueHelpsVersion(GetValueHelpsVersionRequest) returns (GetValueHelpsVersionResponse);
+  rpc Test(TestRequest) returns (TestResponse);
+}
+
+message ValueHelpsVersion {
+  string name = 1;
+  uint64 version = 2;
+}
+
+message GetValueHelpRequest {
+  string id = 1;
+  string locale = 2;
+}
+
+//message ValueHelpValue {
+//  string key = 1;
+//  string value = 2;
+//}
+
+/*
+message ValueHelpsValues {
+    uint64 version = 1;
+    repeated ValueHelpsValue values = 2;
+}
+*/
+
+message GetValueHelpResponse {
+  string name = 1;
+  string locale = 2;
+  uint64 version = 3;
+  //  repeated ValueHelpValue values = 4;
+  string values = 4;
+}
+
+message GetValueHelpsVersionRequest {
+  string locale = 1;
+  repeated string valueHelps = 2;
+}
+
+message GetValueHelpsVersionResponse {
+  repeated ValueHelpsVersion values = 1;
+}
+
+message TestRequest {
+  string name = 1;
+}
+
+message TestResponse {
+  string reply = 1;
+}

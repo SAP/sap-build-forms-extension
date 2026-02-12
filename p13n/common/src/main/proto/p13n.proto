@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package com.sap.bfx.p13n.grpc;
+
+/* import "google/protobuf/timestamp.proto"; */
+
+/*-------------------------------------------------------------------------------------*/
+
+service P13nService {
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+  rpc ChangeSettings(ChangeSettingsRequest) returns (ChangeSettingsResponse);
+  rpc DeleteSettings(DeleteSettingsRequest) returns (DeleteSettingsResponse);
+  rpc Test(TestRequest) returns (TestResponse);
+}
+
+message GetSettingsRequest {
+  string user = 1;
+  string app = 2;
+}
+
+message Settings {
+  string id = 1;
+  string user = 2;
+  string key = 3;
+  string app = 4;
+  string encoding = 5;
+  string value = 6;
+}
+
+message GetSettingsResponse {
+  repeated Settings values = 1;
+}
+
+message ChangeSettingsRequest {
+  repeated Settings settings = 1;
+}
+
+message ChangeSettingsResponse {
+  repeated Settings settings = 1;
+}
+
+message DeleteSettingsRequest {
+  repeated Settings settings = 1;
+}
+
+message DeleteSettingsResponse {
+  repeated Settings settings = 1;
+}
+
+message TestRequest {
+  string name = 1;
+}
+
+message TestResponse {
+  string reply = 1;
+}

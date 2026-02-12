@@ -1,0 +1,1 @@
+package com.sap.bfx.callback;import org.springframework.stereotype.Component;import java.lang.annotation.*;@Target({ElementType.TYPE})@Retention(RetentionPolicy.RUNTIME)@Inherited@Componentpublic @interface AdapterDescriptor {    String value() default Adapter.DEFAULT;}

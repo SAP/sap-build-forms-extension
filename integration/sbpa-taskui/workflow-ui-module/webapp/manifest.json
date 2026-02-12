@@ -1,0 +1,308 @@
+{
+    "_version": "1.26.0",
+    "sap.app": {
+        "id": "forms.sbpa.taskui.workflowuimodule",
+        "type": "application",
+        "i18n": "i18n/i18n.properties",
+        "applicationVersion": {
+            "version": "0.0.1"
+        },
+        "title": "{{appTitle}}",
+        "description": "{{appDescription}}",
+        "resources": "resources.json",
+        "sourceTemplate": {
+            "id": "@sap/generator-fiori:basic",
+            "version": "1.8.4",
+            "toolsId": "386ed4dc-0936-4081-bd16-9d4a563bdf4b"
+        },
+        "dataSources": {
+            "mainService": {
+                "uri": "/sap/opu/odata/",
+                "type": "OData",
+                "settings": {
+                    "annotations": [],
+                    "localUri": "localService/metadata.xml",
+                    "odataVersion": "2.0"
+                }
+            }
+        }
+    },
+    "sap.ui": {
+        "technology": "UI5",
+        "icons": {
+            "icon": "",
+            "favIcon": "",
+            "phone": "",
+            "phone@2": "",
+            "tablet": "",
+            "tablet@2": ""
+        },
+        "deviceTypes": {
+            "desktop": true,
+            "tablet": true,
+            "phone": true
+        }
+    },
+    "sap.ui5": {
+        "flexEnabled": true,
+        "dependencies": {
+            "minUI5Version": "1.82.2",
+            "libs": {
+                "sap.m": {},
+                "sap.ui.core": {},
+                "sap.f": {},
+                "sap.suite.ui.generic.template": {},
+                "sap.ui.comp": {},
+                "sap.ui.generic.app": {},
+                "sap.ui.table": {},
+                "sap.ushell": {}
+            }
+        },
+        "contentDensities": {
+            "compact": true,
+            "cozy": true
+        },
+        "models": {
+            "i18n": {
+                "type": "sap.ui.model.resource.ResourceModel",
+                "settings": {
+                    "bundleName": "forms.sbpa.taskui.workflowuimodule.i18n.i18n"
+                }
+            },
+            "": {
+                "dataSource": "mainService",
+                "preload": true,
+                "settings": {}
+            }
+        },
+        "resources": {
+            "css": [
+                {
+                    "uri": "css/style.css"
+                }
+            ]
+        },
+        "routing": {
+            "config": {
+                "routerClass": "sap.m.routing.Router",
+                "viewType": "XML",
+                "async": true,
+                "viewPath": "forms.sbpa.taskui.workflowuimodule.view",
+                "controlAggregation": "pages",
+                "controlId": "app",
+                "clearControlAggregation": false
+            },
+            "routes": [
+                {
+                    "name": "Routeforms",
+                    "pattern": ":?query:",
+                    "target": [
+                        "Targetforms"
+                    ]
+                }
+            ],
+            "targets": {
+                "Targetforms": {
+                    "viewType": "XML",
+                    "transition": "slide",
+                    "clearControlAggregation": false,
+                    "viewId": "forms",
+                    "viewName": "forms"
+                }
+            }
+        },
+        "rootView": {
+            "viewName": "forms.sbpa.taskui.workflowuimodule.view.App",
+            "type": "XML",
+            "async": true,
+            "id": "App"
+        }
+    },
+    "sap.cloud": {
+        "public": true,
+        "service": "forms-sbpa-taskui"
+    },
+    "sap.bpa.task": {
+        "_version": "1.0.0",
+        "outcomes": [
+            {
+                "id": "submit",
+                "label": "Completed"
+            }
+        ],
+        "inputs": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "title": "input",
+            "type": "object",
+            "required": [
+                "formsProcessID"
+            ],
+            "properties": {
+                "formsProcessID": {
+                    "type": "string",
+                    "title": "Forms Process ID",
+                    "description": "Forms Process ID"
+                },
+                "configID": {
+                    "type": "string",
+                    "title": "Config ID",
+                    "description": "Config ID"
+                },
+                "formsProcessState": {
+                    "type": "string",
+                    "title": "Forms Process State",
+                    "description": "Forms Process State"
+                },
+                "formsScenarioBaseUrl": {
+                    "type": "string",
+                    "title": "Forms Scenario Base Url",
+                    "description": "Forms Scenario Base Url"
+                },
+                "mailTemplate": {
+                    "type": "string",
+                    "title": "Mail Template",
+                    "description": "Mail Template"
+                },
+                "customTaskTitle": {
+                    "type": "string",
+                    "title": "Custom Task Title",
+                    "description": "Custom Task Title"
+                },
+                "parameters": {
+                    "title": "Parameters",
+                    "description": "Parameters",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/parameterItem"
+                    }
+                }
+            },
+            "definitions": {
+                "parameterItem": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "title": "Key",
+                            "description": "Parameter Key"
+                        },
+                        "value": {
+                            "type": "string",
+                            "title": "Value",
+                            "description": "Parameter Value"
+                        },
+                        "values": {
+                            "title": "Values",
+                            "description": "Values",
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "title": "Value",
+                                "description": "Parameter Value"
+                            }
+                        },
+                        "itemsMap": {
+                            "title": "Items Map",
+                            "description": "Items Map",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mapItem"
+                            }
+                        }
+                    }
+                },
+                "mapItem": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "title": "Key",
+                            "description": "Parameter Key"
+                        },
+                        "value": {
+                            "type": "string",
+                            "title": "Value",
+                            "description": "Parameter Value"
+                        }
+                    }
+                }
+            }
+        },
+        "outputs": {
+            "$schema": "http://json-schema.org/draft-07/schema",
+            "title": "output",
+            "type": "object",
+            "required": [],
+            "properties": {
+                "selectedAction": {
+                    "type": "string",
+                    "title": "Selected Action",
+                    "description": "Selected Action"
+                },
+                "parameters": {
+                    "title": "Parameters",
+                    "description": "Parameters",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/parameterItem"
+                    }
+                }
+            },
+            "definitions": {
+                "parameterItem": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "title": "Key",
+                            "description": "Parameter Key"
+                        },
+                        "value": {
+                            "type": "string",
+                            "title": "Value",
+                            "description": "Parameter Value"
+                        },
+                        "values": {
+                            "title": "Values",
+                            "description": "Values",
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "title": "Value",
+                                "description": "Parameter Value"
+                            }
+                        },
+                        "itemsMap": {
+                            "title": "Items Map",
+                            "description": "Items Map",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/mapItem"
+                            }
+                        }
+                    }
+                },
+                "mapItem": {
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "key": {
+                            "type": "string",
+                            "title": "Key",
+                            "description": "Parameter Key"
+                        },
+                        "value": {
+                            "type": "string",
+                            "title": "Value",
+                            "description": "Parameter Value"
+                        }
+                    }
+                }
+            }
+        },
+        "category": "standard"
+    }
+}

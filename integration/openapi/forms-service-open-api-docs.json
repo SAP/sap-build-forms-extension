@@ -1,0 +1,815 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/v1/scenario/process/{stateValue}": {
+      "post": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Set process state",
+        "description": "This operation sets a state for a form process.",
+        "operationId": "setProcessState",
+        "parameters": [
+          {
+            "name": "stateValue",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/event/{eventName}": {
+      "post": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Trigger event",
+        "description": "This operation triggers the execution of a scenario event for a form process.",
+        "operationId": "triggerEvent",
+        "parameters": [
+          {
+            "name": "eventName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/forms-scenario-base-url": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get forms scenario base URL",
+        "description": "This operation returns the string of forms scenario base URL, where the SessionController of the scenario is executed.",
+        "operationId": "getFormsScenarioBaseUrl",
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioBaseUrlResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fields": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get fields",
+        "description": "This operation returns multiple fields from a form process.",
+        "operationId": "getFields",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldNames",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseMapStringObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldsSerialized": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get fields in a serialized string",
+        "description": "This operation returns multiple fields from a form process in a serialized string.",
+        "operationId": "getFieldsSerialized",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldNames",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsTime": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as time",
+        "description": "This operation returns one time field of a form process in the format HH:mm.",
+        "operationId": "getFieldAsTime",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsString": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as string",
+        "description": "This operation returns one string field of a form process.",
+        "operationId": "getFieldAsString",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsInteger": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as integer",
+        "description": "This operation returns one integer field of a form process.",
+        "operationId": "getFieldAsInteger",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseInteger"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsDecimal": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as decimal",
+        "description": "This operation returns one decimal field of a form process.",
+        "operationId": "getFieldAsDecimal",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseBigDecimal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsDate": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as date",
+        "description": "This operation returns one date field of a form process in the format yyyy-MM-dd.",
+        "operationId": "getFieldAsDate",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsDateTime": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as datetime",
+        "description": "This operation returns one date time field of a form process in the format yyyy-MM-dd'T'HH:mm:ss.",
+        "operationId": "getFieldAsDateTime",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsDateRange": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as date range",
+        "description": "This operation returns one date range field of a form process.",
+        "operationId": "getFieldAsDateRange",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseMapStringString"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/fieldAsBoolean": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get field as boolean",
+        "description": "This operation returns one boolean field of a form process.",
+        "operationId": "getFieldAsBoolean",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseBoolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/collection": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get collection",
+        "description": "This operation returns a collection (table) of a form process.",
+        "operationId": "getCollection",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseCollectionObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/scenario/collectionSerialized": {
+      "get": {
+        "tags": [
+          "scenario-controller"
+        ],
+        "summary": "Get collection in a serialized string",
+        "description": "This operation returns a collection (table) of a form process in a serialized string.",
+        "operationId": "getCollectionSerialized",
+        "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scenarioFieldName",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponseString"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FieldResponseString": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "string"
+          }
+        }
+      },
+      "ScenarioBaseUrlResponse": {
+        "type": "object",
+        "properties": {
+          "formsScenarioBaseUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "FieldResponseMapStringObject": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "FieldResponseInteger": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "FieldResponseBigDecimal": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "number"
+          }
+        }
+      },
+      "FieldResponseMapStringString": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "FieldResponseBoolean": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "boolean"
+          }
+        }
+      },
+      "FieldResponseCollectionObject": {
+        "type": "object",
+        "properties": {
+          "fieldValue": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2595 @@
+x-sap-api-type: ODATA
+x-sap-shortText: Retrieve the workflow tasks assigned to the current user
+x-sap-extensible:
+  supported: 'no'
+  description: You can’t extend this API because the underlying domain model can’t be extended with custom fields.
+x-servers:
+- url: https://{apiurl}/public/workflow/odata/v1/tcm
+  description: SAP Build Process Automation Inbox OData API Endpoint
+  templates:
+    apiurl:
+      description: SAP Business Technology Platform Region Host
+      enum:
+      - spa-api-gateway-bpi-eu-prod.cfapps.eu10.hana.ondemand.com
+      - spa-api-gateway-bpi-us-prod.cfapps.us10.hana.ondemand.com
+      - spa-api-gateway-bpi-ap-prod.cfapps.ap10.hana.ondemand.com
+      default: spa-api-gateway-bpi-eu-prod.cfapps.eu10.hana.ondemand.com
+    consumersubdomain:
+      description: SAP Business Technology Platform Consumer Sub Domain Name
+    authenticationdomain:
+      description: SAP Business Technology Platform UAA domain
+      enum:
+      - authentication.eu10.hana.ondemand.com
+      - authentication.ap10.hana.ondemand.com
+      - authentication.us10.hana.ondemand.com
+      default: authentication.eu10.hana.ondemand.com
+info:
+  title: Inbox
+  description: |-
+    This API provides the functionality for building "own inbox" capabilities on top of SAP Build Process Automation.
+    It is based on the task consumption model (TCM) as documented in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+
+    Only users who have the ProcessAutomationParticipant role assigned are able to use the Inbox API.
+
+    SAP Build Process Automation currently supports only a subset of the Task Consumption Model capabilities. Only the functionality included in this document is available.
+  version: v1
+externalDocs:
+  description: SAP Build Process Automation documentation
+  url: https://help.sap.com/viewer/p/PROCESS_AUTOMATION
+host: hostname
+basePath: /public/workflow/odata/v1/tcm
+consumes:
+- application/json
+produces:
+- application/json
+- application/xml
+definitions:
+  TaskInstance:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __metadata:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the object.
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+              type:
+                type: string
+                default: com.sap.bpm.wfs.tcm.metadata.TaskCollection
+                description: The name of the EntityType in the data model of the OData service that describes the current entry.
+          InstanceID:
+            type: string
+            description: The ID of the task.
+            minLength: 36
+            maxLength: 255
+          SAP__Origin:
+            type: string
+            description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+            default: NA
+          TaskDefinitionID:
+            type: string
+            description: 'The ID of the task definition this task belongs to. The ID consists of the task definition name and the workflow definition ID  in lowercase using the following format: {task definition name}@{workflow definition ID}.'
+          TaskDefinitionName:
+            type: string
+            description: The modeled task definition name.
+          Status:
+            type: string
+            description: The current status of the task.
+            enum:
+            - READY
+            - RESERVED
+            - CANCELED
+            - COMPLETED
+          TaskTitle:
+            type: string
+            description: The title of the task as it appears in the inbox. Translation of this text is currently not supported.
+          HasComments:
+            type: boolean
+            description: Indicates whether a task has comments. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+            default: false
+          HasAttachments:
+            type: boolean
+            description: Indicates whether a task has attachments. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+            default: false
+          HasPotentialOwners:
+            type: boolean
+            description: Indicates whether a task has potential owners. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+            default: false
+          SupportsClaim:
+            type: boolean
+            description: |-
+              Indicates whether a claim operation on this task is possible. This depends on the life cycle of the task.
+              See [Status Changes for Task Instances](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+          SupportsRelease:
+            type: boolean
+            description: |-
+              Indicates whether a release operation on this task is possible. This depends on the life cycle of the task.
+              See [Status Changes for Task Instances](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+          SupportsForward:
+            type: boolean
+            description: Indicates whether a forward operation on this task is possible.
+            default: false
+          SupportsComments:
+            type: boolean
+            description: Indicates whether comments on this task are supported. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+            default: false
+          SupportsAttachments:
+            type: boolean
+            description: Indicates whether attachments on this task are supported. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+            default: false
+          CreatedOn:
+            type: string
+            format: date-time
+            description: The time the task was created.
+          CreatedBy:
+            type: string
+            description: The user who created the task. The user ID is at most 255 characters long.
+            maxLength: 255
+          CreatedByName:
+            type: string
+            description: As of now, this returns the same value as the CreatedBy property. This is subject to change.
+          Processor:
+            type: string
+            description: The user who works on the task. The user ID is at most 255 characters long
+            maxLength: 255
+          CompletionDeadLine:
+            type: string
+            format: date-time
+            description: The time by which the task must be completed.
+          SubstitutedUserName:
+            type: string
+            description: The name of the user who is substituted. This is currently not implemented in SAP Workflow service and will always return null. This is subject to change.
+          Priority:
+            type: string
+            description: The priority of the task.
+            enum:
+            - LOW
+            - MEDIUM
+            - HIGH
+            - VERY_HIGH
+          PriorityNumber:
+            type: integer
+            description: The numerical representation of the priority of the task.
+            enum:
+            - 6
+            - 5
+            - 4
+            - 2
+          TaskSupports:
+            type: object
+            properties:
+              __metadata:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    default: com.sap.bpm.wfs.tcm.metadata.TaskSupports
+                    description: The name of the EntityType in the data model of the OData service that describes the current entry.
+              Description:
+                type: boolean
+                description: Indicates whether a description is supported on this task.
+              UIExecutionLink:
+                type: boolean
+                description: Indicates whether an UI execution link is supported on this task.
+              WorkflowLog:
+                type: boolean
+                description: Indicates whether a workflow log is supported on this task.
+              Claim:
+                type: boolean
+                description: |-
+                  Indicates whether a claim operation on this task is possible. This depends on the life cycle of the task.
+                  See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+              Release:
+                type: boolean
+                description: |-
+                  Indicates whether a release operation on this task is possible. This depends on the life cycle of the task.
+                  See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+              Forward:
+                type: boolean
+                description: |-
+                  Indicates whether a forward operation on this task is possible. This depends on the life cycle of the task.
+                  See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+          GUI_Link:
+            type: string
+            description: The URI of the task execution UI.
+          Description:
+            type: object
+            properties:
+              __deferred:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: The canonical URI identifying the current entry.
+          TaskDefinitionData:
+            type: object
+            properties:
+              __deferred:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: The canonical URI identifying the current entry.
+          CustomAttributeData:
+            type: object
+            properties:
+              __deferred:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: The canonical URI identifying the current entry.
+          WorkflowLogs:
+            type: object
+            properties:
+              __deferred:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: The canonical URI identifying the current entry.
+  TaskInstances:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __count:
+            type: string
+            description: When '$inlinecount=allpages' is set as query parameter, __count returns the number of results.
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.TaskCollection
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                InstanceID:
+                  type: string
+                  description: The ID of the task.
+                  minLength: 36
+                  maxLength: 255
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                  default: NA
+                TaskDefinitionID:
+                  type: string
+                  description: 'The ID of the task definition this task belongs to. The ID consists of the task definition name and the workflow definition ID  in lowercase using the following format: {task definition name}@{workflow definition ID}.'
+                TaskDefinitionName:
+                  type: string
+                  description: The modeled task definition name.
+                Status:
+                  type: string
+                  description: The current status of the task.
+                  enum:
+                  - READY
+                  - RESERVED
+                  - CANCELED
+                  - COMPLETED
+                TaskTitle:
+                  type: string
+                  description: The title of the task as it appears in the inbox. Translation of this text is currently not supported.
+                HasComments:
+                  type: boolean
+                  description: Indicates whether a task has comments. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+                  default: false
+                HasAttachments:
+                  type: boolean
+                  description: Indicates whether a task has attachments. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+                  default: false
+                HasPotentialOwners:
+                  type: boolean
+                  description: Indicates whether a task has potential owners. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+                  default: false
+                SupportsClaim:
+                  type: boolean
+                  description: |-
+                    Indicates whether a claim operation on this task is possible. This depends on the life cycle of the task.
+                    See [Status Changes for Task Instances](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+                SupportsRelease:
+                  type: boolean
+                  description: |-
+                    Indicates whether a release operation on this task is possible. This depends on the life cycle of the task.
+                    See [Status Changes for Task Instances](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+                SupportsForward:
+                  type: boolean
+                  description: Indicates whether a forward operation on this task is possible.
+                  default: false
+                SupportsComments:
+                  type: boolean
+                  description: Indicates whether comments on this task are supported. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+                  default: false
+                SupportsAttachments:
+                  type: boolean
+                  description: Indicates whether attachments on this task are supported. This is currently not implemented in SAP Workflow service and will always return false. This is subject to change.
+                  default: false
+                CreatedOn:
+                  type: string
+                  format: date-time
+                  description: The time the task was created.
+                CreatedBy:
+                  type: string
+                  description: The user who created the task. The user ID is at most 255 characters long.
+                  maxLength: 255
+                CreatedByName:
+                  type: string
+                  description: As of now, this returns the same value as the CreatedBy property. This is subject to change.
+                Processor:
+                  type: string
+                  description: The user who works on the task. The user ID is at most 255 characters long
+                  maxLength: 255
+                CompletionDeadLine:
+                  type: string
+                  format: date-time
+                  description: The time by which the task must be completed.
+                SubstitutedUserName:
+                  type: string
+                  description: The name of the user who is substituted. This is currently not implemented in SAP Workflow service and will always return null. This is subject to change.
+                Priority:
+                  type: string
+                  description: The priority of the task.
+                  enum:
+                  - LOW
+                  - MEDIUM
+                  - HIGH
+                  - VERY_HIGH
+                PriorityNumber:
+                  type: integer
+                  description: The numerical representation of the priority of the task.
+                  enum:
+                  - 6
+                  - 5
+                  - 4
+                  - 2
+                TaskSupports:
+                  type: object
+                  properties:
+                    __metadata:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          default: com.sap.bpm.wfs.tcm.metadata.TaskSupports
+                          description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                    Description:
+                      type: boolean
+                      description: Indicates whether a description is supported on this task.
+                    UIExecutionLink:
+                      type: boolean
+                      description: Indicates whether an UI execution link is supported on this task.
+                    WorkflowLog:
+                      type: boolean
+                      description: Indicates whether a workflow log is supported on this task.
+                    Claim:
+                      type: boolean
+                      description: |-
+                        Indicates whether a claim operation on this task is possible. This depends on the life cycle of the task.
+                        See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+                    Release:
+                      type: boolean
+                      description: |-
+                        Indicates whether a release operation on this task is possible. This depends on the life cycle of the task.
+                        See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+                    Forward:
+                      type: boolean
+                      description: |-
+                        Indicates whether a forward operation on this task is possible. This depends on the life cycle of the task.
+                        See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+                GUI_Link:
+                  type: string
+                  description: The URI of the task execution UI.
+                Description:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+                TaskDefinitionData:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+                CustomAttributeData:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+                WorkflowLogs:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+  WorkflowLog:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          id:
+            type: string
+            description: The ID of the object.
+          uri:
+            type: string
+            description: The canonical URI identifying the current entry.
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.WorkflowLog
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      InstanceID:
+        type: string
+        description: The ID of the task to which the workflow log belongs.
+        minLength: 36
+        maxLength: 255
+      SAP__Origin:
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      EventOrder:
+        type: string
+        description: The order in which the events have been processed for a workflow. The value is a linearly increasing number. It starts at zero per workflow instance.
+      ReferenceInstanceID:
+        type: string
+        description: The ID of the task instance for which the event has been triggered.
+      PerformedBy:
+        type: string
+        description: The unique ID of the agent who performed the action on the work item.
+        maxLength: 255
+      PerformedByName:
+        type: string
+        description: Currently it is the same value as 'PerformedBy'. In future it will contain the name of the agent who performed the action on the work item.
+      Status:
+        type: string
+        description: Latest status of the work item.
+        enum:
+        - WORKFLOW_STARTED
+        - READY
+        - IN_PROGRESS
+        - COMPLETED
+      Timestamp:
+        type: string
+        format: date-time
+        description: Indication when the event was logged.
+      Description:
+        type: string
+        description: Description text of the work item.
+      SupportsNavigation:
+        type: boolean
+        description: Flag that determines whether the user can click the description. Currently, this will always return false. This is subject to change.
+        default: false
+      Result:
+        type: string
+        description: Outcome of the work item.
+      ResultType:
+        type: string
+        description: Nature for the outcome of the work item.
+        enum:
+        - POSITIVE
+        - NEUTRAL
+        - NEGATIVE
+      CreationTimestamp:
+        type: string
+        format: date-time
+        description: Indication when the workflow was initiated.
+      EndTimestamp:
+        type: string
+        format: date-time
+        description: Indication by when the workflow should be completed. For a COMPLETED task, it will be the completion time of the task. For an open task, for which a deadline is defined, it is either the 'Latest End' or the 'Requested End'.
+      PerformedByDetails:
+        type: object
+        properties:
+          __deferred:
+            type: object
+            properties:
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+  WorkflowLogs:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.WorkflowLog
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                InstanceID:
+                  type: string
+                  description: The ID of the task to which the workflow log belongs.
+                  minLength: 36
+                  maxLength: 255
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                  default: NA
+                EventOrder:
+                  type: string
+                  description: The order in which the events have been processed for a workflow. The value is a linearly increasing number. It starts at zero per workflow instance.
+                ReferenceInstanceID:
+                  type: string
+                  description: The ID of the task instance for which the event has been triggered.
+                PerformedBy:
+                  type: string
+                  description: The unique ID of the agent who performed the action on the work item.
+                  maxLength: 255
+                PerformedByName:
+                  type: string
+                  description: Currently it is the same value as 'PerformedBy'. In future it will contain the name of the agent who performed the action on the work item.
+                Status:
+                  type: string
+                  description: Latest status of the work item.
+                  enum:
+                  - WORKFLOW_STARTED
+                  - READY
+                  - IN_PROGRESS
+                  - COMPLETED
+                Timestamp:
+                  type: string
+                  format: date-time
+                  description: Indication when the event was logged.
+                Description:
+                  type: string
+                  description: Description text of the work item.
+                SupportsNavigation:
+                  type: boolean
+                  description: Flag that determines whether the user can click the description. Currently, this will always return false. This is subject to change.
+                  default: false
+                Result:
+                  type: string
+                  description: Outcome of the work item.
+                ResultType:
+                  type: string
+                  description: Nature for the outcome of the work item.
+                  enum:
+                  - POSITIVE
+                  - NEUTRAL
+                  - NEGATIVE
+                CreationTimestamp:
+                  type: string
+                  format: date-time
+                  description: Indication when the workflow was initiated.
+                EndTimestamp:
+                  type: string
+                  format: date-time
+                  description: Indication by when the workflow should be completed. For a COMPLETED task, it will be the completion time of the task. For an open task, for which a deadline is defined, it is either the 'Latest End' or the 'Requested End'.
+                PerformedByDetails:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+  TaskDefinitionData:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          id:
+            type: string
+            description: The ID of the object.
+          uri:
+            type: string
+            description: The canonical URI identifying the current entry.
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.TaskDefinition
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      SAP__Origin:
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      TaskDefinitionID:
+        type: string
+        description: The ID of the task definition this task belongs to. It consists of the task definition name and the workflow definition ID in the form {task definition name}@{workflow definition ID} in lowercase.
+      TaskName:
+        type: string
+        description: The modeled task definition name.
+      Category:
+        type: string
+        description: The category of the task.
+        default: TASK
+      CustomAttributeDefinitionData:
+        type: object
+        properties:
+          __deferred:
+            type: object
+            properties:
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+  TaskDefinition:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __metadata:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the object.
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+              type:
+                type: string
+                default: com.sap.bpm.wfs.tcm.metadata.TaskDefinition
+                description: The name of the EntityType in the data model of the OData service that describes the current entry.
+          SAP__Origin:
+            type: string
+            description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+            default: NA
+          TaskDefinitionID:
+            type: string
+            description: The ID of the task definition this task belongs to. It consists of the task definition name and the workflow definition ID in the form {task definition name}@{workflow definition ID} in lowercase.
+          TaskName:
+            type: string
+            description: The modeled task definition name.
+          Category:
+            type: string
+            description: The category of the task.
+            default: TASK
+          CustomAttributeDefinitionData:
+            type: object
+            properties:
+              __deferred:
+                type: object
+                properties:
+                  uri:
+                    type: string
+                    description: The canonical URI identifying the current entry.
+  TaskDefinitions:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.TaskDefinition
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                  default: NA
+                TaskDefinitionID:
+                  type: string
+                  description: The ID of the task definition this task belongs to. It consists of the task definition name and the workflow definition ID in the form {task definition name}@{workflow definition ID} in lowercase.
+                TaskName:
+                  type: string
+                  description: The modeled task definition name.
+                Category:
+                  type: string
+                  description: The category of the task.
+                  default: TASK
+                CustomAttributeDefinitionData:
+                  type: object
+                  properties:
+                    __deferred:
+                      type: object
+                      properties:
+                        uri:
+                          type: string
+                          description: The canonical URI identifying the current entry.
+  TaskCustomAttributeDefinition:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          id:
+            type: string
+            description: The ID of the object.
+          uri:
+            type: string
+            description: The canonical URI identifying the current entry.
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.CustomAttributeDefinition
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      SAP__Origin:
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      TaskDefinitionID:
+        type: string
+        description: The ID of the task definition this task belongs to. Is constructed out of the task definition name and the workflow definition ID in the form {task definition name}@{workflow definition ID} in lowercase.
+      Name:
+        type: string
+        description: The name of the custom attribute definition
+      Type:
+        type: string
+      Label:
+        type: string
+  TaskCustomAttributeDefinitions:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.CustomAttributeDefinition
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                  default: NA
+                TaskDefinitionID:
+                  type: string
+                  description: The ID of the task definition this task belongs to. Is constructed out of the task definition name and the workflow definition ID in the form {task definition name}@{workflow definition ID} in lowercase.
+                Name:
+                  type: string
+                  description: The name of the custom attribute definition
+                Type:
+                  type: string
+                Label:
+                  type: string
+  TaskCustomAttributeData:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          id:
+            type: string
+            description: The ID of the object.
+          uri:
+            type: string
+            description: The canonical URI identifying the current entry.
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.CustomAttribute
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      SAP__Origin:
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      InstanceID:
+        type: string
+        description: The ID of the task.
+      Name:
+        type: string
+        description: The name of the custom attribute
+      Value:
+        type: string
+        description: The value of the custom attribute for the given task instance
+  TaskCustomAttributeDatas:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.CustomAttribute
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                  default: NA
+                InstanceID:
+                  type: string
+                  description: The ID of the task.
+                Name:
+                  type: string
+                  description: The name of the custom attribute
+                Value:
+                  type: string
+                  description: The value of the custom attribute for the given task instance
+  TaskSupports:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.TaskSupports
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      Description:
+        type: boolean
+        description: Indicates whether a description is supported on this task.
+      UIExecutionLink:
+        type: boolean
+        description: Indicates whether an UI execution link is supported on this task.
+      WorkflowLog:
+        type: boolean
+        description: Indicates whether a workflow log is supported on this task.
+      Claim:
+        type: boolean
+        description: |-
+          Indicates whether a claim operation on this task is possible. This depends on the life cycle of the task.
+          See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+      Release:
+        type: boolean
+        description: |-
+          Indicates whether a release operation on this task is possible. This depends on the life cycle of the task.
+          See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+      Forward:
+        type: boolean
+        description: |-
+          Indicates whether a forward operation on this task is possible. This depends on the life cycle of the task.
+          See [Status Changes for Task Instances ](https://help.sap.com/viewer/e157c391253b4ecd93647bf232d18a83/Cloud/en-US/539ab87c451e4c0aa8321d2f226c44d0.html).
+  TaskDescription:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __metadata:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the object.
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+              type:
+                type: string
+                default: com.sap.bpm.wfs.tcm.metadata.TaskDescription
+                description: The name of the EntityType in the data model of the OData service that describes the current entry.
+          InstanceID:
+            type: string
+            description: The ID of the task to which the description belongs.
+            minLength: 36
+            maxLength: 255
+          SAP__Origin:
+            type: string
+            description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+            default: NA
+          Description:
+            type: string
+            description: The description of the task.
+  SubstitutionRule:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __metadata:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the object.
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+              type:
+                type: string
+                default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRule
+                description: The name of the EntityType in the data model of the OData service that describes the current entry.
+          SubstitutionRuleID:
+            type: string
+            description: The ID of the substitution rule.
+            minLength: 36
+            maxLength: 64
+          SAP__Origin:
+            type: string
+            description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+          User:
+            type: string
+            description: The user who substitutes the current user.
+          BeginDate:
+            type: string
+            format: date-time
+            description: The date on which the substitution begins (UTC time).
+          EndDate:
+            type: string
+            format: date-time
+            description: The date on which the substitution ends (UTC time).
+          FullName:
+            type: string
+            description: The user who substitutes the current user. The user name is identical with the value of the User field. The value of this field may change in future, so if you currently work with fullName you should consider to use the field "User" instead.
+          Mode:
+            type: string
+            description: The mode of the substitution rule.
+            enum:
+            - RECEIVE_TASKS
+            - TAKE_OVER
+          IsEnabled:
+            type: boolean
+            description: Indicates whether the substitution rule is enabled.
+          SupportsDeleteSubstitutionRule:
+            type: boolean
+            description: Indicates whether the substitution rule can be deleted.
+          SupportsEnableSubstitutionRule:
+            type: boolean
+            description: Indicates whether the substitution rule can be enabled/disabled.
+  SubstitutionRules:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRule
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                SubstitutionRuleID:
+                  type: string
+                  description: The ID of the substitution rule.
+                  minLength: 36
+                  maxLength: 64
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                User:
+                  type: string
+                  description: The user who substitutes the current user.
+                BeginDate:
+                  type: string
+                  format: date-time
+                  description: The date on which the substitution begins (UTC time).
+                EndDate:
+                  type: string
+                  format: date-time
+                  description: The date on which the substitution ends (UTC time).
+                FullName:
+                  type: string
+                  description: The user who substitutes the current user. The user name is identical with the value of the User field. The value of this field may change in future, so if you currently work with fullName you should consider to use the field "User" instead.
+                Mode:
+                  type: string
+                  description: The mode of the substitution rule.
+                  enum:
+                  - RECEIVE_TASKS
+                  - TAKE_OVER
+                IsEnabled:
+                  type: boolean
+                  description: Indicates whether the substitution rule is enabled.
+                SupportsDeleteSubstitutionRule:
+                  type: boolean
+                  description: Indicates whether the substitution rule can be deleted.
+                SupportsEnableSubstitutionRule:
+                  type: boolean
+                  description: Indicates whether the substitution rule can be enabled/disabled.
+  SubstitutesRule:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          __metadata:
+            type: object
+            properties:
+              id:
+                type: string
+                description: The ID of the object.
+              uri:
+                type: string
+                description: The canonical URI identifying the current entry.
+              type:
+                type: string
+                default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRule
+                description: The name of the EntityType in the data model of the OData service that describes the current entry.
+          SubstitutionRuleID:
+            type: string
+            description: The ID of the substitution rule.
+            minLength: 36
+            maxLength: 64
+          SAP__Origin:
+            type: string
+            description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+          User:
+            type: string
+            description: The user who is substituted by the currently logged-in user.
+          BeginDate:
+            type: string
+            format: date-time
+            description: The date on which the substitution begins (UTC time).
+          EndDate:
+            type: string
+            format: date-time
+            description: The date on which the substitution ends (UTC time).
+          FullName:
+            type: string
+            description: The user who substitutes the current user. The user name is identical with the value of the User field. The value of this field may change in future, so if you currently work with fullName you should consider to use the field "User" instead.
+          Mode:
+            type: string
+            description: The mode of the substitution rule.
+            enum:
+            - RECEIVE_TASKS
+            - TAKE_OVER
+          IsEnabled:
+            type: boolean
+            description: Indicates whether the substitution rule is enabled.
+          SupportsDeleteSubstitutionRule:
+            type: boolean
+            description: Indicates whether the substitution rule can be deleted.
+          SupportsEnableSubstitutionRule:
+            type: boolean
+            description: Indicates whether the substitution rule can be enabled/disabled.
+  SubstitutesRules:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          results:
+            type: array
+            minItems: 0
+            items:
+              type: object
+              properties:
+                __metadata:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      description: The ID of the object.
+                    uri:
+                      type: string
+                      description: The canonical URI identifying the current entry.
+                    type:
+                      type: string
+                      default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRule
+                      description: The name of the EntityType in the data model of the OData service that describes the current entry.
+                SubstitutionRuleID:
+                  type: string
+                  description: The ID of the substitution rule.
+                  minLength: 36
+                  maxLength: 64
+                SAP__Origin:
+                  type: string
+                  description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+                User:
+                  type: string
+                  description: The user who is substituted by the currently logged-in user.
+                BeginDate:
+                  type: string
+                  format: date-time
+                  description: The date on which the substitution begins (UTC time).
+                EndDate:
+                  type: string
+                  format: date-time
+                  description: The date on which the substitution ends (UTC time).
+                FullName:
+                  type: string
+                  description: The user who substitutes the current user. The user name is identical with the value of the User field. The value of this field may change in future, so if you currently work with fullName you should consider to use the field "User" instead.
+                Mode:
+                  type: string
+                  description: The mode of the substitution rule.
+                  enum:
+                  - RECEIVE_TASKS
+                  - TAKE_OVER
+                IsEnabled:
+                  type: boolean
+                  description: Indicates whether the substitution rule is enabled.
+                SupportsDeleteSubstitutionRule:
+                  type: boolean
+                  description: Indicates whether the substitution rule can be deleted.
+                SupportsEnableSubstitutionRule:
+                  type: boolean
+                  description: Indicates whether the substitution rule can be enabled/disabled.
+  SubstitutionRuleCreatePayload:
+    type: object
+    properties:
+      __metadata:
+        type: object
+        properties:
+          type:
+            type: string
+            default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRule
+            description: The name of the EntityType in the data model of the OData service that describes the current entry.
+      SAP__Origin:
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+      User:
+        type: string
+        description: The user who should substitute the current user.
+      BeginDate:
+        type: string
+        format: date-time
+        description: |-
+          The date on which the substitution should begin. It expects a UTC date. Please make sure to convert your timezone to UTC before sending a request.
+
+          Additional requirements apply:
+          - It must be yesterday, today or in the future.
+      EndDate:
+        type: string
+        format: date-time
+        description: |-
+          The date on which the substitution should end. It expects a UTC date.
+
+          Additional requirements apply:
+          - If the mode is 'RECEIVE_TASKS', it is required. Otherwise, it is ignored and set to null.
+          - It must be equal to the begin date or be more recent. But it cannot be in the past.
+      Mode:
+        type: string
+        description: |-
+          The mode of the new substitution rule.
+
+          - RECEIVE_TASKS (planned substitution): The substitution rule is enabled immediately.
+          The substitute receives the tasks of the substituted user in the defined period.
+          - TAKE_OVER (unplanned substitution): The substitution rule is disabled by default and can be enabled by the substitute when needed
+          (unplanned absence of substituted user). If enabled, the substitute receives the tasks of the substituted user starting on the defined begin date.
+        enum:
+        - RECEIVE_TASKS
+        - TAKE_OVER
+      IsEnabled:
+        type: boolean
+        description: |-
+          Indicates whether the new substitution rule should be enabled.
+
+          Additional requirements apply:
+          - If mode is 'RECEIVE_TASKS', it must be 'true'.
+          - If mode is 'TAKE_OVER', it must be 'false'.
+    required:
+    - SAP__Origin
+    - User
+    - BeginDate
+    - Mode
+    - IsEnabled
+  SubstitutionDeleteRule:
+    type: object
+    properties:
+      d:
+        type: object
+        properties:
+          DeleteSubstitutionRule:
+            type: object
+            properties:
+              __metadata:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    default: com.sap.bpm.wfs.tcm.metadata.SubstitutionRuleReturn
+                    description: The name of the EntityType in the data model of the OData service that describes the current entry.
+              Deleted:
+                type: boolean
+                description: Indicates whether the substitution rule with specified id is removed or not.
+  DeferredType:
+    type: object
+    properties:
+      __deferred:
+        type: object
+        properties:
+          uri:
+            type: string
+            description: The canonical URI identifying the current entry.
+  SubstitutionError-400:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - SUBSTITUTION_BAD_REQUEST
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  SubstitutionError-403:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - SUBSTITUTION_INVALID_USER
+            - SUBSTITUTION_USER_NOT_AUTHORIZED
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  SubstitutionError-404:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - SUBSTITUTION_NOT_FOUND
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  SubstitutionError-405:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - 'null'
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  SubstitutionError-406:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - 'null'
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  SubstitutionError-500:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - SUBSTITUTION_INVALID_STATE_TRANSITION
+            - INVALID_DATA
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message.
+  TCMError-400:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - TASK_BAD_REQUEST
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  TCMError-403:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - TASK_USER_NOT_AUTHORIZED
+            - TASK_CLAIMED_BY_OTHER_USER
+            - TASK_FORWARD_FORBIDDEN
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  TCMError-404:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - TASK_NOT_FOUND
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  TCMError-405:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - 'null'
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  TCMError-406:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - 'null'
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  TCMError-500:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: string
+            description: The error category.
+            enum:
+            - TASK_INVALID_STATE_TRANSITION
+          message:
+            type: object
+            properties:
+              lang:
+                type: string
+                default: en
+              value:
+                type: string
+                description: The error message
+  UnauthorizedError:
+    type: object
+    properties:
+      error:
+        type: string
+        description: The error name.
+      error_description:
+        type: string
+        description: The error description.
+    required:
+    - error
+    - error_description
+responses:
+  '400':
+    description: The syntax of the sent request is invalid.
+    schema:
+      $ref: '#/definitions/TCMError-400'
+    examples:
+      application/json:
+        error:
+          code: TASK_BAD_REQUEST
+          message:
+            lang: en
+            value: 'An error occured: 400 Bad Request'
+  '401':
+    description: Unauthorized. You do not have provided valid authentication credentials to access the resource.
+    schema:
+      $ref: '#/definitions/UnauthorizedError'
+    examples:
+      application/json:
+        error: unauthorized
+        error_description: Full authentication is required to access this resource.
+  '403':
+    description: The user who sent the request is not authorized to access the requested data or to perform the requested action.
+    schema:
+      $ref: '#/definitions/TCMError-403'
+    examples:
+      application/json:
+        error:
+          code: TASK_USER_NOT_AUTHORIZED
+          message:
+            lang: en
+            value: 'An error occured: 403 Forbidden'
+  '404':
+    description: The requested object could not be found.
+    schema:
+      $ref: '#/definitions/TCMError-404'
+    examples:
+      application/json:
+        error:
+          code: TASK_NOT_FOUND
+          message:
+            lang: en
+            value: 'An error occured: 404 Not Found'
+  '405':
+    description: The action to be executed is not supported by the OData service.
+    schema:
+      $ref: '#/definitions/TCMError-405'
+    examples:
+      application/json:
+        error:
+          code: null
+          message:
+            lang: en
+            value: 'An error occured: 405 Method Not Allowed'
+  '406':
+    description: The requested object cannot be returned in the specified format according to the accept headers.
+    schema:
+      $ref: '#/definitions/TCMError-406'
+    examples:
+      application/json:
+        error:
+          code: null
+          message:
+            lang: en
+            value: 'An error occured: 406 Not Acceptable'
+  '500':
+    description: An error occurred while processing the request.
+    schema:
+      $ref: '#/definitions/TCMError-500'
+    examples:
+      application/json:
+        error:
+          code: TASK_INVALID_STATE_TRANSITION
+          message:
+            lang: en
+            value: 'An error occured: 500 Internal Server Error'
+  400Substitution:
+    description: The syntax of the sent request is invalid.
+    schema:
+      $ref: '#/definitions/SubstitutionError-400'
+    examples:
+      application/json:
+        error:
+          code: SUBSTITUTION_BAD_REQUEST
+          message:
+            lang: en
+            value: 'An error occured: 400 Bad Request'
+  403Substitution:
+    description: The user who sent the request is not authorized to access the requested data or to perform the requested action.
+    schema:
+      $ref: '#/definitions/SubstitutionError-403'
+    examples:
+      application/json:
+        error:
+          code: TASK_USER_NOT_AUTHORIZED
+          message:
+            lang: en
+            value: 'An error occured: 403 Forbidden'
+  404Substitution:
+    description: The requested object could not be found.
+    schema:
+      $ref: '#/definitions/SubstitutionError-404'
+    examples:
+      application/json:
+        error:
+          code: SUBSTITUTION_NOT_FOUND
+          message:
+            lang: en
+            value: 'An error occured: 404 Not Found'
+  405Substitution:
+    description: The action to be executed is not supported by the OData service.
+    schema:
+      $ref: '#/definitions/SubstitutionError-405'
+    examples:
+      application/json:
+        error:
+          code: null
+          message:
+            lang: en
+            value: 'An error occured: 405 Method Not Allowed'
+  406Substitution:
+    description: The requested object cannot be returned in the specified format according to the accept headers.
+    schema:
+      $ref: '#/definitions/SubstitutionError-406'
+    examples:
+      application/json:
+        error:
+          code: null
+          message:
+            lang: en
+            value: 'An error occured: 406 Not Acceptable'
+  500Substitution:
+    description: An error occurred while processing the request.
+    schema:
+      $ref: '#/definitions/SubstitutionError-500'
+    examples:
+      application/json:
+        error:
+          code: SUBSTITUTION_INVALID_STATE_TRANSITION
+          message:
+            lang: en
+            value: 'An error occured: 500 Internal Server Error'
+paths:
+  /TaskCollection:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves a list of the tasks for the current user. The request can be parameterized.
+      summary: Retrieves a list of the tasks for the current user
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: query
+        name: $expand
+        required: false
+        type: string
+        default: Description
+        description: Expand attributes of the task. The enumeration of allowed values is subject to change. Separate multiple values by a comma.
+        enum:
+        - Description
+        - CustomAttributeData
+      - in: query
+        name: $skip
+        required: false
+        type: integer
+        minimum: 0
+        maximum: 4000
+        default: 0
+        description: |-
+          Specify the number of records you want to skip from the beginning.
+          You can skip at most 4000 records. To indicate a result range that starts, for example, at 1001, combine the $skip with the $top parameter.
+          If not specified, no records are skipped.
+          Refer also to the $top parameter.
+      - in: query
+        name: $top
+        required: false
+        type: integer
+        minimum: 0
+        maximum: 1000
+        default: 100
+        description: |-
+          Specify the number of records you want to show.
+          You can see at most 1000 records per API call. To indicate a result range that starts, for example, at 1001, combine the $top with the $skip parameter.
+          If not specified, 100 records are returned.
+          Refer also to the $skip parameter.
+      - in: query
+        name: $filter
+        required: false
+        type: string
+        default: Status eq 'READY' or Status eq 'RESERVED'
+        description: |-
+          Specify the filter attribute for tasks using the following format: `$filter=attribute eq 'value'`. More complex filter predicates are only supported as described in the following.
+
+          Filtering on 'CreatedOn' and 'CompletionDeadline' supports the greater-equal ('ge') and lower-equal ('le') operator. All other attributes only support filtering on equality ('eq').
+
+          Multiple filters on different attributes can be combined with 'and' (for example: `Status eq 'READY' and Priority eq 'HIGH'`).
+
+          Filtering the TaskDefinitionID, Status, Priority, and PriorityNumber attributes supports multiple values that are combined with 'or' (for example: `Status eq 'READY' or Status eq 'RESERVED'`).
+
+          You can only filter the Status attribute using the 'READY', 'RESERVED', 'IN_PROGRESS', and 'EXECUTED' values for comparison with the 'eq' operator. Note: 'IN_PROGRESS' and 'EXECUTED' are supported, but no tasks have this value for the Status attribute. Other SAP workflow systems that implement the same API also support the 'COMPLETED' and 'FOR_RESUBMISSION' attribute values. If you refer to these, or any other value not mentioned previously, the request fails with HTTP response code 400.
+
+          Filter predicates which are based on the 'CustomAttributeData' navigation property must provide the name of the task attribute and its value combined with 'and', for example `CustomAttributeData/Name eq 'ProjectId' and CustomAttributeData/Value eq 'PRO_247'`.
+          These predicates can be combined with 'and' to filter on different attributes. They can be combined with 'or' to filter multiple values, for example: `(CustomAttributeData/Name eq 'ProjectId' and CustomAttributeData/Value eq 'PRO_247') or (CustomAttributeData/Name eq 'ProjectId' and CustomAttributeData/Value eq 'PRO_007')`.
+          For optimal performance, filter also the 'TaskDefinitionID' attribute of candidate tasks. If more than 50 different task definitions match the query based on the 'CustomAttributeData/Name' predicates, you must specify a predicate on the 'TaskDefinitionID' attribute.
+        enum:
+        - TaskDefinitionID eq ''
+        - Status eq ''
+        - Priority eq ''
+        - PriorityNumber eq ''
+        - CreatedOn eq ''
+        - CreatedOn le ''
+        - CreatedOn ge ''
+        - CompletionDeadLine eq ''
+        - CompletionDeadLine le ''
+        - CompletionDeadLine ge ''
+        - CustomAttributeData/Name eq '' and CustomAttributeData/Value eq ''
+      - in: query
+        name: $orderby
+        required: false
+        type: string
+        default: CreatedOn desc
+        description: |-
+          Specify the attribute you want to sort by and the order separated by a space.
+          Up to two attributes can be used (for example: 'CreatedOn desc, Priority desc'). Using more attributes is not allowed.
+          Results are sorted in the given sequence.
+
+          When sorting by TaskDefinitionName, it has to be the first in the sequence.
+        enum:
+        - TaskDefinitionName asc
+        - TaskDefinitionName desc
+        - TaskTitle asc
+        - TaskTitle desc
+        - Status asc
+        - Status desc
+        - Priority asc
+        - Priority desc
+        - PriorityNumber asc
+        - PriorityNumber desc
+        - CreatedOn asc
+        - CreatedOn desc
+        - CreatedByName asc
+        - CreatedByName desc
+        - CompletionDeadLine asc
+        - CompletionDeadLine desc
+      - in: query
+        name: $inlinecount
+        required: false
+        type: string
+        default: none
+        description: Specify whether to return the number of results in the result body. When the value is 'allpages', the number of results is returned in the '__count' attribute of the response body.
+        enum:
+        - none
+        - allpages
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns a list of task instances for the current user.
+          schema:
+            $ref: '#/definitions/TaskInstances'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection/$count:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves the number of tasks for the current user. The request can be parameterized.
+      summary: Retrieves the number of the tasks for the current user.
+      parameters:
+      - in: query
+        name: $filter
+        required: false
+        type: string
+        default: Status eq 'READY' or Status eq 'RESERVED'
+        description: |-
+          Specify the filter attribute for tasks using the following format: $filter=attribute eq 'value'.
+
+          Filtering on 'CreatedOn' and 'CompletionDeadline' supports the greater-equal ('ge') and lower-equal ('le') operator. All other attributes only support filtering on equality ('eq').
+
+          Multiple filters on different attributes can be combined with 'and' (for example: `Status eq 'READY' and Priority eq 'HIGH'`).
+
+          Filtering the TaskDefinitionID, Status, Priority, and PriorityNumber attributes supports multiple values that are combined with 'or' (for example: `Status eq 'READY' or Status eq 'RESERVED'`).
+
+          You can only filter the Status attribute using the 'READY', 'RESERVED', 'IN_PROGRESS', and 'EXECUTED' values for comparison with the 'eq' operator. Note: 'IN_PROGRESS' and 'EXECUTED' are supported, but no tasks have this value for the Status attribute. Other SAP workflow systems that implement the same API also support the 'COMPLETED' and 'FOR_RESUBMISSION' attribute values. If you refer to these, or any other value not mentioned previously, the request fails with HTTP response code 400.
+        enum:
+        - TaskDefinitionID eq ''
+        - Status eq ''
+        - Priority eq ''
+        - PriorityNumber eq ''
+        - CreatedOn eq ''
+        - CreatedOn le ''
+        - CreatedOn ge ''
+        - CompletionDeadLine eq ''
+        - CompletionDeadLine le ''
+        - CompletionDeadLine ge ''
+      responses:
+        '200':
+          description: Returns the number of task instances for the current user.
+          schema:
+            type: integer
+            description: The number of tasks for the current user.
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection(SAP__Origin='{SAP__Origin}',InstanceID='{InstanceID}'):
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves a task for the current user. The request can be parameterized.
+      summary: Retrieves a task for the current user
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns a task.
+          schema:
+            $ref: '#/definitions/TaskInstance'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection(SAP__Origin='{SAP__Origin}',InstanceID='{InstanceID}')/TaskDefinitionData:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves the task definition data for a given task. The request can be parameterized.
+      summary: Retrieves the task definition data for a given task
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns the task definition data of a given task.
+          schema:
+            $ref: '#/definitions/TaskDefinition'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection(SAP__Origin='{SAP__Origin}',InstanceID='{InstanceID}')/WorkflowLogs:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves the history of the workflow for the given task, with detailed information about the tasks that are part of the workflow.
+      summary: Retrieves the history of the workflow for the given task
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns the workflow logs for a given task.
+          schema:
+            $ref: '#/definitions/WorkflowLogs'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection(SAP__Origin='{SAP__Origin}',InstanceID='{InstanceID}')/Description:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves the description of a task.
+      summary: Retrieves the description of a task
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns the description for a given task.
+          schema:
+            $ref: '#/definitions/TaskDescription'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskCollection(SAP__Origin='{SAP__Origin}',InstanceID='{InstanceID}')/CustomAttributeData:
+    get:
+      tags:
+      - Task Collection
+      description: Retrieves the custom attribute data for a given task. The request can be parameterized.
+      summary: Retrieves the custom attribute data for a given task
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns the custom attribute data of a given task.
+          schema:
+            $ref: '#/definitions/TaskCustomAttributeDatas'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskDefinitionCollection:
+    get:
+      tags:
+      - Task Definition Collection
+      description: Retrieves a list of the task definitions for the current user.
+      summary: Retrieves a list of the task definitions for the current user
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      responses:
+        '200':
+          description: Returns a list of task definitions for the current user.
+          schema:
+            $ref: '#/definitions/TaskDefinitions'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskDefinitionCollection/$count:
+    get:
+      tags:
+      - Task Definition Collection
+      description: Retrieves the number of task definitions for the current user.
+      summary: Retrieves the number of task definitions for the current user
+      responses:
+        '200':
+          description: Returns the number of task definitions for the current user.
+          schema:
+            type: integer
+            description: The number of task definitions for the current user.
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /TaskDefinitionCollection(SAP__Origin='{SAP__Origin}',TaskDefinitionID='{TaskDefinitionID}')/CustomAttributeDefinitionData:
+    get:
+      tags:
+      - Task Definition Collection
+      description: Retrieves a list of custom attributes for a task definition.
+      summary: Retrieves a list of custom attributes for a task definition
+      parameters:
+      - in: header
+        name: Accept-Language
+        required: false
+        type: string
+        description: Provide a preferred language. If a translation is available, relevant texts are returned in this language.
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: TaskDefinitionID
+        required: true
+        type: string
+        description: The ID of the task definition.
+      - in: query
+        name: $format
+        required: false
+        type: string
+        default: xml
+        description: 'Specify the format of the result. '
+        enum:
+        - xml
+        - json
+      responses:
+        '200':
+          description: Returns a list of custom attributes for a task definition.
+          schema:
+            $ref: '#/definitions/TaskCustomAttributeDefinitions'
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /Claim?SAP__Origin='{SAP__Origin}'&InstanceID='{InstanceID}':
+    post:
+      tags:
+      - Operations
+      description: Claims the given task to the current user. Afterwards, the task is in status "RESERVED" and can be handled only by the processor.
+      summary: Claims the given task to the current user
+      parameters:
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task to be claimed.
+      responses:
+        '202':
+          description: Task has been claimed.
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /Release?SAP__Origin='{SAP__Origin}'&InstanceID='{InstanceID}':
+    post:
+      tags:
+      - Operations
+      description: Releases a given task so it can be claimed by other users. Afterwards, the task is in status "READY" and can be claimed by any user who is assigned as a potential owner.
+      summary: Releases the given task so it can be claimed by other users
+      parameters:
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task to be released.
+      responses:
+        '202':
+          description: Task has been released.
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /Forward?SAP__Origin='{SAP__Origin}'&InstanceID='{InstanceID}'&ForwardTo='{ForwardTo}':
+    post:
+      tags:
+      - Operations
+      description: Forwards the given task to the specified user. Afterwards, the task is in status "RESERVED" and only the new processor can work on it. In addition, this user becomes one of the task recipients, that means, the task remains accessible even after it was released. Note that the passed user ID is not validated. If the given user is not present, an administrator is required to reassign the task. Forwarding is a configuration option for user tasks. You can deactivate forwarding.
+      summary: Forwards the given task to the specified user
+      parameters:
+      - in: path
+        name: SAP__Origin
+        required: true
+        type: string
+        description: The SID discriminator. Set to 'NA' for all entities. For more information, see the Task Consumption Model documentation in SAP Note [2304317](https://launchpad.support.sap.com/#/notes/2304317/E).
+        default: NA
+      - in: path
+        name: InstanceID
+        required: true
+        type: string
+        description: The ID of the task to be forwarded.
+      - in: path
+        name: ForwardTo
+        required: true
+        type: string
+        description: The ID of the user to be forwarded to.
+      responses:
+        '202':
+          description: Task has been forwarded.
+        '400':
+          $ref: '#/responses/400'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403'
+        '404':
+          $ref: '#/responses/404'
+        '405':
+          $ref: '#/responses/405'
+        '406':
+          $ref: '#/responses/406'
+        '500':
+          $ref: '#/responses/500'
+  /SubstitutionRuleCollection:
+    get:
+      tags:
+      - Substitution
+      description: Retrieves a list of the substitution rules for the current user. The request can not be parameterized.
+      summary: Retrieves a list of the substitution rules for the current user
+      responses:
+        '200':
+          description: Returns a list of substitution rules for the current user.
+          schema:
+            $ref: '#/definitions/SubstitutionRules'
+          examples:
+            application/json:
+              d:
+                results:
+                - __metadata:
+                    id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                  SubstitutionRuleID: '"82f3541d-137b-4a16-bd6f-86c82db2a763"'
+                  SAP__Origin: '"NA"'
+                  User: '"substitute"'
+                  BeginDate: '"/Date(1597758367607)/"'
+                  EndDate: '"/Date(1597758367607)/"'
+                  FullName: '"substitute"'
+                  Mode: '"RECEIVE_TASKS"'
+                  IsEnabled: true
+                  SupportsDeleteSubstitutionRule: true
+                  SupportsEnableSubstitutionRule: true
+                - __metadata:
+                    id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                  SubstitutionRuleID: '"32f3541d-137b-4s16-bd6f-8fc82db2a763"'
+                  SAP__Origin: '"NA"'
+                  User: '"substitute 2"'
+                  BeginDate: '"/Date(1597758367607)/"'
+                  EndDate: '"/Date(1597758367607)/"'
+                  FullName: '"substitute 2"'
+                  Mode: '"TAKE_OVER"'
+                  IsEnabled: false
+                  SupportsDeleteSubstitutionRule: true
+                  SupportsEnableSubstitutionRule: false
+        '400':
+          $ref: '#/responses/400Substitution'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403Substitution'
+        '404':
+          $ref: '#/responses/404Substitution'
+        '405':
+          $ref: '#/responses/405Substitution'
+        '406':
+          $ref: '#/responses/406Substitution'
+        '500':
+          $ref: '#/responses/500Substitution'
+    post:
+      tags:
+      - Substitution
+      description: Creates a substitution rule for the current user. The request can be parameterized.
+      summary: Creates a substitution rule for the current user
+      parameters:
+      - in: body
+        name: body
+        description: Specify the new substitution rule.
+        required: true
+        schema:
+          $ref: '#/definitions/SubstitutionRuleCreatePayload'
+      responses:
+        '201':
+          description: Substitution rule for the current user has been created.
+          schema:
+            $ref: '#/definitions/SubstitutionRule'
+          examples:
+            application/json:
+              d:
+                __metadata:
+                  id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                  uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                  type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                SubstitutionRuleID: '"82f3541d-137b-4a16-bd6f-86c82db2a763"'
+                SAP__Origin: '"NA"'
+                User: '"substitute"'
+                BeginDate: '"/Date(1597758367607)/"'
+                EndDate: '"/Date(1597758367607)/"'
+                FullName: '"substitute"'
+                Mode: '"RECEIVE_TASKS"'
+                IsEnabled: true
+                SupportsDeleteSubstitutionRule: true
+                SupportsEnableSubstitutionRule: true
+        '400':
+          $ref: '#/responses/400Substitution'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403Substitution'
+        '404':
+          $ref: '#/responses/404Substitution'
+        '405':
+          $ref: '#/responses/405Substitution'
+        '406':
+          $ref: '#/responses/406Substitution'
+        '500':
+          $ref: '#/responses/500Substitution'
+  /SubstitutesRuleCollection:
+    get:
+      tags:
+      - Substitution
+      description: Retrieves a list of the substitution rules where the currently logged-in user is a substitute. The request can not be parameterized.
+      summary: Retrieves a list of the substitution rules where the currently logged-in user is a substitute.
+      responses:
+        '200':
+          description: Retrieves a list of the substitution rules where the currently logged-in user is a substitute.
+          schema:
+            $ref: '#/definitions/SubstitutesRules'
+          examples:
+            application/json:
+              d:
+                results:
+                - __metadata:
+                    id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                  SubstitutionRuleID: '"82f3541d-137b-4a16-bd6f-86c82db2a763"'
+                  SAP__Origin: '"NA"'
+                  User: '"substitute"'
+                  BeginDate: '"/Date(1597758367607)/"'
+                  EndDate: '"/Date(1597758367607)/"'
+                  FullName: '"substitute"'
+                  Mode: '"RECEIVE_TASKS"'
+                  IsEnabled: true
+                  SupportsDeleteSubstitutionRule: true
+                  SupportsEnableSubstitutionRule: true
+                - __metadata:
+                    id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                    type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                  SubstitutionRuleID: '"32f3541d-137b-4s16-bd6f-8fc82db2a763"'
+                  SAP__Origin: '"NA"'
+                  User: '"substitute 2"'
+                  BeginDate: '"/Date(1597758367607)/"'
+                  EndDate: '"/Date(1597758367607)/"'
+                  FullName: '"substitute 2"'
+                  Mode: '"TAKE_OVER"'
+                  IsEnabled: false
+                  SupportsDeleteSubstitutionRule: true
+                  SupportsEnableSubstitutionRule: false
+        '400':
+          $ref: '#/responses/400Substitution'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403Substitution'
+        '404':
+          $ref: '#/responses/404Substitution'
+        '405':
+          $ref: '#/responses/405Substitution'
+        '406':
+          $ref: '#/responses/406Substitution'
+        '500':
+          $ref: '#/responses/500Substitution'
+  /DeleteSubstitutionRule?SubstitutionRuleID='{SubstitutionRuleID}':
+    post:
+      tags:
+      - Substitution
+      description: Delete a substitution rule with specified ID for the current user. The request can be parameterized.
+      summary: Delete a substitution rule with specified ID for the current user
+      parameters:
+      - in: path
+        name: SubstitutionRuleID
+        required: true
+        type: string
+        description: The ID of the substitution rule to be deleted.
+      responses:
+        '202':
+          description: Accepted the request to delete the substitution rule with the specified ID.
+          schema:
+            $ref: '#/definitions/SubstitutionDeleteRule'
+          examples:
+            application/json:
+              d:
+                DeleteSubstitutionRule:
+                  __metadata:
+                    type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRuleReturn"'
+                  Deleted: true
+        '400':
+          $ref: '#/responses/400Substitution'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403Substitution'
+        '404':
+          $ref: '#/responses/404Substitution'
+        '405':
+          $ref: '#/responses/405Substitution'
+        '406':
+          $ref: '#/responses/406Substitution'
+        '500':
+          $ref: '#/responses/500Substitution'
+  /EnableSubstitutionRule?SubstitutionRuleID='{SubstitutionRuleID}'&Enabled={Enabled}:
+    post:
+      tags:
+      - Substitution
+      description: Support enabling and disabling of passive substitution rules. The request can be parameterized.
+      summary: Support enabling and disabling of passive substitution rules
+      parameters:
+      - in: path
+        name: SubstitutionRuleID
+        required: true
+        type: string
+        description: The ID of the passive substitution rule to be enabled or disabled.
+      - in: path
+        name: Enabled
+        required: true
+        type: boolean
+        description: Indicates whether the substitution rule is enabled.
+      responses:
+        '202':
+          description: Accepted the request to enable or disable the substitution rule with the specified id.
+          schema:
+            $ref: '#/definitions/SubstitutesRule'
+          examples:
+            application/json:
+              d:
+                __metadata:
+                  id: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                  uri: '"https://sandbox.api.sap.com/workflow-service/odata/v1/tcm/SubstitutionRuleCollection(SAP__Origin=''NA'',SubstitutionRuleID=''82f3541d-137b-4a16-bd6f-86c82db2a763'')"'
+                  type: '"com.sap.bpm.wfs.tcm.metadata.SubstitutionRule"'
+                SubstitutionRuleID: '"82f3541d-137b-4a16-bd6f-86c82db2a763"'
+                SAP__Origin: '"NA"'
+                User: '"substitute"'
+                BeginDate: '"/Date(1597758367607)/"'
+                EndDate: '"/Date(1597758367607)/"'
+                FullName: '"substitute"'
+                Mode: '"RECEIVE_TASKS"'
+                IsEnabled: true
+                SupportsDeleteSubstitutionRule: true
+                SupportsEnableSubstitutionRule: true
+        '400':
+          $ref: '#/responses/400Substitution'
+        '401':
+          $ref: '#/responses/401'
+        '403':
+          $ref: '#/responses/403Substitution'
+        '404':
+          $ref: '#/responses/404Substitution'
+        '405':
+          $ref: '#/responses/405Substitution'
+        '406':
+          $ref: '#/responses/406Substitution'
+        '500':
+          $ref: '#/responses/500Substitution'
+schemes:
+- https
+securityDefinitions:
+  Oauth2_AuthorizationCode:
+    type: oauth2
+    flow: accessCode
+    authorizationUrl: https://{consumersubdomain}.{authenticationdomain}/oauth/authorize
+    tokenUrl: https://{consumersubdomain}.{authenticationdomain}/oauth/token
+    scopes: {}
+security:
+- Oauth2_AuthorizationCode: []
+swagger: '2.0'

@@ -1,0 +1,58 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>core-btp</artifactId>
+
+    <name>core-btp</name>
+
+    <parent>
+        <groupId>com.sap.build-forms-extension</groupId>
+        <artifactId>core</artifactId>
+        <version>0.2.0-SNAPSHOT</version>
+    </parent>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.sap.cloud.sdk.datamodel</groupId>
+            <artifactId>openapi-core</artifactId>
+            <version>${sap-cloud-openapi-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sap.build-forms-extension</groupId>
+            <artifactId>core-framework</artifactId>
+            <version>${forms.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.sap.cloud.sdk.datamodel</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi-generator-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <inputSpec>
+                                ${project.basedir}/src/main/openapi/SAP_AuthorizationAndTrustManagementService_SCIM_API.yaml
+                            </inputSpec>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
+                    <deleteOutputDirectory>false</deleteOutputDirectory>
+                    <apiPackage>com.sap.openapi.scim.api</apiPackage>
+                    <modelPackage>com.sap.openapi.scim.model</modelPackage>
+                    <apiMaturity>released</apiMaturity>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
