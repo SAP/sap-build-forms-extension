@@ -29,7 +29,6 @@
 
     <build>
         <plugins>
-<!--
             <plugin>
                 <groupId>com.sap.cloud.sdk.datamodel</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -37,20 +36,12 @@
                 <executions>
                     <execution>
                         <id>Generate OData SBPA Workflow Inbox classes</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/openapi/SPA_Workflow_Inbox.yaml</inputSpec>
                         </configuration>
                     </execution>
                     <execution>
                         <id>Generate REST SBPA Workflow Runtime classes</id>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
                             <inputSpec>${project.basedir}/src/main/openapi/SPA_Workflow_Runtime.yaml</inputSpec>
                         </configuration>
@@ -64,7 +55,6 @@
                     <apiMaturity>released</apiMaturity>
                 </configuration>
             </plugin>
--->
         </plugins>
     </build>
 </project>

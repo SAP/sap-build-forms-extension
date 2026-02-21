@@ -34,10 +34,6 @@
                 <version>${openapi-generator-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
                         <configuration>
                             <inputSpec>
                                 ${project.basedir}/src/main/openapi/SAP_AuthorizationAndTrustManagementService_SCIM_API.yaml
