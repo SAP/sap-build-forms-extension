@@ -26,7 +26,8 @@ import java.util.*;
  * Service class for generating Java source files based on scenario definitions and mixins. It uses the Freemarker
  * template engine to create access classes, field enums, context factory classes, and mixin mapping structures.
  */
-@Service public class TemplateService extends AbstractProcessor {
+@Service
+public class TemplateService extends AbstractProcessor {
 
     final private static String NM_VERSION = "version";
     final private static String NM_BASE_PACKAGE = "basePackage";
@@ -74,7 +75,8 @@ import java.util.*;
      *
      * @param appContext the application context from which to retrieve the MetadataService bean
      */
-    @Autowired public TemplateService(ApplicationContext appContext) {
+    @Autowired
+    public TemplateService(ApplicationContext appContext) {
 
         this.metadataService = appContext.getBean(MetadataService.class);
 
