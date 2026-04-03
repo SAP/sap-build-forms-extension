@@ -24,7 +24,7 @@ export default function (props: ControlProps) {
         <ControlContainer {...props}>
             <CheckBox
                 id={def.key}
-                checked={element!.va as boolean}
+                checked={(element?.va as boolean) ?? false}
                 required={element?.rq}
                 readonly={!element?.ed || !globalEd}
                 onChange={(e: Ui5CustomEvent<CheckBoxDomRef, never>) =>

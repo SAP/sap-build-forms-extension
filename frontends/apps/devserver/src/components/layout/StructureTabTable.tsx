@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useState, useEffect, useMemo, useRef } from "react"
 import {
     AttachmentDesignType,
     DataTypeValue,
@@ -45,6 +45,8 @@ import { RowType } from "@ui5/webcomponents-react/dist/components/AnalyticalTabl
 import ValidationTable from "./ValidationTable"
 import StructureTabTextsInput from "./StructureTabTextsInput"
 import CategoriesTable from "./CategoriesTable"
+import { useVariantFilter } from "./VariantFilterContext"
+import { elementMatchesSelectedVariants } from "../../utils/variantUtils"
 
 interface Props {
     version: number
@@ -64,6 +66,7 @@ interface Props {
     openMessageBox: (e1: any, e2: any, e3: any) => void
     setUpdate: (e: any) => void
     setRenderTable: (e: any) => void
+    search: string
 }
 
 const useStyles = createUseStyles({
@@ -103,9 +106,34 @@ export default function StructureTabTable(props: Props) {
     const editTexts = useElementsStore((state) => state.editTexts)
 
     const allMessages = useMessagesStore((state) => state.messages)
+    const { selectedVariants } = useVariantFilter()
     const messages = React.useMemo(
         () => allMessages.filter((m: Message) => m.defVersion == props.version),
         [allMessages, props.version]
+    )
+
+    const tableHooks = useMemo(
+        () => [
+            (hooks: any) => {
+                hooks.getRowProps.push((rowProps: any, { row }: any) => {
+                    const matches = elementMatchesSelectedVariants(
+                        row?.original?.visible,
+                        selectedVariants,
+                    )
+                    const shouldDim = selectedVariants.length > 0 && !matches
+                    return [
+                        rowProps,
+                        {
+                            style: {
+                                ...(rowProps?.style || {}),
+                                opacity: shouldDim ? 0.45 : 1,
+                            },
+                        },
+                    ]
+                })
+            },
+        ],
+        [selectedVariants],
     )
 
     const [elementsTable, setElementsTable] = useState<ElemForTable[]>([])
@@ -119,9 +147,94 @@ export default function StructureTabTable(props: Props) {
 
     const [validationDialogOpen, setValidationDialogOpen] = useState<boolean>(false)
     const [categoriesDialogOpen, setCategoriesDialogOpen] = useState<boolean>(false)
+    const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const memorizedData = useMemo(() => elementsTableShown, [elementsTableShown])
     const memorizedSelectedRow = useMemo(() => selectedRowId, [selectedRowId])
+
+    const scheduleRefresh = () => {
+        if (refreshTimeoutRef.current) {
+            clearTimeout(refreshTimeoutRef.current)
+        }
+
+        // Coalesce frequent keystroke updates into one table refresh to avoid flicker.
+        refreshTimeoutRef.current = setTimeout(() => {
+            props.setUpdate((prev: number) => prev + 1)
+            refreshTimeoutRef.current = null
+        }, 120)
+    }
+
+    const memorizedData = useMemo(() => {
+        if (!props.search) return elementsTableShown;
+
+        const searchLower = props.search.toLowerCase();
+
+        const itemOrChildrenMatch = (item: ElemForTable): boolean => {
+            if (!item) return false;
+
+            if (item.name?.toLowerCase().includes(searchLower)) {
+                return true;
+            }
+
+            if (item.subRows && item.subRows.length > 0) {
+                return item.subRows.some(subItem => itemOrChildrenMatch(subItem));
+            }
+
+            return false;
+        };
+
+        const filterItems = (items: ElemForTable[]): ElemForTable[] => {
+            if (!items) return [];
+
+            return items
+                .filter(item => itemOrChildrenMatch(item))
+                .map(item => ({
+                    ...item,
+                    subRows: item.subRows ? filterItems(item.subRows) : []
+                }));
+        };
+
+        return filterItems(elementsTableShown);
+    }, [elementsTableShown, props.search]);
+
+    useEffect(() => {
+        if (props.search && elementsTable.length > 0) {
+            const timeoutId = setTimeout(() => {
+                const searchLower = props.search.toLowerCase();
+
+                const matchedItem = elementsTable.find(item =>
+                    item.name?.toLowerCase().includes(searchLower)
+                );
+
+                if (matchedItem) {
+                    setTimeout(() => {
+                        const allRows = document.querySelectorAll('[role="row"]');
+                        let targetRow: Element | null = null;
+
+                        allRows.forEach(row => {
+                            const cells = row.querySelectorAll('[role="gridcell"]');
+                            const firstCell = cells[0];
+
+                            if (firstCell && firstCell.textContent?.includes(matchedItem.name)) {
+                                targetRow = row;
+                            }
+                        });
+
+                        if (targetRow) {
+                            const rowElement = targetRow as HTMLElement;
+                            rowElement.style.transition = 'background-color 0.3s ease';
+                            rowElement.style.backgroundColor = '#e3f2fd';
+
+                            setTimeout(() => {
+                                rowElement.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    }, 800);
+                }
+            }, 500);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [props.search, elementsTable]);
 
     console.log(memorizedData)
 
@@ -160,13 +273,21 @@ export default function StructureTabTable(props: Props) {
         }
     }, [])
 
+    useEffect(() => {
+        return () => {
+            if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current)
+                props.setUpdate((prev: number) => prev + 1)
+                refreshTimeoutRef.current = null
+            }
+        }
+    }, [])
+
     const updateEl = (newEl: ElemForTable) => {
         elementsTableRef.current = elementsTableRef.current.map((item) =>
             item.index == newEl.index ? newEl : item,
         )
-        const newEl2: ElemForTable = { ...newEl }
-        const { parent, index, ...rest } = newEl2
-        Object.assign(newEl2, rest)
+        const { parent, index, ...newEl2 } = newEl
         editDetailData({
             version: props.version,
             scenarioMixinName: props.scenarioMixinName,
@@ -174,13 +295,31 @@ export default function StructureTabTable(props: Props) {
             newEl: newEl2,
         })
         props.setElement(newEl.index)
-        props.setEl(newEl2)
-        props.setUpdate((prev: number) => prev + 1)
+        props.setEl(newEl2 as Elem)
+        scheduleRefresh()
     }
 
     const getElemByIndex = (index: string): ElemForTable | undefined => {
         return elementsTableRef.current.find((item) => item.index === index)
     }
+
+    const getInputValue = (e: any): string => {
+        const target = e?.target as { value?: string; attributes?: NamedNodeMap } | undefined
+        const valueFromTarget = target?.value
+        if (typeof valueFromTarget === "string") {
+            return valueFromTarget
+        }
+
+        const valueFromAttribute = target?.attributes
+            ?.getNamedItem("value")
+            ?.nodeValue
+        return valueFromAttribute ?? ""
+    }
+
+    const lineBreakAllowedTypes = ["alert", "attachment", "button", "checkbox", "currency", "daterange", "edit", "icon", "image", "input", "link", "multiselect", "radio", "select", "table", "text"]
+
+    const hasLineBreakSupport = (elem: ElemForTable | undefined) =>
+        elem?.type != null && lineBreakAllowedTypes.includes(elem.type)
 
     // Helper function to flatten tree structure
     function constructTree(items: ElemForTable[]): ElemForTable[] {
@@ -266,23 +405,47 @@ export default function StructureTabTable(props: Props) {
         })
     }
 
-    // rows are expanded when opening the TreeTable
     const expandedState = useMemo(() => {
         const expanded: Record<string, boolean> = {};
 
-        const expandAll = (rows: any[], parentId = '') => {
+        const expandAll = (rows: any[], parentId = '', level = 0) => {
             rows.forEach((row, idx) => {
                 const id = parentId ? `${parentId}.${idx}` : `${idx}`;
-                expanded[id] = true;
-                if (row.subRows?.length) {
-                    expandAll(row.subRows, id);
+
+                if (props.search && row?.original) {
+                    const item = row.original as ElemForTable;
+                    const searchLower = props.search.toLowerCase();
+
+                    const hasMatchInTree = (item: ElemForTable | undefined): boolean => {
+                        if (!item) return false;
+                        if (item.name?.toLowerCase().includes(searchLower)) return true;
+                        if (item.subRows && item.subRows.length > 0) {
+                            return item.subRows.some(sub => hasMatchInTree(sub));
+                        }
+                        return false;
+                    };
+
+                    if (hasMatchInTree(item)) {
+                        expanded[id] = true;
+                    }
+                } else {
+                    if (level < 2) {
+                        expanded[id] = true;
+                    }
+                }
+
+                if (row.subRows && row.subRows.length > 0) {
+                    expandAll(row.subRows, id, level + 1);
                 }
             });
         };
 
-        expandAll(memorizedData);
+        if (memorizedData.length > 0) {
+            expandAll(memorizedData);
+        }
+
         return expanded;
-    }, [memorizedData]);
+    }, [memorizedData, props.search]);
 
     const columns = useMemo(
         () => [
@@ -303,7 +466,11 @@ export default function StructureTabTable(props: Props) {
                                         instance.row.original.index,
                                     )?.name
                                     var newName: any =
-                                        e.target.attributes.getNamedItem("value")!.nodeValue!
+                                        getInputValue(e)
+
+                                    if (oldName === newName) {
+                                        return
+                                    }
 
                                     if (
                                         treeItemsRef.current?.root != undefined &&
@@ -314,30 +481,44 @@ export default function StructureTabTable(props: Props) {
                                             version: props.version,
                                             root: newName,
                                         })
-                                        props.setUpdate((prev: number) => prev + 1)
                                     }
 
-                                    var texts: any = JSON.parse(
-                                        JSON.stringify(treeItemsRef.current?.texts!),
-                                    )
+                                    if (oldName != null && treeItemsRef.current?.texts) {
+                                        const texts = JSON.parse(
+                                            JSON.stringify(treeItemsRef.current.texts),
+                                        )
+                                        const postfixes = [
+                                            TextPostfix.short,
+                                            TextPostfix.long,
+                                            TextPostfix.title,
+                                            TextPostfix.doc,
+                                        ]
 
-                                    Object.keys(treeItemsRef.current?.texts!).map((l) => {
-                                        texts![l][`${newName}.short`] =
-                                            texts![l][`${oldName}.short` as any]
-                                        delete texts![l][`${oldName}.short`]
+                                        Object.keys(texts).forEach((language) => {
+                                            if (!texts[language]) {
+                                                texts[language] = {}
+                                            }
+                                            postfixes.forEach((postfix) => {
+                                                const oldKey = `${oldName}${postfix}`
+                                                const newKey = `${newName}${postfix}`
+                                                if (texts[language][newKey] === undefined) {
+                                                    texts[language][newKey] =
+                                                        texts[language][oldKey] ?? ""
+                                                }
+                                                delete texts[language][oldKey]
+                                            })
+                                        })
 
-                                        texts[l]![`${newName}.long`] =
-                                            texts![l][`${oldName}.long` as any]
-                                        delete texts![l][`${oldName}.long`]
-
-                                        texts![l][`${newName}.title`] =
-                                            texts![l][`${oldName}.title` as any]
-                                        delete texts![l][`${oldName}.title`]
-
-                                        texts[l][`${newName}.doc`] =
-                                            texts[l][`${oldName}.doc` as any]
-                                        delete texts[l][`${oldName}.doc`]
-                                    })
+                                        treeItemsRef.current = {
+                                            ...treeItemsRef.current,
+                                            texts,
+                                        }
+                                        editTexts({
+                                            version: props.version,
+                                            scenarioMixinName: props.scenarioMixinName,
+                                            texts,
+                                        })
+                                    }
 
                                     var v = getElemByIndex(instance.row.original.index)
                                     if (v != undefined) {
@@ -346,13 +527,6 @@ export default function StructureTabTable(props: Props) {
                                             name: newName,
                                         })
                                     }
-
-                                    editTexts({
-                                        version: props.version,
-                                        texts: texts,
-                                        scenarioMixinName: props.scenarioMixinName,
-                                    })
-                                    props.setUpdate((prev: number) => prev + 1)
                                 }}
                                 valueState={
                                     messages.filter(
@@ -596,8 +770,7 @@ export default function StructureTabTable(props: Props) {
                                             ...v,
                                             col: calculateCol(
                                                 v.col!,
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                                 "sm",
                                             ),
                                         })
@@ -637,8 +810,7 @@ export default function StructureTabTable(props: Props) {
                                             ...v,
                                             col: calculateCol(
                                                 v.col!,
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                                 "md",
                                             ),
                                         })
@@ -678,8 +850,7 @@ export default function StructureTabTable(props: Props) {
                                             ...v,
                                             col: calculateCol(
                                                 v.col!,
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                                 "lg",
                                             ),
                                         })
@@ -719,8 +890,7 @@ export default function StructureTabTable(props: Props) {
                                             ...v,
                                             col: calculateCol(
                                                 v.col!,
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                                 "xl",
                                             ),
                                         })
@@ -749,8 +919,7 @@ export default function StructureTabTable(props: Props) {
                                         updateEl({
                                             ...v,
                                             visible:
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                         })
                                     }
                                 }}
@@ -777,8 +946,7 @@ export default function StructureTabTable(props: Props) {
                                         updateEl({
                                             ...v,
                                             editable:
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                         })
                                     }
                                 }}
@@ -805,8 +973,7 @@ export default function StructureTabTable(props: Props) {
                                         updateEl({
                                             ...v,
                                             required:
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                getInputValue(e),
                                         })
                                     }
                                 }}
@@ -834,8 +1001,7 @@ export default function StructureTabTable(props: Props) {
                                     if (v != undefined) {
                                         updateEl({
                                             ...v,
-                                            css: e.target.attributes.getNamedItem("value")!
-                                                .nodeValue!,
+                                            css: getInputValue(e),
                                         })
                                     }
                                 }}
@@ -941,6 +1107,42 @@ export default function StructureTabTable(props: Props) {
                 },
             },
             {
+                Header: "Line break",
+                accessor: (originalRow: Record<string, any>) => {
+                    const elem = getElemByIndex(originalRow.index)
+                    return hasLineBreakSupport(elem) ? elem?.lineBreak : undefined
+                },
+                disableFilters: true,
+                disableSortBy: true,
+                width: 100,
+                Cell: (instance: any) => {
+                    const elem = getElemByIndex(instance.row.original.index)
+
+                    if (!hasLineBreakSupport(elem)) return null
+
+                    return (
+                        <FlexBox
+                            alignItems="Center"
+                            justifyContent="Center"
+                            direction="Row"
+                            className={classes.largeInput}
+                        >
+                            <CheckBox
+                                checked={elem?.lineBreak}
+                                onChange={(e) => {
+                                    if (elem) {
+                                        updateEl({
+                                            ...elem,
+                                            lineBreak: e.target.checked,
+                                        })
+                                    }
+                                }}
+                            />
+                        </FlexBox>
+                    )
+                },
+            },
+            {
                 Header: "Texts short",
                 accessor: (originalRow: Record<string, any>) => {
                     return (
@@ -964,7 +1166,7 @@ export default function StructureTabTable(props: Props) {
                                 currentName={getElemByIndex(instance.row.original.index)?.name}
                                 scenarioMixinName={props.scenarioMixinName}
                                 version={props.version}
-                                setUpdate={props.setUpdate}
+                                setUpdate={scheduleRefresh}
                             />
                         </FlexBox>
                     )
@@ -994,7 +1196,7 @@ export default function StructureTabTable(props: Props) {
                                 currentName={getElemByIndex(instance.row.original.index)?.name}
                                 scenarioMixinName={props.scenarioMixinName}
                                 version={props.version}
-                                setUpdate={props.setUpdate}
+                                setUpdate={scheduleRefresh}
                             />
                         </FlexBox>
                     )
@@ -1024,7 +1226,7 @@ export default function StructureTabTable(props: Props) {
                                 currentName={getElemByIndex(instance.row.original.index)?.name}
                                 scenarioMixinName={props.scenarioMixinName}
                                 version={props.version}
-                                setUpdate={props.setUpdate}
+                                setUpdate={scheduleRefresh}
                             />
                         </FlexBox>
                     )
@@ -1054,7 +1256,7 @@ export default function StructureTabTable(props: Props) {
                                 currentName={getElemByIndex(instance.row.original.index)?.name}
                                 scenarioMixinName={props.scenarioMixinName}
                                 version={props.version}
-                                setUpdate={props.setUpdate}
+                                setUpdate={scheduleRefresh}
                             />
                         </FlexBox>
                     )
@@ -1067,11 +1269,67 @@ export default function StructureTabTable(props: Props) {
                 },
                 width: 100,
                 Cell: (instance: any) => {
+                    const elemType = getElemByIndex(instance.row.original.index)?.type
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {[
+                            {elemType === "image" ? (
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "row",
+                                        gap: "5px",
+                                        alignItems: "center",
+                                        width: "100%",
+                                    }}
+                                >
+                                    <Input
+                                        value={
+                                            getElemByIndex(instance.row.original.index)?.defaultValue
+                                        }
+                                        placeholder="URL or data URI"
+                                        style={{ flex: 1 }}
+                                        onChange={(e) => {
+                                            var v = getElemByIndex(instance.row.original.index)
+                                            if (v != undefined) {
+                                                updateEl({
+                                                    ...v,
+                                                    defaultValue:
+                                                        getInputValue(e),
+                                                })
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        icon="upload"
+                                        design="Default"
+                                        onClick={() => {
+                                            const input = document.createElement("input")
+                                            input.type = "file"
+                                            input.accept = "image/*"
+                                            input.onchange = (e: Event) => {
+                                                const target = e.target as HTMLInputElement
+                                                const file = target.files?.[0]
+                                                if (file) {
+                                                    const reader = new FileReader()
+                                                    reader.onload = (event) => {
+                                                        const dataUri = event.target?.result as string
+                                                        var v = getElemByIndex(instance.row.original.index)
+                                                        if (v != undefined) {
+                                                            updateEl({
+                                                                ...v,
+                                                                defaultValue: dataUri,
+                                                            })
+                                                        }
+                                                    }
+                                                    reader.readAsDataURL(file)
+                                                }
+                                            }
+                                            input.click()
+                                        }}
+                                    />
+                                </div>
+                            ) : [
                                 "input",
-                                "image",
                                 "alert",
                                 "icon",
                                 "text",
@@ -1079,25 +1337,83 @@ export default function StructureTabTable(props: Props) {
                                 "checkbox",
                                 "radio",
                             ].includes(getElemByIndex(instance.row.original.index)?.type!) && (
-                                    <Input
-                                        value={
-                                            getElemByIndex(instance.row.original.index)?.defaultValue
+                                <Input
+                                    value={
+                                        getElemByIndex(instance.row.original.index)?.defaultValue
+                                    }
+                                    placeholder={instance.row.original.defaultValue}
+                                    className={classes.largeInput}
+                                    onChange={(e) => {
+                                        var v = getElemByIndex(instance.row.original.index)
+                                        if (v != undefined) {
+                                            updateEl({
+                                                ...v,
+                                                defaultValue:
+                                                    getInputValue(e),
+                                            })
                                         }
-                                        placeholder={instance.row.original.defaultValue}
-                                        className={classes.largeInput}
-                                        onChange={(e) => {
-                                            var v = getElemByIndex(instance.row.original.index)
-                                            if (v != undefined) {
-                                                updateEl({
-                                                    ...v,
-                                                    defaultValue:
-                                                        e.target.attributes.getNamedItem("value")!
-                                                            .nodeValue!,
-                                                })
-                                            }
-                                        }}
-                                    />
-                                )}
+                                    }}
+                                />
+                            )}
+                        </FlexBox>
+                    )
+                },
+            },
+            {
+                Header: "Link URL",
+                accessor: (originalRow: Record<string, any>) => {
+                    return getElemByIndex(originalRow.index)?.linkHRef
+                },
+                width: 100,
+                Cell: (instance: any) => {
+                    const type = getElemByIndex(instance.row.original.index)?.type
+                    return (
+                        <FlexBox style={{ width: "100%" }}>
+                            {(type === "link" || type === "button") && (
+                                <Input
+                                    value={getElemByIndex(instance.row.original.index)?.linkHRef}
+                                    placeholder="https://example.com"
+                                    className={classes.largeInput}
+                                    onChange={(e) => {
+                                        var v = getElemByIndex(instance.row.original.index)
+                                        if (v != undefined) {
+                                            updateEl({
+                                                ...v,
+                                                linkHRef: getInputValue(e),
+                                            })
+                                        }
+                                    }}
+                                />
+                            )}
+                        </FlexBox>
+                    )
+                },
+            },
+            {
+                Header: "Link Text",
+                accessor: (originalRow: Record<string, any>) => {
+                    return getElemByIndex(originalRow.index)?.linkText
+                },
+                width: 100,
+                Cell: (instance: any) => {
+                    return (
+                        <FlexBox style={{ width: "100%" }}>
+                            {getElemByIndex(instance.row.original.index)?.type! == "link" && (
+                                <Input
+                                    value={getElemByIndex(instance.row.original.index)?.linkText}
+                                    placeholder="Link display text"
+                                    className={classes.largeInput}
+                                    onChange={(e) => {
+                                        var v = getElemByIndex(instance.row.original.index)
+                                        if (v != undefined) {
+                                            updateEl({
+                                                ...v,
+                                                linkText: getInputValue(e),
+                                            })
+                                        }
+                                    }}
+                                />
+                            )}
                         </FlexBox>
                     )
                 },
@@ -1211,8 +1527,7 @@ export default function StructureTabTable(props: Props) {
                                                 maxColumnWidth:
                                                     v.columnOptions?.maxColumnWidth || "",
                                                 minColumnWidth:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             },
                                         })
                                     }
@@ -1248,8 +1563,7 @@ export default function StructureTabTable(props: Props) {
                                                 minColumnWidth:
                                                     v.columnOptions?.minColumnWidth || "",
                                                 maxColumnWidth:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             },
                                         })
                                     }
@@ -1284,8 +1598,7 @@ export default function StructureTabTable(props: Props) {
                                                     ...v,
                                                     valueHelp: {
                                                         ...v.valueHelp,
-                                                        name: e.target.attributes.getNamedItem("value")!
-                                                            .nodeValue!,
+                                                        name: getInputValue(e),
                                                         validate: v.valueHelp?.validate || false,
                                                         emptySelection:
                                                             v.valueHelp?.emptySelection || false,
@@ -1408,8 +1721,7 @@ export default function StructureTabTable(props: Props) {
                                                         emptySelection:
                                                             v.valueHelp?.emptySelection || false,
                                                         displayFormat:
-                                                            e.target.attributes.getNamedItem("value")!
-                                                                .nodeValue!,
+                                                            getInputValue(e),
                                                     },
                                                 })
                                             }
@@ -1651,7 +1963,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {["button", "alert"].includes(
+                            {["button", "alert", "icon"].includes(
                                 getElemByIndex(instance.row.original.index)?.type!,
                             ) && (
                                     <Input
@@ -1663,8 +1975,7 @@ export default function StructureTabTable(props: Props) {
                                             if (v != undefined) {
                                                 updateEl({
                                                     ...v,
-                                                    icon: e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    icon: getInputValue(e),
                                                 })
                                             }
                                         }}
@@ -1694,8 +2005,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 tooltip:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             })
                                         }
                                     }}
@@ -1724,8 +2034,7 @@ export default function StructureTabTable(props: Props) {
                                         if (v != undefined) {
                                             updateEl({
                                                 ...v,
-                                                path: e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                                                path: getInputValue(e),
                                             })
                                         }
                                     }}
@@ -1755,8 +2064,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 mixinName:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             })
                                         }
                                     }}
@@ -1788,8 +2096,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 version: Number(
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                                 ).valueOf(),
                                             })
                                         }
@@ -1856,8 +2163,8 @@ export default function StructureTabTable(props: Props) {
                         <FlexBox style={{ width: "100%" }}>
                             {getElemByIndex(instance.row.original.index)?.type! == "attachment" && (
                                 <Input
-                                    value={getElemByIndex(instance.row.original.index)?.adapter}
-                                    placeholder={instance.row.original.adapter}
+                                    value={getElemByIndex(instance.row.original.index)?.adapter || "database"}
+                                    placeholder={instance.row.original.adapter || "database"}
                                     className={classes.largeInput}
                                     onChange={(e) => {
                                         var v = getElemByIndex(instance.row.original.index)
@@ -1865,8 +2172,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 adapter:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             })
                                         }
                                     }}
@@ -1896,8 +2202,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 fileTypes:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             })
                                         }
                                     }}
@@ -1978,7 +2283,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {getElemByIndex(instance.row.original.index)?.type! == "table" && (
+                            {(getElemByIndex(instance.row.original.index)?.type === "table" || getElemByIndex(instance.row.original.index)?.type === "attachment") && (
                                 <Select
                                     className={classes.largeInput}
                                     onChange={(e) => {
@@ -2058,6 +2363,34 @@ export default function StructureTabTable(props: Props) {
                 },
             },
             {
+                Header: "Pagesize",
+                accessor: (originalRow: Record<string, any>) => {
+                    return getElemByIndex(originalRow.index)?.pageSize
+                },
+                width: 100,
+                Cell: (instance: any) => {
+                    return (
+                        <FlexBox style={{ width: "100%" }}>
+                            {getElemByIndex(instance.row.original.index)?.type! == "table" && (
+                                <Input
+                                    value={(getElemByIndex(instance.row.original.index)?.pageSize ?? 10).toString()}
+                                    className={classes.largeInput}
+                                    onChange={(e) => {
+                                        var v = getElemByIndex(instance.row.original.index)
+                                        if (v != undefined) {
+                                            updateEl({
+                                                ...v,
+                                                pageSize: parseInt(getInputValue(e)) || 10,
+                                            })
+                                        }
+                                    }}
+                                />
+                            )}
+                        </FlexBox>
+                    )
+                },
+            },
+            {
                 Header: "Dialog Key",
                 accessor: (originalRow: Record<string, any>) => {
                     return getElemByIndex(originalRow.index)?.dialogKey
@@ -2077,8 +2410,7 @@ export default function StructureTabTable(props: Props) {
                                             updateEl({
                                                 ...v,
                                                 dialogKey:
-                                                    e.target.attributes.getNamedItem("value")!
-                                                        .nodeValue!,
+                                                    getInputValue(e),
                                             })
                                         }
                                     }}
@@ -2113,9 +2445,7 @@ export default function StructureTabTable(props: Props) {
                                                     ...v,
                                                     size: {
                                                         width: v.size?.width || "",
-                                                        height: e.target.attributes.getNamedItem(
-                                                            "value",
-                                                        )!.nodeValue!,
+                                                        height: getInputValue(e),
                                                     },
                                                 })
                                             }
@@ -2148,10 +2478,8 @@ export default function StructureTabTable(props: Props) {
                                                 updateEl({
                                                     ...v,
                                                     size: {
-                                                        height: v.size?.width || "",
-                                                        width: e.target.attributes.getNamedItem(
-                                                            "value",
-                                                        )!.nodeValue!,
+                                                        height: v.size?.height || "",
+                                                        width: getInputValue(e),
                                                     },
                                                 })
                                             }
@@ -2289,6 +2617,7 @@ export default function StructureTabTable(props: Props) {
                     selectionBehavior="RowOnly"
                     selectedRowIds={memorizedSelectedRow}
                     onLoadMore={() => { }}
+                    tableHooks={tableHooks}
                     onRowSelect={(e) => {
                         props.setElement(e?.detail.row?.original.index)
                         props.setEl(e?.detail.row?.original)

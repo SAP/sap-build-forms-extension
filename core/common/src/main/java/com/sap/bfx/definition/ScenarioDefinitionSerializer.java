@@ -91,6 +91,7 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
         gen.writeStringField(NM_CSS, ed.getCss());
         gen.writeBooleanField(NM_SHOW_LABEL, ed.isShowLabel());
         gen.writeBooleanField(NM_SHOW_HELP, ed.isShowHelp());
+        gen.writeBooleanField(NM_LINE_BREAK, ed.isLineBreak());
 
         if (ed.getWizardFormatOptions() != null) {
             gen.writeObjectFieldStart(NM_WIZARD_FORMAT_OPTIONS);
@@ -123,6 +124,7 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                         ((AttachmentElementDefinition) ed).getCardinality().getIdentifier());
                 gen.writeStringField(NM_FILE_TYPES, ((AttachmentElementDefinition) ed).getFileTypes());
                 gen.writeStringField(NM_DESIGN, ((AttachmentElementDefinition) ed).getDesign().getIdentifier());
+                gen.writeStringField(NM_SELECT, ((AttachmentElementDefinition) ed).getSelect().getIdentifier());
 
                 gen.writeArrayFieldStart(NM_CATEGORIES);
                 for (CategoryOptions categoryOptions : ((AttachmentElementDefinition) ed).getCategories()) {
@@ -151,6 +153,9 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
+                if (((ButtonElementDefinition) ed).getLinkHRef() != null && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
+                    gen.writeStringField(NM_LINK_HREF, ((ButtonElementDefinition) ed).getLinkHRef());
+                }
                 break;
             case Currency:
                 if(((CurrencyElementDefinition) ed).getValueHelp() != null) {
@@ -163,7 +168,6 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 }
                 break;
             case Dialog:
-
                 Dimension size = ((DialogElementDefinition) ed).getSize();
                 if(size != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
@@ -174,10 +178,18 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
 
                 this.serializeElementWithName(NM_FOOTER, ((DialogElementDefinition) ed).getFooter(), gen, provider);
                 break;
+            case DocForm:
+                this.serializeElementWithName(NM_HEADER_SEGMENT, ((DocFormElementDefinition) ed).getHeaderSegment(),
+                        gen, provider);
+                this.serializeElementWithName(NM_FOOTER, ((DocFormElementDefinition) ed).getFooter(), gen, provider);
+                break;
             case Form:
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
                 this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(),
                         gen, provider);
+                break;
+            case Icon:
+                gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
                 break;
             case Image:
                 if(((ImageElementDefinition) ed).getSize() != null) {
@@ -189,6 +201,17 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 break;
             case Input:
                 gen.writeStringField(NM_INPUT_TYPE, ((InputElementDefinition) ed).getInputType().getIdentifier());
+                break;
+            case Link:
+                if (((LinkElementDefinition) ed).getLinkData() != null) {
+                    LinkData linkData = ((LinkElementDefinition) ed).getLinkData();
+                    if (linkData.getText() != null && !linkData.getText().isEmpty()) {
+                        gen.writeStringField(NM_LINK_TEXT, linkData.getText());
+                    }
+                    if (linkData.getHRef() != null && !linkData.getHRef().isEmpty()) {
+                        gen.writeStringField(NM_LINK_HREF, linkData.getHRef());
+                    }
+                }
                 break;
             case MultiSelect:
                 if(((MultiSelectElementDefinition) ed).getValueHelp() != null) {

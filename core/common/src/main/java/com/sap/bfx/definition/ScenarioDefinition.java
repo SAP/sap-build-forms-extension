@@ -49,7 +49,7 @@ public class ScenarioDefinition extends AbstractStructureDefinition {
                 var matcher = pattern.matcher(resource.getFilename());
                 if (matcher.find()) {
                     log.info("  found default texts '{}' for language '{}'", matcher.group(), matcher.group(1));
-                    final var locale = Locale.of(matcher.group(1));
+                    final var locale = new Locale(matcher.group(1));
                     var textMap = getTexts().get(locale);
 //                    texts.keySet().forEach(it -> log.info("Available locale {}, hashKeys {} == {}, equals {}",
 //                            it.toString(),

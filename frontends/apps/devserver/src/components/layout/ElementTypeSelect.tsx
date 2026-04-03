@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function ElementTypeSelect(props: Props) {
-    var formOrWizard: "form" | "wizard" | null = null
+    var formOrWizard: "form" | "wizard" | "docform" | null = null
 
     if (props.treeItemsShown) {
         var elements: Elem[] = props.treeItemsShown!.elements!
@@ -24,6 +24,9 @@ export default function ElementTypeSelect(props: Props) {
                 break
             } else if (x.type == "wizard") {
                 formOrWizard = "wizard"
+                break
+            } else if (x.type == "docform") {
+                formOrWizard = "docform"
                 break
             }
         }
@@ -67,7 +70,7 @@ export default function ElementTypeSelect(props: Props) {
                     ((props.changeItem == false && formOrWizard == null) ||
                         (props.changeItem == true &&
                             ((formOrWizard != null &&
-                                (props.type == "form" || props.type == "wizard")) ||
+                                (props.type == "form" || props.type == "wizard" || props.type == "docform")) ||
                                 formOrWizard == null))) && (
                         <>{props.type != "form" && <Option selected={false}>form</Option>}</>
                     )}
@@ -75,11 +78,19 @@ export default function ElementTypeSelect(props: Props) {
                     ((props.changeItem == false && formOrWizard == null) ||
                         (props.changeItem == true &&
                             ((formOrWizard != null &&
-                                (props.type == "form" || props.type == "wizard")) ||
+                                (props.type == "form" || props.type == "wizard" || props.type == "docform")) ||
                                 formOrWizard == null))) && (
                         <>{props.type != "wizard" && <Option selected={false}>wizard</Option>}</>
                     )}
-                {(props.parentType == "form" || props.parentType == "wizard") &&
+                {props.parentType == undefined &&
+                    ((props.changeItem == false && formOrWizard == null) ||
+                        (props.changeItem == true &&
+                            ((formOrWizard != null &&
+                                (props.type == "form" || props.type == "wizard" || props.type == "docform")) ||
+                                formOrWizard == null))) && (
+                        <>{props.type != "docform" && <Option selected={false}>docform</Option>}</>
+                    )}
+                {(props.parentType == "form" || props.parentType == "wizard" || props.parentType == "docform") &&
                     props.type != "toolbar" && (
                         <>{props.type != "segment" && <Option selected={false}>segment</Option>}</>
                     )}
@@ -183,6 +194,7 @@ export default function ElementTypeSelect(props: Props) {
 
                 {(props.parentType == "form" ||
                     props.parentType == "wizard" ||
+                    props.parentType == "docform" ||
                     props.parentType == undefined) && (
                     <>{props.type != "segment" && <Option selected={false}>segment</Option>}</>
                 )}

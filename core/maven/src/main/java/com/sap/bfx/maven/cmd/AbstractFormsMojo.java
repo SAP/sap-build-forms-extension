@@ -10,7 +10,7 @@ public abstract class AbstractFormsMojo extends AbstractMojo {
         final var appContext = new AnnotationConfigApplicationContext();
         appContext.getBeanFactory().registerSingleton("log", this.getLog());
         appContext.getBeanFactory().registerSingleton("applicationContext", appContext);
-        appContext.scan("com.sap.consulting.forms.maven");
+        appContext.scan("com.sap.bfx.maven");
         appContext.refresh();
 
         return appContext;

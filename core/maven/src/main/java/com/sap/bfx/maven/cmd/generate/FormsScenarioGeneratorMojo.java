@@ -19,26 +19,23 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
-@Mojo(name = "scenario-generate", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
-@Configuration
+@Mojo(name = "scenario-generate", defaultPhase = LifecyclePhase.GENERATE_SOURCES) @Configuration
 public class FormsScenarioGeneratorMojo extends AbstractFormsMojo {
 
-    @Parameter(defaultValue = "${project}", required = true, readonly = true)
-    MavenProject project;
+    @Parameter(defaultValue = "${project}", required = true, readonly = true) MavenProject project;
 
     // The metadata folder.
-    @Parameter(property = "metadataFolder", defaultValue = "${project.basedir}/src/main/metadata")
-    String metadataFolder;
+    @Parameter(property = "metadataFolder", defaultValue = "${project.basedir}/src/main/metadata") String
+            metadataFolder;
 
     @Parameter(property = "targetAccessClassFolder", defaultValue = "${project.basedir}/target/generated-sources")
     String tgtAccessClassFolder;
 
-    @Parameter(property = "targetDefinitionsFolder", defaultValue = "${project.basedir}/target/classes")
-    String tgtDefinitionsFolder;
+    @Parameter(property = "targetDefinitionsFolder", defaultValue = "${project.basedir}/target/classes") String
+            tgtDefinitionsFolder;
 
     // See <a href="https://maven.apache.org/guides/mini/guide-configuring-plugins.html">Configuration</a>
-    @Parameter(property = "mixinPaths")
-    Map<String, String> mixinPaths;
+    @Parameter(property = "mixinPaths") Map<String, String> mixinPaths;
 
     /**
      * Default execution method of the Mojo. It will be called by Maven when the plugin is executed. The method will

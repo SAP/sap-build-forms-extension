@@ -3,6 +3,8 @@ package com.sap.bfx.definition;
 import com.sap.bfx.callback.AccessClass;
 import com.sap.bfx.callback.Context;
 import com.sap.bfx.session.Attachments;
+import com.sap.bfx.session.DocFormData;
+import com.sap.bfx.session.MoneyAmount;
 import com.sap.bfx.session.Table;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -50,6 +52,10 @@ public class StandardValueEvaluator implements Evaluator<Object> {
             return this.getDefaultDateRangeValue(ed.getDefaultValue());
         } else if (dt == LinkData.class) {
             return this.getDefaultLinkDataValue(ed.getDefaultValue());
+        } else if (dt == DocFormData.class) {
+            return this.getDefaultDocFormDataValue(ed.getDefaultValue());
+        } else if (dt == MoneyAmount.class) {
+            return this.getDefaultMoneyAmountValue(ed.getDefaultValue());
         }
         return StringUtils.isNotBlank(ed.getDefaultValue())
                 && Boolean.parseBoolean(ed.getDefaultValue());
@@ -174,10 +180,60 @@ public class StandardValueEvaluator implements Evaluator<Object> {
     }
 
     /**
+     * @param def default value string
+     * @return LinkData
+     */
+    private LinkData getDefaultLinkDataValue(final String def) {
+        if (ed instanceof LinkElementDefinition) {
+            LinkData configuredLinkData = ((LinkElementDefinition) ed).getLinkData();
+            if (configuredLinkData != null &&
+                (StringUtils.isNotBlank(configuredLinkData.getText()) ||
+                 StringUtils.isNotBlank(configuredLinkData.getHRef()))) {
+                return new LinkData(
+                    configuredLinkData.getText(),
+                    configuredLinkData.getHRef()
+                );
+            }
+        }
+
+        if (StringUtils.isBlank(def)) {
+            return new LinkData();
+        }
+
+        final var linkData = new LinkData();
+        linkData.setHRef(StringUtils.trim(def));
+        return linkData;
+    }
+
+    /**
+     *
      * @param def
      * @return
      */
-    private LinkData getDefaultLinkDataValue(final String def) {
-        return new LinkData();
+    private DocFormData getDefaultDocFormDataValue(final String def) {
+        return new DocFormData();
+    }
+
+    /**
+     *
+     * @param def
+     * @return
+     */
+    private MoneyAmount getDefaultMoneyAmountValue(final String def) {
+        final var r = new MoneyAmount();
+
+        if (StringUtils.isNotBlank(def)) {
+            if (StringUtils.contains(def, ' ')) {
+                final var parts = StringUtils.split(def, ' ');
+                if (parts.length == 2) {
+                    r.setCurrency(StringUtils.trim(parts[0]));
+                    r.setAmount(new BigDecimal(StringUtils.trim(parts[1])));
+                    return r;
+                }
+            }
+            log.error("Error parsing default value '{" + def + "}' to currency-amount.");
+        }
+
+        return r;
     }
 }

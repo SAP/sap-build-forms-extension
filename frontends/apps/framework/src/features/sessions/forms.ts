@@ -50,9 +50,25 @@ export interface TableInfo {
 }
 
 /**
+ * CurrencyAmount interface
+ */
+export interface CurrencyAmount {
+    amount: number
+    currency: string
+}
+
+/**
+ * Data structure for document form control
+ */
+export interface DocFormData {
+    selectedTab?: string
+    docUrl?: string
+}
+
+/**
  *
  */
-export type DataTypes = string | number | boolean | Date | DateRange | ElementInfo | TableInfo
+export type DataTypes = string | number | boolean | Date | DateRange | ElementInfo | TableInfo | CurrencyAmount | DocFormData
 
 /**
  *
@@ -122,6 +138,8 @@ export interface Attachment {
     s: number
     c?: string
     d?: string
+    co?: string
+    cb?: string
 }
 
 /**

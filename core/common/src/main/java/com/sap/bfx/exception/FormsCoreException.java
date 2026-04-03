@@ -13,12 +13,9 @@ import java.util.UUID;
  */
 @EqualsAndHashCode(callSuper = true)
 public class FormsCoreException extends RuntimeException {
-    @Getter
-    protected String user;
-    @Getter
-    private String id;
-    @Getter
-    private Map<String, Object> details = new HashMap<>();
+    @Getter private final String id;
+    @Getter private final Map<String, Object> details = new HashMap<>();
+    @Getter protected String user;
 
     /**
      * Constructor
@@ -54,7 +51,9 @@ public class FormsCoreException extends RuntimeException {
     public FormsCoreException(String message, Throwable base) {
         super(message == null ? "" : message, base);
 
-        user = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            user = SecurityContextHolder.getContext().getAuthentication().getName();
+        }
         id = UUID.randomUUID().toString();
     }
 

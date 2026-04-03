@@ -10,6 +10,7 @@ export enum UIElement {
     Currency = "currency",
     DateRange = "daterange",
     Dialog = "dialog",
+    DocForm = "docform",
     Dummy = "dummy",
     Editor = "edit",
     Form = "form",
@@ -109,7 +110,13 @@ export interface Definition {
     header?: Definition
     hasDescription?: boolean
     el?: boolean
+    showLabel?: boolean
+    lineBreak?: boolean
     pageSize: number
+    linkText?: string
+    linkHRef?: string
+    fileTypes?: string
+    selectionMode?: "none" | "single" | "multiple"
 }
 
 /**

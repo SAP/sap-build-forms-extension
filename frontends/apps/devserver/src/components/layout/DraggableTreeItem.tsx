@@ -13,6 +13,8 @@ interface Props {
     version: number
     scenarioMixinName: string
     setUpdate?: (value: any) => void
+    expanded?: boolean  
+    dimmed?: boolean
 }
 
 export default function DraggableTreeItem(props: Props) {
@@ -23,134 +25,167 @@ export default function DraggableTreeItem(props: Props) {
     const elements = useElementsStore((state) => state.elements)
     const { toast } = useMessages()
 
-    // Retrieves an element from the store by navigating through the tree structure
-    // using the provided index path (e.g., "0x1x2" means element[0].elements[1].elements[2])
-    const getElementFromStore = (indexPath: string): any => {
-        const indexes = indexPath.split("x").filter((item) => item)
+    type CollectionKey = "elements" | "leftElements" | "rightElements"
 
-        // Find the root scenario/mixin
+    // Resolve parent path and sibling collection from a tree id.
+    const resolveCollectionContext = (itemPath: string): {
+        parentPath: string
+        collectionKey: CollectionKey
+    } => {
+        const tokens = itemPath.split("x").filter((item) => item)
+
+        if (tokens.length <= 1) {
+            return { parentPath: "", collectionKey: "elements" }
+        }
+
+        const parentTokens = tokens.slice(0, -1)
+        const marker = parentTokens[parentTokens.length - 1]
+
+        if (marker === "l") {
+            return {
+                parentPath: parentTokens.slice(0, -1).join("x"),
+                collectionKey: "leftElements",
+            }
+        }
+
+        if (marker === "r") {
+            return {
+                parentPath: parentTokens.slice(0, -1).join("x"),
+                collectionKey: "rightElements",
+            }
+        }
+
+        return {
+            parentPath: parentTokens.join("x"),
+            collectionKey: "elements",
+        }
+    }
+
+    // Read any node/array using ids with f/h/t/l/r markers.
+    const getNodeAtPath = (root: any, path: string): any => {
+        if (!root) return null
+
+        const tokens = path.split("x").filter((item) => item)
+        if (tokens.length === 0) return root
+
+        let current: any = root
+
+        for (const token of tokens) {
+            if (!current) return null
+
+            if (token === "f") {
+                current = current.footer
+                continue
+            }
+            if (token === "h") {
+                current = current.headerSegment
+                continue
+            }
+            if (token === "t") {
+                current = current.toolbar
+                continue
+            }
+            if (token === "l") {
+                current = current.leftElements
+                continue
+            }
+            if (token === "r") {
+                current = current.rightElements
+                continue
+            }
+
+            const index = Number(token)
+            if (Number.isNaN(index)) {
+                return null
+            }
+
+            current = Array.isArray(current) ? current[index] : current.elements?.[index]
+        }
+
+        return current
+    }
+
+    // Immutably update a node/array at a marker-aware path.
+    const updateNodeAtPath = (root: any, path: string, updater: (node: any) => any): any => {
+        const tokens = path.split("x").filter((item) => item)
+
+        const applyUpdate = (node: any, tokenIndex: number): any => {
+            if (tokenIndex >= tokens.length) {
+                return updater(node)
+            }
+
+            const token = tokens[tokenIndex]
+
+            if (token === "f") {
+                return {
+                    ...node,
+                    footer: applyUpdate(node?.footer, tokenIndex + 1),
+                }
+            }
+
+            if (token === "h") {
+                return {
+                    ...node,
+                    headerSegment: applyUpdate(node?.headerSegment, tokenIndex + 1),
+                }
+            }
+
+            if (token === "t") {
+                return {
+                    ...node,
+                    toolbar: applyUpdate(node?.toolbar, tokenIndex + 1),
+                }
+            }
+
+            if (token === "l" || token === "r") {
+                const key = token === "l" ? "leftElements" : "rightElements"
+                return {
+                    ...node,
+                    [key]: applyUpdate(node?.[key] || [], tokenIndex + 1),
+                }
+            }
+
+            const index = Number(token)
+            if (Number.isNaN(index)) {
+                return node
+            }
+
+            if (Array.isArray(node)) {
+                const updatedArray = [...node]
+                updatedArray[index] = applyUpdate(updatedArray[index], tokenIndex + 1)
+                return updatedArray
+            }
+
+            const updatedElements = [...(node?.elements || [])]
+            updatedElements[index] = applyUpdate(updatedElements[index], tokenIndex + 1)
+            return {
+                ...node,
+                elements: updatedElements,
+            }
+        }
+
+        return applyUpdate(root, 0)
+    }
+
+    // Read an element from store by path id.
+    const getElementFromStore = (indexPath: string): any => {
+        // Find active scenario or mixin root.
         const scenarioIndex = props.scenarioMixinName === "Scenario"
             ? elements.findIndex((el) => el.version === props.version && "defaultLanguage" in el)
             : elements.findIndex((el) => el.version === props.version && el.name === props.scenarioMixinName)
         
         if (scenarioIndex < 0) return null
-
-        let current: any = elements[scenarioIndex]
-        
-        // Empty path means return the root scenario itself
-        if (indexes.length === 0) return current
-
-        // Navigate through the tree using the index path
-        for (let i = 0; i < indexes.length; i++) {
-            if (!current) return null
-            
-            const index = indexes[i]
-            const nextMarker = indexes[i + 1]
-            
-            // Handle special markers (f=footer, h=header, t=toolbar, l=left, r=right)
-            if (nextMarker === "f") {
-                current = current.elements?.[index]?.footer
-                i++ 
-            } else if (nextMarker === "h") {
-                current = current.elements?.[index]?.headerSegment
-                i++
-            } else if (nextMarker === "t") {
-                current = current.elements?.[index]?.toolbar
-                i++
-            } else if (nextMarker === "l") {
-                current = current.elements?.[index]?.leftElements
-                i++
-            } else if (nextMarker === "r") {
-                current = current.elements?.[index]?.rightElements
-                i++
-            } else if (nextMarker !== undefined) {
-                current = current.elements?.[index]
-            } else {
-                return current.elements?.[index]
-            }
-        }
-
-        return current
+        const root = elements[scenarioIndex]
+        return getNodeAtPath(root, indexPath)
     }
 
-    // Deep clones the tree and updates a nested element at the specified path
-    const updateNestedElement = (root: any, path: string, updater: (element: any) => any): any => {
-        if (!path) return updater(root)
-
-        const indexes = path.split("x").filter((item) => item)
-        let current = { ...root }
-        let parent = current
-
-        // Navigate through the path, cloning each level
-        for (let i = 0; i < indexes.length; i++) {
-            const indexStr = indexes[i]
-            const index = parseInt(indexStr, 10)
-            const nextMarker = indexes[i + 1]
-
-            // Handle special markers with deep cloning
-            if (nextMarker === "f") {
-                const newElements = [...(parent.elements || [])]
-                const newElement = { ...newElements[index] }
-                newElement.footer = { ...newElement.footer }
-                newElements[index] = newElement
-                parent.elements = newElements
-                parent = newElement.footer
-                i++
-            } else if (nextMarker === "h") {
-                const newElements = [...(parent.elements || [])]
-                const newElement = { ...newElements[index] }
-                newElement.headerSegment = { ...newElement.headerSegment }
-                newElements[index] = newElement
-                parent.elements = newElements
-                parent = newElement.headerSegment
-                i++
-            } else if (nextMarker === "t") {
-                const newElements = [...(parent.elements || [])]
-                const newElement = { ...newElements[index] }
-                newElement.toolbar = { ...newElement.toolbar }
-                newElements[index] = newElement
-                parent.elements = newElements
-                parent = newElement.toolbar
-                i++
-            } else if (nextMarker === "l") {
-                const newElements = [...(parent.elements || [])]
-                const newElement = { ...newElements[index] }
-                newElement.leftElements = { ...newElement.leftElements }
-                newElements[index] = newElement
-                parent.elements = newElements
-                parent = newElement.leftElements
-                i++
-            } else if (nextMarker === "r") {
-                const newElements = [...(parent.elements || [])]
-                const newElement = { ...newElements[index] }
-                newElement.rightElements = { ...newElement.rightElements }
-                newElements[index] = newElement
-                parent.elements = newElements
-                parent = newElement.rightElements
-                i++
-            } else {
-                const newElements = [...(parent.elements || [])]
-                if (i === indexes.length - 1) {
-                    newElements[index] = updater(newElements[index])
-                    parent.elements = newElements
-                } else {
-                    // Continue navigating deeper
-                    newElements[index] = { ...newElements[index] }
-                    parent.elements = newElements
-                    parent = newElements[index]
-                }
-            }
-        }
-
-        return current
-    }
-
-    // Checks if parent element should be dropped into its own child
+    // Block moves into own descendants.
     const isDescendant = (parentPath: string, childPath: string): boolean => {
         if (!parentPath || !childPath) return false
         return childPath.startsWith(parentPath + "x")
     }
 
+    // Start native drag operation.
     const handleDragStart = (e: any) => {
         e.stopPropagation()
         setIsDragging(true)
@@ -158,15 +193,16 @@ export default function DraggableTreeItem(props: Props) {
         e.dataTransfer.setData("text/plain", props.id)
     }
 
+    // Reset drag visuals after drop/cancel.
     const handleDragEnd = () => {
         setIsDragging(false)
         setDropPosition('inside')
     }
 
     // Determines drop position based on mouse position: 
-    // - Top 25%: drop before
-    // - Bottom 25%: drop after
-    // - Middle 50%: drop inside
+    // - Top 40%: drop before
+    // - Bottom 40%: drop after
+    // - Middle 20%: drop inside
     const handleDragOver = (e: any) => {
         e.preventDefault()
         e.stopPropagation()
@@ -176,9 +212,9 @@ export default function DraggableTreeItem(props: Props) {
         const height = rect.height
         
         // Calculate drop position based on cursor location
-        if (y < height * 0.25) {
+        if (y < height * 0.40) {
             setDropPosition('before')
-        } else if (y > height * 0.75) {
+        } else if (y > height * 0.60) {
             setDropPosition('after')
         } else {
             setDropPosition('inside')
@@ -187,6 +223,7 @@ export default function DraggableTreeItem(props: Props) {
         setIsOver(true)
     }
 
+    // Clear hover state when pointer leaves.
     const handleDragLeave = (e: any) => {
         // Only reset if actually leaving the element
         if (!e.currentTarget.contains(e.relatedTarget)) {
@@ -195,7 +232,7 @@ export default function DraggableTreeItem(props: Props) {
         }
     }
 
-    // Drop Handler: determines whether to reorder on same level or move to a different level
+    // Handle drop and route to reorder or move.
     const handleDrop = (e: any) => {
         e.preventDefault()
         e.stopPropagation()
@@ -204,13 +241,13 @@ export default function DraggableTreeItem(props: Props) {
         const draggedId = e.dataTransfer.getData("text/plain")
         const droppedOnId = props.id
 
-        // Can't drop on itself
+        // Ignore self-drop.
         if (draggedId === droppedOnId) {
             setDropPosition('inside')
             return
         }
 
-        // Prevent dropping parent into its own descendant
+        // Prevent invalid parent->child drop.
         if (isDescendant(draggedId, droppedOnId)) {
             toast(Severity.Warning, "Cannot move element into its own child")
             setDropPosition('inside')
@@ -225,14 +262,21 @@ export default function DraggableTreeItem(props: Props) {
             return
         }
 
-        const draggedIndexes = draggedId.split("x").filter((item: string) => item)
-        const droppedIndexes = droppedOnId.split("x").filter((item: string) => item)
-        const draggedParentPath = draggedIndexes.length <= 1 ? "" : draggedIndexes.slice(0, -1).join("x")
-        const droppedParentPath = droppedIndexes.length <= 1 ? "" : droppedIndexes.slice(0, -1).join("x")
+        const draggedContext = resolveCollectionContext(draggedId)
+        const droppedContext = resolveCollectionContext(droppedOnId)
 
         // Determine if this is a same-level reorder or cross-level move
-        if (draggedParentPath === droppedParentPath && dropPosition !== 'inside') {
-            reorderOnSameLevel(draggedId, droppedOnId, draggedElement, droppedElement, draggedParentPath)
+        if (
+            draggedContext.parentPath === droppedContext.parentPath &&
+            draggedContext.collectionKey === droppedContext.collectionKey &&
+            dropPosition !== 'inside'
+        ) {
+            reorderOnSameLevel(
+                draggedElement,
+                droppedElement,
+                draggedContext.parentPath,
+                draggedContext.collectionKey,
+            )
         } else {
             moveElementToNewParent(draggedId, droppedOnId, draggedElement, droppedElement)
         }
@@ -240,50 +284,50 @@ export default function DraggableTreeItem(props: Props) {
         setDropPosition('inside')
     }
 
-    // Reorders elements on the same level (same parent)
+    // Reorder within the same sibling collection.
     const reorderOnSameLevel = (
-        draggedId: string,
-        droppedOnId: string,
         draggedElement: any,
         droppedElement: any,
-        parentPath: string
+        parentPath: string,
+        collectionKey: CollectionKey,
     ) => {
         const root = getElementFromStore("")
         
-        const updatedRoot = updateNestedElement(root, parentPath, (parent) => {
-            if (!parent.elements) return parent
+        const updatedRoot = updateNodeAtPath(root, parentPath, (parent) => {
+            const siblings = parent?.[collectionKey] || []
+            if (!Array.isArray(siblings)) return parent
 
             // Find indices of dragged and dropped elements
-            const draggedIndex = parent.elements.findIndex(
+            const draggedIndex = siblings.findIndex(
                 (el: any) => el.name === draggedElement.name && el.sort === draggedElement.sort && el.id === draggedElement.id
             )
-            const droppedIndex = parent.elements.findIndex(
+            const droppedIndex = siblings.findIndex(
                 (el: any) => el.name === droppedElement.name && el.sort === droppedElement.sort && el.id === droppedElement.id
             )
 
             if (draggedIndex === -1 || droppedIndex === -1) return parent
 
-            // Calculate target position
+            // Compute final insert index.
             let targetIndex = droppedIndex
             if (dropPosition === 'after') targetIndex++
             if (draggedIndex < targetIndex) targetIndex--
 
-            // Move element to new position
-            const elementsCopy = [...parent.elements]
+            // Move element in copied array.
+            const elementsCopy = [...siblings]
             const [movedElement] = elementsCopy.splice(draggedIndex, 1)
             elementsCopy.splice(targetIndex, 0, movedElement)
 
-            // Reassign sort values to maintain order
-            const sortValues = parent.elements.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
+            // Keep existing sort slots, only swap order.
+            const sortValues = siblings.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
             const updatedElements = elementsCopy.map((el: any, index: number) => ({
                 ...el,
                 sort: sortValues[index]
             }))
 
-            return { ...parent, elements: updatedElements }
+            return { ...parent, [collectionKey]: updatedElements }
         })
 
-        // Single update to the store
+        // Persist full tree in one store update.
         editDetailData({
             scenarioMixinName: props.scenarioMixinName,
             version: props.version,
@@ -295,50 +339,50 @@ export default function DraggableTreeItem(props: Props) {
         if (props.setUpdate) props.setUpdate(Date.now())
     }
 
+    // Move across parents or collections.
     const moveElementToNewParent = (
         draggedId: string,
         droppedOnId: string,
         draggedElement: any,
         droppedElement: any
     ) => {
-        const draggedIndexes = draggedId.split("x").filter((item: string) => item)
-        const droppedIndexes = droppedOnId.split("x").filter((item: string) => item)
-        const draggedParentPath = draggedIndexes.length <= 1 ? "" : draggedIndexes.slice(0, -1).join("x")
-        const droppedParentPath = droppedIndexes.length <= 1 ? "" : droppedIndexes.slice(0, -1).join("x")
+        const draggedContext = resolveCollectionContext(draggedId)
+        const droppedContext = resolveCollectionContext(droppedOnId)
 
         let root = getElementFromStore("")
         let movedElement: any = null
 
         // Remove element from source parent
-        root = updateNestedElement(root, draggedParentPath, (parent) => {
-            if (!parent.elements) return parent
+        root = updateNodeAtPath(root, draggedContext.parentPath, (parent) => {
+            const siblings = parent?.[draggedContext.collectionKey] || []
+            if (!Array.isArray(siblings)) return parent
 
-            const draggedIndex = parent.elements.findIndex(
+            const draggedIndex = siblings.findIndex(
                 (el: any) => el.name === draggedElement.name && el.sort === draggedElement.sort && el.id === draggedElement.id
             )
 
             if (draggedIndex === -1) return parent
 
-            const elementsCopy = [...parent.elements]
+            const elementsCopy = [...siblings]
             const [removed] = elementsCopy.splice(draggedIndex, 1)
             movedElement = removed
 
             // Reassign sort values after removal
-            const sortValues = parent.elements.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
+            const sortValues = elementsCopy.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
             const updatedElements = elementsCopy.map((el: any, index: number) => ({
                 ...el,
-                sort: sortValues[index] !== undefined ? sortValues[index] : index
+                sort: sortValues[index]
             }))
 
-            return { ...parent, elements: updatedElements }
+            return { ...parent, [draggedContext.collectionKey]: updatedElements }
         })
 
         if (!movedElement) return
 
-        // Add element to target location
+        // Insert at target location.
         if (dropPosition === 'inside') {
-            // Add as a child of the dropped element
-            root = updateNestedElement(root, droppedOnId, (target) => {
+            // Append as child of dropped element.
+            root = updateNodeAtPath(root, droppedOnId, (target) => {
                 const targetElements = target.elements || []
                 const newSort = targetElements.length > 0 
                     ? Math.max(...targetElements.map((el: any) => el.sort)) + 1 
@@ -349,32 +393,30 @@ export default function DraggableTreeItem(props: Props) {
                 }
             })
         } else {
-            // Add as a sibling (before or after the dropped element)
-            root = updateNestedElement(root, droppedParentPath, (parent) => {
-                if (!parent.elements) return parent
+            // Insert as sibling before/after dropped item.
+            root = updateNodeAtPath(root, droppedContext.parentPath, (parent) => {
+                const siblings = parent?.[droppedContext.collectionKey] || []
+                if (!Array.isArray(siblings)) return parent
 
-                const droppedIndex = parent.elements.findIndex(
+                const droppedIndex = siblings.findIndex(
                     (el: any) => el.name === droppedElement.name && el.sort === droppedElement.sort && el.id === droppedElement.id
                 )
 
                 if (droppedIndex === -1) return parent
 
-                const insertIndex = dropPosition === 'after' ? droppedIndex + 1 : droppedIndex
-                const elementsCopy = [...parent.elements]
-                elementsCopy.splice(insertIndex, 0, movedElement)
+            const insertIndex = dropPosition === 'after' ? droppedIndex + 1 : droppedIndex
+            const elementsCopy = [...siblings]
+            elementsCopy.splice(insertIndex, 0, movedElement)
 
-                // Reassign sort values with the new element included
-                const sortValues = parent.elements.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
-                const newSortValue = sortValues.length > 0 ? Math.max(...sortValues) + 1 : 0
-                sortValues.push(newSortValue)
-                sortValues.sort((a: number, b: number) => a - b)
+            // Rebuild ordered sort values.
+            const sortValues = elementsCopy.map((el: any) => el.sort).sort((a: number, b: number) => a - b)
 
-                const updatedElements = elementsCopy.map((el: any, index: number) => ({
-                    ...el,
-                    sort: sortValues[index]
-                }))
+            const updatedElements = elementsCopy.map((el: any, index: number) => ({
+                ...el,
+                sort: sortValues[index]
+            }))
 
-                return { ...parent, elements: updatedElements }
+            return { ...parent, [droppedContext.collectionKey]: updatedElements }
             })
         }
 
@@ -402,8 +444,9 @@ export default function DraggableTreeItem(props: Props) {
         }
     }
 
+    // Merge base item style with drop visuals.
     const itemStyle = {
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0.5 : props.dimmed ? 0.45 : 1,
         cursor: "grab",
         transition: 'all 0.2s ease',
         ...getDropIndicatorStyle()
@@ -416,6 +459,7 @@ export default function DraggableTreeItem(props: Props) {
             selected={props.selected}
             navigated={props.navigated}
             content={props.content}
+            expanded={props.expanded} 
             draggable
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}

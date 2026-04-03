@@ -9,8 +9,7 @@ public enum P13NRoles implements AbstractRoles {
 
     P13NEdit("P13NEdit"),
     P13NDisplay("P13NDisplay"),
-    P13NEnduser("P13NEnduser"),
-    P13NUsage("P13NUsage");
+    P13NEnduser("P13NEnduser");
 
     private final String value;
 
@@ -18,14 +17,13 @@ public enum P13NRoles implements AbstractRoles {
         this.value = value;
     }
 
-    @Override
-    public String getValue() {
-        return value;
+    public static P13NRoles fromValue(String value) {
+        return Arrays.stream(P13NRoles.values()).filter(it -> StringUtils.equalsIgnoreCase(
+                it.getValue(), value)).findFirst().orElseThrow();
     }
 
     @Override
-    public P13NRoles fromValue(String value) {
-        return Arrays.stream(P13NRoles.values()).filter(it -> StringUtils.equalsIgnoreCase(
-                it.getValue(), value)).findFirst().orElseThrow();
+    public String getValue() {
+        return value;
     }
 }

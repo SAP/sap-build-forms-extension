@@ -17,6 +17,7 @@ public class DefinitionNames {
     public final static String NM_DESIGN = "design";
     public final static String NM_DIALOG_KEY = "dialogKey";
     public final static String NM_DISPLAY_FORMAT = "displayFormat";
+    public final static String NM_DOC_URL = "docUrl";
     public final static String NM_EDITABLE = "editable";
     public final static String NM_ELEMENTS = "elements";
     public final static String NM_EMPTY_SELECTION = "emptySelection";
@@ -34,6 +35,7 @@ public class DefinitionNames {
     public final static String NM_LABEL = "label";
     public final static String NM_LENGTH = "length";
     public final static String NM_LIMIT = "limit";
+    public final static String NM_LINE_BREAK = "lineBreak";
     public final static String NM_KEY = "key";
     public final static String NM_LEFT_ELEMENTS = "leftElements";
     public static final String NM_MESSAGE_KEY = "messageKey";
@@ -49,6 +51,7 @@ public class DefinitionNames {
     public final static String NM_ROOT_ELEMENT = "root";
     public final static String NM_ROOT_ELEMENT_KEY = "rootElementKey";
     public final static String NM_SELECT = "select";
+    public final static String NM_SELECTED_TAB = "selectedTab";
     public static final String NM_SEVERITY = "severity";
     public final static String NM_SHOW_AS_COLUMN = "showAsColumn";
     public final static String NM_SHOW_LABEL = "showLabel";
@@ -58,7 +61,8 @@ public class DefinitionNames {
     public final static String NM_SKIP_IN_SUMMARY = "skipInSummary";
     public final static String NM_SORT = "sort";
     public final static String NM_STYLE = "style";
-    public final static String NM_TARGET = "target";
+    public final static String NM_LINK_TEXT = "linkText";
+    public final static String NM_LINK_HREF = "linkHRef";
     public final static String NM_TEXTS = "texts";
     public final static String NM_TOOLBAR = "toolbar";
     public final static String NM_TOOLTIP = "tooltip";

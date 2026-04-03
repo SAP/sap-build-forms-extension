@@ -43,20 +43,18 @@ export default function (props: Props & PropsWithChildren) {
             direction="Column"
             fitContainer
             alignItems="Stretch"
-            justifyContent={justifyContent}
+            justifyContent={justifyContent ?? "Center"}
+            style={{ height: "100%" }}
         >
             {!asTableCell && (
-                <Label id={"l" + def.key} for={def.key} required={element?.rq}>
-                    <>
-                        {labelText}
-                        {labelText.length === 0 && <span style={{ opacity: 0 }}>.</span>}
-                    </>
+                <Label
+                    id={"l" + def.key}
+                    for={def.key}
+                    required={element?.rq}
+                    style={def.showLabel === false ? { visibility: "hidden" } : undefined}
+                >
+                    {def.showLabel !== false ? labelText : ""}
                 </Label>
-            )}
-            {!asTableCell && (typeof labelText !== "string" || labelText.length === 0) && (
-                <div aria-hidden style={{ opacity: 0 }}>
-                    <Label>{labelText}</Label>
-                </div>
             )}
             {children}
         </FlexBox>

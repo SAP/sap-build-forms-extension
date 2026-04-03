@@ -60,6 +60,7 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
         gen.writeStringField(NM_REQUIRED, ed.getRequired());
         gen.writeStringField(NM_COL, ed.getCol());
         gen.writeBooleanField(NM_SHOW_AS_COLUMN, ed.isShowAsColumn());
+        gen.writeBooleanField(NM_LINE_BREAK, ed.isLineBreak());
         serializeValidationRules(ed, gen);
         if (includeKeys) {
             gen.writeStringField(NM_KEY, ed.getKey());

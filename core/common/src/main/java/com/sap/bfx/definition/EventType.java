@@ -14,7 +14,16 @@ public enum EventType implements Identifier {
     EnterFocus("enterFocus"),
     LeaveFocus("leaveFocus"),
     Open("open"),
-    Sort("sort");
+    Sort("sort"),
+    FindValueHelpAuth("findValueHelpAuth"),
+    UploadAttachmentAuth("uploadAttachmentAuth"),
+    DownloadAttachmentAuth("downloadAttachmentAuth"),
+    DeleteAttachmentAuth("deleteAttachmentAuth"),
+    GetScenarioControllerAuth("getScenarioControllerAuth"),
+    PostScenarioControllerAuth("postScenarioControllerAuth"),
+    TaskExecutionAuth("taskExecutionAuth"),
+    ShowContextAuth("showContextAuth"),
+    StartProcessAuth("startProcessAuth");
 
     private final String identifier;
 

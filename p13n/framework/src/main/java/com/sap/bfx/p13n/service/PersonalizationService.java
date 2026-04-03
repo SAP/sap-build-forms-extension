@@ -3,7 +3,10 @@ package com.sap.bfx.p13n.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sap.bfx.callback.AdapterDescriptor;
-import com.sap.bfx.p13n.model.*;
+import com.sap.bfx.p13n.model.Constants;
+import com.sap.bfx.p13n.model.Personalization;
+import com.sap.bfx.p13n.model.PersonalizationAdapter;
+import com.sap.bfx.p13n.model.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -16,9 +19,7 @@ import java.util.stream.Collectors;
 /**
  * Service class for managing Personalization operations.
  */
-@Service
-@Slf4j
-public class PersonalizationService {
+@Service @Slf4j public class PersonalizationService {
 
     private final Map<String, PersonalizationAdapter> adapterMap = new HashMap<>();
     private final CoreDao dao;
@@ -28,8 +29,7 @@ public class PersonalizationService {
      *
      * @param dao
      */
-    @Autowired
-    public PersonalizationService(final CoreDao dao) {
+    @Autowired public PersonalizationService(final CoreDao dao) {
         this.dao = dao;
     }
 
@@ -45,12 +45,12 @@ public class PersonalizationService {
         adapter.values().forEach(it -> {
             var descriptor = it.getClass().getAnnotation(AdapterDescriptor.class);
             if (descriptor == null) {
-                log.error("PersonalizationAdapter '" + it.getClass().getName()
-                        + "' has not annotation of type AdapterDescriptor");
+                log.error("PersonalizationAdapter '" + it.getClass().getName() +
+                        "' has not annotation of type AdapterDescriptor");
             } else {
                 adapterMap.put(descriptor.value(), it);
-                log.info("PersonalizationAdapter '" + it.getClass().getName() + "' added with name '"
-                        + descriptor.value() + "'.");
+                log.info("PersonalizationAdapter '" + it.getClass().getName() + "' added with name '" +
+                        descriptor.value() + "'.");
             }
         });
     }
@@ -82,9 +82,9 @@ public class PersonalizationService {
     /**
      * Finds a Personalization by key, user, and application.
      *
-     * @param key the key of the Personalization
+     * @param key  the key of the Personalization
      * @param user the user identifier
-     * @param app the application identifier
+     * @param app  the application identifier
      * @return the found Personalization or null if not found
      */
     public Personalization findPersonalizationByKeyUserAndApp(String key, String user, String app) {
@@ -133,7 +133,7 @@ public class PersonalizationService {
      * Finds Personalizations for a user and application, combining static and non-static visible personalizations.
      *
      * @param username the username to search for
-     * @param app the application to search for
+     * @param app      the application to search for
      * @return a collection of Personalization objects
      */
     public Collection<Personalization> findPersonalizationsByUserAndAppForUser(String username, String app) {
@@ -160,7 +160,7 @@ public class PersonalizationService {
      * Finds Personalizations for a user and application, combining static and all non-static personalizations.
      *
      * @param username the username to search for
-     * @param app the application to search for
+     * @param app      the application to search for
      * @return a collection of Personalization objects
      */
     public Collection<Personalization> findPersonalizationsByUserAndAppForAdmin(String username, String app) {
@@ -174,15 +174,14 @@ public class PersonalizationService {
      * Finds static Personalizations for a user and application.
      *
      * @param username the username to search for
-     * @param app the application to search for
+     * @param app      the application to search for
      * @return a collection of static Personalization objects
      */
     public Collection<Personalization> findStaticPersonalizations(String username, String app) {
         Collection<Personalization> personalizations = new ArrayList<>();
         for (Field field : Constants.class.getDeclaredFields()) {
             try {
-                var p = this.findPersonalizationByKeyUserAndApp(field.get(null).toString(), username,
-                        app);
+                var p = this.findPersonalizationByKeyUserAndApp(field.get(null).toString(), username, app);
                 if (p != null) {
                     personalizations.add(p);
                 } else {
@@ -218,7 +217,7 @@ public class PersonalizationService {
      * Finds non-static Personalizations for a user and application.
      *
      * @param username the username to search for
-     * @param app the application to search for
+     * @param app      the application to search for
      * @return a collection of non-static Personalization objects
      */
     public Collection<Personalization> findNonStaticPersonalizations(String username, String app) {
@@ -240,7 +239,7 @@ public class PersonalizationService {
      * Finds non-static visible Personalizations for a user and application.
      *
      * @param username the username to search for
-     * @param app the application to search for
+     * @param app      the application to search for
      * @return a collection of non-static visible Personalization objects
      */
     public Collection<Personalization> findNonStaticVisiblePersonalizations(String username, String app) {
@@ -297,19 +296,18 @@ public class PersonalizationService {
      *
      * @param locale the locale to search for
      * @return a map of keys and their corresponding values
-     * @throws NullPointerException if any value intervals are not completely filled
+     * @throws NullPointerException   if any value intervals are not completely filled
      * @throws IllegalAccessException if there is an error accessing the fields
      */
-    public Map<String, Object> getValuesForStaticPersonalizations(Locale locale) throws NullPointerException,
-            IllegalAccessException {
+    public Map<String, Object> getValuesForStaticPersonalizations(Locale locale)
+            throws NullPointerException, IllegalAccessException {
         Map<String, Object> values = new HashMap<>();
         for (Field field : Constants.class.getDeclaredFields()) {
             Optional<Value> value = dao.findValuesByLocaleAndKey(locale, field.get(null).toString());
             if (value.isPresent()) {
                 values.put(field.get(null).toString(), value.get().getValues());
             } else {
-                var value2 = dao.findValuesByLocaleAndKey(new Locale("_"),
-                        field.get(null).toString());
+                var value2 = dao.findValuesByLocaleAndKey(new Locale("_"), field.get(null).toString());
                 if (value2.isPresent()) {
                     values.put(field.get(null).toString(), value2.get().getValues());
                 } else {
@@ -407,34 +405,26 @@ public class PersonalizationService {
      */
     public void updateValue(Value value) throws JsonProcessingException {
         if (value.getLocale().toString().equals("_")) {
-            Set<String> newKeys = value
-                    .getValues()
-                    .stream()
-                    .map(str -> {
+            Set<String> newKeys = value.getValues().stream().map(str -> {
+                if (str.contains("(") && str.contains(")")) {
+                    return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
+                } else {
+                    return "";
+                }
+            }).collect(Collectors.toSet());
+            if (!newKeys.equals(Set.of(""))) {
+                var valueExistent = dao.findValuesByLocaleAndKey(value.getLocale(), value.getId());
+                if (valueExistent.isPresent()) {
+                    Set<String> existingKeys = valueExistent.get().getValues().stream().map(str -> {
                         if (str.contains("(") && str.contains(")")) {
                             return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
                         } else {
                             return "";
                         }
-                    })
-                    .collect(Collectors.toSet());
-            if (!newKeys.equals(Set.of(""))) {
-                var valueExistent = dao.findValuesByLocaleAndKey(value.getLocale(), value.getId());
-                if (valueExistent.isPresent()) {
-                    Set<String> existingKeys = valueExistent.get().getValues()
-                            .stream()
-                            .map(str -> {
-                                if (str.contains("(") && str.contains(")")) {
-                                    return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
-                                } else {
-                                    return "";
-                                }
-                            })
-                            .collect(Collectors.toSet());
-                    Set<String> differentKeys = existingKeys
-                            .stream()
-                            .filter(key -> newKeys.stream().noneMatch(k -> k.equals(key)))
-                            .collect(Collectors.toSet());
+                    }).collect(Collectors.toSet());
+                    Set<String> differentKeys =
+                            existingKeys.stream().filter(key -> newKeys.stream().noneMatch(k -> k.equals(key)))
+                                        .collect(Collectors.toSet());
                     for (var key : differentKeys) {
                         dao.deleteByKeyAndValue(value.getId(), key);
                     }
@@ -470,7 +460,7 @@ public class PersonalizationService {
     /**
      * Deletes a user-application association.
      *
-     * @param username the username
+     * @param username    the username
      * @param application the application identifier
      */
     public void deleteUser(String username, String application) {
@@ -482,7 +472,7 @@ public class PersonalizationService {
     /**
      * Deletes a user-application association for user context.
      *
-     * @param username the username
+     * @param username    the username
      * @param application the application identifier
      */
     public void deleteUserForUser(String username, String application) {
@@ -495,7 +485,7 @@ public class PersonalizationService {
      * Deletes a Value by locale and key.
      *
      * @param locale the locale of the Value
-     * @param key the key of the Value
+     * @param key    the key of the Value
      */
     public void deleteValue(Locale locale, String key) {
         dao.deleteValue(locale, key);
@@ -517,7 +507,7 @@ public class PersonalizationService {
      * @return true if the Personalization exists, false otherwise
      */
     public boolean isPersonalizationExistent(Personalization personalization) {
-        return dao.findPersonalizationByKeyUserApp(personalization.getKey(),
-                personalization.getUser(), personalization.getApp()).isPresent();
+        return dao.findPersonalizationByKeyUserApp(personalization.getKey(), personalization.getUser(),
+                personalization.getApp()).isPresent();
     }
 }

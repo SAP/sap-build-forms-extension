@@ -18,7 +18,7 @@ import { formatDate, fromInternalDate, toInternalDate } from "../../utils/DataFo
  * @param value
  * @returns
  */
-function formatValue(value: DateRange): string {
+function formatValue(value: DateRange | undefined): string {
     if (value) {
         const l = getLanguage()
         const fd = fromInternalDate(value.f, l)
@@ -67,7 +67,7 @@ export default function (props: ControlProps) {
             <DateRangePicker
                 ref={ref as MutableRefObject<DateRangePickerDomRef | null>}
                 id={def.key}
-                value={formatValue(element!.va as DateRange)}
+                value={formatValue(element?.va as DateRange | undefined)}
                 readonly={!element?.ed || !globalEd}
                 required={element?.rq}
                 onChange={(e) => handleChange(dispatch, def, rowId, messages, parseValue(ref))}

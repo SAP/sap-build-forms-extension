@@ -1,4 +1,4 @@
-import { Button } from "@ui5/webcomponents-react"
+import { Button, Label } from "@ui5/webcomponents-react"
 
 import { useMessages } from "commons"
 
@@ -39,7 +39,7 @@ function mapDesign(
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId, texts, withContainer } = props
+    const { def, globalEd, rowId, texts, withContainer, onAfterAction } = props
     const dispatch = useAppDispatch()
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
@@ -51,9 +51,18 @@ export default function (props: ControlProps) {
             design={mapDesign(def.design)}
             disabled={!element?.ed || !globalEd}
             icon={def.icon}
-            onClick={() =>
-                dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
-            }
+            onClick={async (e: any) => {
+
+                if (def.linkHRef && def.linkHRef.trim() !== "") {
+                    e.preventDefault?.()
+                    window.open(def.linkHRef, "_blank")
+                    return
+                }
+                await dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
+                if (onAfterAction) {
+                    await onAfterAction()
+                }
+            }}
             style={{
                 width: "100%",
             }}
@@ -65,7 +74,7 @@ export default function (props: ControlProps) {
     if (withContainer) {
         return (
             <ControlContainer {...props} asTableCell={true}>
-                <div style={{ opacity: 0 }}>.</div>
+                <Label></Label>
                 <>{button}</>
             </ControlContainer>
         )

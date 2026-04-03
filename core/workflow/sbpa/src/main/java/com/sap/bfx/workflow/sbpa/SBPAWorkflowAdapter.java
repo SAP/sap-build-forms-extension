@@ -82,11 +82,13 @@ public class SBPAWorkflowAdapter implements WorkflowAdapter {
 
     @Override
     public String startWorkflowByWfDefId(String workflowDefinitionId, String environmentId, String destinationName, Object workflowStartContext) {
-        WorkflowInstancesApiExtended wfApiExt = new WorkflowInstancesApiExtended(ConnectivityUtils.getHttpDestinationWithForwardUserToken(destinationName));
+        HttpDestination destination = ConnectivityUtils.getHttpDestinationWithForwardUserToken(destinationName);
+        String apiKey = (!destination.get(WorkflowConstants.API_KEY).isEmpty()) ? destination.get(WorkflowConstants.API_KEY).get().toString() : null;
+        WorkflowInstancesApiExtended wfApiExt = new WorkflowInstancesApiExtended(destination);
         WorkflowInstanceStartPayload wfStartPayload = new WorkflowInstanceStartPayload();
         wfStartPayload.setDefinitionId(workflowDefinitionId);
         wfStartPayload.setContext(workflowStartContext);
-        WorkflowInstance wfInstance = wfApiExt.v1WorkflowInstancesPost(environmentId, wfStartPayload);
+        WorkflowInstance wfInstance = wfApiExt.v1WorkflowInstancesPost(environmentId, apiKey, wfStartPayload);
         return wfInstance.getId();
     }
 

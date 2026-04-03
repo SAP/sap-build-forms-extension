@@ -1,17 +1,16 @@
 package ${basePackage}.metadata;
 
+import com.sap.bfx.callback.AccessClass;
+import com.sap.bfx.callback.AccessClassFactory;
+import com.sap.bfx.callback.DataApi;
+import com.sap.bfx.callback.DataApiImpl;
+import com.sap.bfx.session.ElementRow;
+import com.sap.bfx.session.Form;
+import com.sap.bfx.definition.ScenarioDefinition;
+import jakarta.annotation.Generated;
 import org.springframework.stereotype.Service;
 
-import callback.forms.com.sap.AccessClass;
-import callback.forms.com.sap.AccessClassFactory;
-import callback.forms.com.sap.DataApi;
-import callback.forms.com.sap.DataApiImpl;
-import session.forms.com.sap.ElementRow;
-import session.forms.com.sap.Form;
-import definition.forms.com.sap.ScenarioDefinition;
-import jakarta.annotation.Generated;
-
-@Generated("com.sap.consulting.forms.maven.TemplateService")
+@Generated("com.sap.bfx.maven.TemplateService")
 @Service
 public class AccessClassFactoryImpl implements AccessClassFactory {
 

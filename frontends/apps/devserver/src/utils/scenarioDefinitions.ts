@@ -25,6 +25,8 @@ export type Elem = {
     type: string
     id?: string
     defaultValue?: string
+    linkText?: string
+    linkHRef?: string
     col?: string
     dataType?: DataTypeValue
     sort?: number
@@ -36,12 +38,14 @@ export type Elem = {
     showLabel?: boolean
     showHelp?: boolean
     showAsColumn?: boolean
+    lineBreak?: boolean
     design?: DesignValue | AttachmentDesignType
     icon?: string
     tooltip?: string
     dialogKey?: string
     select?: SelectValue
     style?: StyleValue
+    pageSize?: number
     inputType?: InputValue
     path?: string
     mixinName?: string

@@ -27,7 +27,7 @@ export default function (props: ControlProps) {
         <ControlContainer {...props}>
             <TextArea
                 id={def.key}
-                value={element!.va as string}
+                value={(element?.va as string) ?? ""}
                 readonly={!element?.ed || !globalEd}
                 required={element?.rq}
                 onInput={(e) => handleChange(dispatch, def, rowId, messages, e.target.value ?? "")}

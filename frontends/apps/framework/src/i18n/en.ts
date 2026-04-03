@@ -37,6 +37,20 @@ export default {
     common_wizard_prev: "Previous",
     common_wizard_next: "Next",
 
+    attachment_drag_drop_hint: "Drag and drop files here",
+    attachment_or_click_add: 'or click "Add" button above',
+    attachment_category: "Category",
+    attachment_description: "Description",
+    attachment_description_required: "Description is required",
+    attachment_not_uploaded: "Not uploaded",
+    attachment_single_only: "Only one attachment is allowed. Delete the existing file to upload a new one.",
+    attachment_filetype_rejected: "File(s) {files} not allowed. Accepted types: {types}.",
+    attachment_files_group: "Files",
+    attachment_file_required: "At least one file must be selected.",
+    attachment_desc_group: "Description Data",
+    attachment_field_required: "This field is required.",
+    attachment_description_maxlength: "Maximum length is 250 characters.",
+
     session_error_creation: "Error in creating form!",
     session_error_timed_out:
         "Session timed out. Please refresh browser page and strart from scratch!",
@@ -49,4 +63,10 @@ export default {
     sh_dialog_title: "Searchhelp for {name}",
     sh_dialog_select: "Select",
     sh_dialog_close: "Close",
+
+    currency_dialog_title: "Select Currency",
+    currency_col_iso_code: "ISO Code",
+    currency_col_digits: "Digits",
+    currency_col_name: "Name",
+    currency_empty_selection: "(no currency)",
 }

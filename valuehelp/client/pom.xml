@@ -35,12 +35,12 @@
                 <configuration>
                     <artifactSet>
                         <includes>
-                            <include>com/sap/consulting/forms/valuehelp/**</include>
+                            <include>com/sap/bfx/valuehelp/**</include>
                         </includes>
                     </artifactSet>
                     <filters>
                         <filter>
-                            <artifact>com/sap/consulting/forms/valuehelp/**</artifact>
+                            <artifact>com/sap/bfx/valuehelp/**</artifact>
                         </filter>
                     </filters>
                     <transformers>

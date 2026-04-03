@@ -8,8 +8,7 @@ import java.util.Arrays;
 public enum ValueHelpRoles implements AbstractRoles {
 
     ValueHelpEdit("ValueHelpEdit"),
-    ValueHelpDisplay("ValueHelpDisplay"),
-    ValueHelpUsage("ValueHelpUsage");
+    ValueHelpDisplay("ValueHelpDisplay");
 
     private final String value;
 
@@ -17,14 +16,13 @@ public enum ValueHelpRoles implements AbstractRoles {
         this.value = value;
     }
 
-    @Override
-    public String getValue() {
-        return value;
+    public static ValueHelpRoles fromValue(String value) {
+        return Arrays.stream(ValueHelpRoles.values()).filter(it -> StringUtils.equalsIgnoreCase(
+                it.getValue(), value)).findFirst().orElseThrow();
     }
 
     @Override
-    public ValueHelpRoles fromValue(String value) {
-        return Arrays.stream(ValueHelpRoles.values()).filter(it -> StringUtils.equalsIgnoreCase(
-                it.getValue(), value)).findFirst().orElseThrow();
+    public String getValue() {
+        return value;
     }
 }

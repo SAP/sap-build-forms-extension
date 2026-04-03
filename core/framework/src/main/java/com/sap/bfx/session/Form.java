@@ -358,6 +358,10 @@ public class Form extends ElementRow implements FormAttributes {
             log.error("Cannot find element for rowId '" + rowId + "' and key '" + key + "'");
             return Optional.empty();
         }
+        // in case the element has currently no message
+        if (element.getMessage() == null) {
+            return Optional.empty();
+        }
         return Optional.of(element.getMessage());
     }
 
@@ -469,29 +473,35 @@ public class Form extends ElementRow implements FormAttributes {
                     r.getLeft().setSelected((Boolean) itChange.getValue());
                 } else {
                     if (element == null) {
-                        throw new NotFoundException("Cannot find element with row='" + itUpdate.getRowId()
-                                + "' and key='" + itUpdate.getKey() + "'");
+                        throw new NotFoundException(
+                                "Cannot find element with row='" + itUpdate.getRowId() + "' and key='" +
+                                        itUpdate.getKey() + "'");
                     }
                     if (itChange.getProp() == ChangePropertyType.Value) {
                         final var value = parseValue(this.sd, itUpdate.getKey(), itChange.getValue());
 
-                        if (def.getType() == UIElementType.Form || def.getType() == UIElementType.Wizard
-                                || def.getType() == UIElementType.Group) {
+                        if (def.getType() == UIElementType.Form || def.getType() == UIElementType.Wizard ||
+                                def.getType() == UIElementType.Group) {
                             // values of these elements are just for display so we can set them always without checking
                             element.setValue(value);
+                        } else if (def.getType() == UIElementType.DocForm) {
+                            // here only the selected tab because docUrl should not be changed in frontend
+                            ((DocFormData) element.getValue()).setSelectedTab(((DocFormData) value).getSelectedTab());
                         } else {
                             // check if the element is editable, if not, we throw an exception
                             if (!element.isEditable()) {
-                                throw new FormsCoreException("Not allowed to modify value on row='"
-                                        + itUpdate.getRowId() + "' and key='" + itUpdate.getKey() + "'");
+                                throw new FormsCoreException(
+                                        "Not allowed to modify value on row='" + itUpdate.getRowId() + "' and key='" +
+                                                itUpdate.getKey() + "'");
                             }
                             element.setValue(value);
                         }
                     } else if (itChange.getProp() == ChangePropertyType.Visible) {
                         final var value = (boolean) itChange.getValue();
                         if (value) {
-                            throw new FormsCoreException("Not allowed to set visible on row='" + itUpdate.getRowId()
-                                    + "' and key='" + itUpdate.getKey() + "' to true");
+                            throw new FormsCoreException(
+                                    "Not allowed to set visible on row='" + itUpdate.getRowId() + "' and key='" +
+                                            itUpdate.getKey() + "' to true");
                         }
                         element.setVisible(false);
                     } else if (itChange.getProp() == ChangePropertyType.Position) {
@@ -505,7 +515,8 @@ public class Form extends ElementRow implements FormAttributes {
                         addToBackendJournal = true;
                     } else if (itChange.getProp() == ChangePropertyType.SortOrder) {
                         ((Table) element.getValue()).setSortOrder(
-                                EnumUtils.valueById(SortOrder.class, (String) itChange.getValue(), SortOrder.ASCENDING));
+                                EnumUtils.valueById(SortOrder.class, (String) itChange.getValue(),
+                                        SortOrder.ASCENDING));
                         addToBackendJournal = true;
                     }
                 }
@@ -519,8 +530,8 @@ public class Form extends ElementRow implements FormAttributes {
         fj.getDeleted().forEach(it -> {
             final var element = FormUtils.findElementByRowAndKey(this, it.getRowId(), it.getKey());
             if (element == null) {
-                throw new NotFoundException("Cannot find element with row='" + it.getRowId() + "' and key='"
-                        + it.getKey() + "'");
+                throw new NotFoundException(
+                        "Cannot find element with row='" + it.getRowId() + "' and key='" + it.getKey() + "'");
             }
 
             final var table = (Table) element.getValue();
@@ -528,9 +539,7 @@ public class Form extends ElementRow implements FormAttributes {
                 // remove row from the rows list
                 table.getRows().removeIf(row -> StringUtils.equals(row, delId));
                 // remove the row from the map
-                if (table.getData().containsKey(delId)) {
-                    table.getData().remove(delId);
-                }
+                table.getData().remove(delId);
                 // we cannot have a position higher than the number of rows. In this case correct the value
                 if (table.getPos() >= table.getData().size()) {
                     table.setPos(Math.max(table.getData().size() - table.getPageSize(), 0));
@@ -560,17 +569,21 @@ public class Form extends ElementRow implements FormAttributes {
             } else if (dt == LocalDate.class) {
                 return source;
             } else if (dt == BigDecimal.class) {
-                return (BigDecimal) source;
+                return source;
             } else if (dt == String.class) {
                 return source;
             } else if (dt == Boolean.class) {
                 return source;
             } else if (dt == Table.class) {
-                return (Table) source;
+                return source;
             } else if (dt == Attachments.class) {
                 throw new FormsCoreException(
                         "Updates from applying journal should not occur because this is always done server-side");
             } else if (dt == DateRange.class) {
+                return source;
+            } else if (dt == MoneyAmount.class) {
+                return source;
+            } else if (dt == DocFormData.class) {
                 return source;
             }
         } catch (Exception e) {

@@ -7,6 +7,8 @@ import { getChildrenMessageSeverities, getHighestSeverity } from "../../utils/fo
 import SeverityIcon from "./SeverityIcon"
 import TagDesign from "@ui5/webcomponents/dist/types/TagDesign"
 import DraggableTreeItem from "./DraggableTreeItem"
+import { useVariantFilter } from "./VariantFilterContext"
+import { elementMatchesSelectedVariants } from "../../utils/variantUtils"
 
 interface Props {
     items: Elem[]
@@ -18,17 +20,65 @@ interface Props {
     version: number
     scenarioMixinName: string
     setUpdate?: (value: any) => void
+    level?: number
 }
 
 export default function TreeItems(props: Props) {
     var subkey = -1
     const map1 = new Map()
+    const currentLevel = props.level || 1
     
+    const shouldExpand = React.useMemo(() => {
+        if (props.searchString.length > 0) {
+            return props.items.some(item => containsChildSearchString(item, props.searchString))
+        }
+        return currentLevel < 2
+    }, [props.searchString, props.items, currentLevel])
+
     const allMessages = useMessagesStore((state) => state.messages)
+    const { selectedVariants } = useVariantFilter()
     const messages: any = React.useMemo(
         () => allMessages.filter((m: Message) => m.defVersion == props.scenarioVersion),
         [allMessages, props.scenarioVersion]
     )
+
+    const getDimmedStyle = (visible?: string) => {
+        const matches = elementMatchesSelectedVariants(visible, selectedVariants)
+        return selectedVariants.length > 0 && !matches ? { opacity: 0.45 } : undefined
+    }
+
+    const isElementEffectivelyDimmed = (item?: Elem): boolean => {
+        if (!item) return false
+        if (selectedVariants.length === 0) return false
+        
+        const matches = elementMatchesSelectedVariants(item.visible, selectedVariants)
+        
+        // If element doesn't match variant, dim
+        if (!matches) return true
+        
+        // Element matches variant, check if all its children are dimmed
+        return areAllChildrenDimmed(item.elements)
+    }
+
+    const areAllChildrenDimmed = (items?: Elem[]): boolean => {
+        if (!items || items.length === 0) return false
+        
+        return items.every((item) => isElementEffectivelyDimmed(item))
+    }
+
+    const getDimmedStyleWithChildren = (visible?: string, children?: Elem[]) => {
+        if (selectedVariants.length === 0) return undefined
+        
+        const matches = elementMatchesSelectedVariants(visible, selectedVariants)
+        if (!matches) return { opacity: 0.45 }
+        
+        // Element matches, check if all children are dimmed
+        if (areAllChildrenDimmed(children)) {
+            return { opacity: 0.45 }
+        }
+        
+        return undefined
+    }
 
     while (subkey < props.items.length - 1) {
         subkey++
@@ -57,6 +107,10 @@ export default function TreeItems(props: Props) {
                         ? ""
                         : props.searchString
 
+                const itemMatchesSearch = props.searchString.length > 0 && 
+                    (item.name.toLocaleLowerCase().includes(props.searchString.toLowerCase()) ||
+                     containsChildSearchString(item, props.searchString))
+
                 return (
                     <DraggableTreeItem
                         key={i}
@@ -67,6 +121,8 @@ export default function TreeItems(props: Props) {
                         version={props.version}
                         scenarioMixinName={props.scenarioMixinName}
                         setUpdate={props.setUpdate}
+                        expanded={shouldExpand || itemMatchesSearch}
+                        dimmed={selectedVariants.length > 0 && (!elementMatchesSelectedVariants(item.visible, selectedVariants) || areAllChildrenDimmed(item.elements))}
                         content={
                             <div
                                 style={{
@@ -79,7 +135,7 @@ export default function TreeItems(props: Props) {
                                     message="There are errors in children of this element"
                                     isMainElement={false}
                                     severity={getHighestSeverity(
-                                        getChildrenMessageSeverities(item, messages, true),
+                                        getChildrenMessageSeverities(messages, item, true),
                                     )}
                                 />
                                 <SeverityIcon
@@ -128,6 +184,7 @@ export default function TreeItems(props: Props) {
                                             title={item.headerSegment.name}
                                             selected={`${i}hx` == props.element}
                                             navigated={`${i}hx` == props.element}
+                                            style={getDimmedStyleWithChildren(item.headerSegment.visible, item.headerSegment.elements)}
                                             content={
                                                 <div
                                                     style={{
@@ -210,6 +267,7 @@ export default function TreeItems(props: Props) {
                                                 version={props.version}
                                                 scenarioMixinName={props.scenarioMixinName}
                                                 setUpdate={props.setUpdate}
+                                                level={currentLevel + 1}
                                             />
                                         </TreeItemCustom>
                                     )}
@@ -230,9 +288,10 @@ export default function TreeItems(props: Props) {
                             version={props.version}
                             scenarioMixinName={props.scenarioMixinName}
                             setUpdate={props.setUpdate}
+                            level={currentLevel + 1}
                         />
 
-                        {(item.type == "form" || item.type == "wizard") && (
+                        {(item.type == "form" || item.type == "wizard" || item.type == "docform") && (
                             <>
                                 {item.footer &&
                                     ((searchString.length > 0 &&
@@ -244,6 +303,7 @@ export default function TreeItems(props: Props) {
                                             title={item.footer.name}
                                             selected={`${i}fx` == props.element}
                                             navigated={`${i}fx` == props.element}
+                                            style={getDimmedStyleWithChildren(item.footer.visible, item.footer.elements)}
                                             content={
                                                 <div
                                                     style={{
@@ -323,6 +383,8 @@ export default function TreeItems(props: Props) {
                                                 }
                                                 version={props.version}
                                                 scenarioMixinName={props.scenarioMixinName}
+                                                setUpdate={props.setUpdate}
+                                                level={currentLevel + 1} 
                                             />
                                             {item.footer.leftElements && (
                                                 <TreeItemCustom
@@ -354,6 +416,7 @@ export default function TreeItems(props: Props) {
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
                                                         setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1} 
                                                     />
                                                 </TreeItemCustom>
                                             )}
@@ -361,7 +424,7 @@ export default function TreeItems(props: Props) {
                                                 <TreeItemCustom
                                                     key={`${i}fxrx`}
                                                     id={`${i}fxrx`}
-                                                    content={ <div> Right elements </div> }
+                                                    content={ <div style={{ fontSize: "0.875rem" }}> Right elements </div> }
                                                 >
                                                     <TreeItems
                                                         items={item.footer.rightElements}
@@ -386,6 +449,8 @@ export default function TreeItems(props: Props) {
                                                         }
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
+                                                        setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1} 
                                                     />
                                                 </TreeItemCustom>
                                             )}
@@ -406,6 +471,7 @@ export default function TreeItems(props: Props) {
                                             title={item.footer.name}
                                             selected={`${i}fx` == props.element}
                                             navigated={`${i}fx` == props.element}
+                                            style={getDimmedStyleWithChildren(item.footer.visible, item.footer.elements)}
                                             content={
                                                 <div
                                                     style={{
@@ -485,6 +551,8 @@ export default function TreeItems(props: Props) {
                                                 }
                                                 version={props.version}
                                                 scenarioMixinName={props.scenarioMixinName}
+                                                setUpdate={props.setUpdate}
+                                                level={currentLevel + 1} 
                                             />
                                             {item.footer.leftElements && (
                                                 <TreeItem
@@ -517,6 +585,7 @@ export default function TreeItems(props: Props) {
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
                                                         setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1}  
                                                     />
                                                 </TreeItem>
                                             )}
@@ -525,6 +594,7 @@ export default function TreeItems(props: Props) {
                                                     text={`Right elements`}
                                                     key={`${i}fxrx`}
                                                     id={`${i}fxrx`}
+                                                    style={{ fontSize: "0.875rem" }}
                                                 >
                                                     <TreeItems
                                                         items={item.footer.rightElements}
@@ -550,6 +620,7 @@ export default function TreeItems(props: Props) {
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
                                                         setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1}  
                                                     />
                                                 </TreeItem>
                                             )}
@@ -570,6 +641,7 @@ export default function TreeItems(props: Props) {
                                             title={item.toolbar.name}
                                             selected={`${i}tx` == props.element}
                                             navigated={`${i}tx` == props.element}
+                                            style={getDimmedStyleWithChildren(item.toolbar.visible, item.toolbar.elements)}
                                             content={
                                                 <div
                                                     style={{
@@ -650,13 +722,13 @@ export default function TreeItems(props: Props) {
                                                 version={props.version}
                                                 scenarioMixinName={props.scenarioMixinName}
                                                 setUpdate={props.setUpdate}
+                                                level={currentLevel + 1} 
                                             />
                                             {item.toolbar.leftElements && (
                                                 <TreeItem
                                                     text={`Left elements`}
                                                     key={`${i}txlx`}
                                                     id={`${i}txlx`}
-                                                    style={{ fontSize: "0.875rem" }}
                                                 >
                                                     <TreeItems
                                                         items={item.toolbar.leftElements}
@@ -682,6 +754,7 @@ export default function TreeItems(props: Props) {
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
                                                         setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1} 
                                                     />
                                                 </TreeItem>
                                             )}
@@ -714,6 +787,8 @@ export default function TreeItems(props: Props) {
                                                         }
                                                         version={props.version}
                                                         scenarioMixinName={props.scenarioMixinName}
+                                                        setUpdate={props.setUpdate}
+                                                        level={currentLevel + 1} 
                                                     />
                                                 </TreeItem>
                                             )}
@@ -740,6 +815,7 @@ export default function TreeItems(props: Props) {
                                             version={props.version}
                                             scenarioMixinName={props.scenarioMixinName}
                                             setUpdate={props.setUpdate}
+                                            level={currentLevel + 1} 
                                         />
                                     </TreeItem>
                                 )}
@@ -759,6 +835,7 @@ export default function TreeItems(props: Props) {
                                             version={props.version}
                                             scenarioMixinName={props.scenarioMixinName}
                                             setUpdate={props.setUpdate}
+                                            level={currentLevel + 1}
                                         />
                                     </TreeItem>
                                 )}
