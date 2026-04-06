@@ -3,9 +3,9 @@ package com.sap.bfx.api;
 import com.sap.bfx.callback.CallbackService;
 import com.sap.bfx.callback.ContextFactory;
 import com.sap.bfx.callback.LifecycleHookType;
+import com.sap.bfx.definition.EventType;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.NotFoundException;
-import com.sap.bfx.security.FormsRoles;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.session.AttachmentService;
 import com.sap.bfx.session.SessionService;
@@ -97,7 +97,7 @@ public class AttachmentController {
         if (file == null) {
             throw new BadRequestException("missing file");
         }
-        securityService.ensureAnyAuthorized(token, FormsRoles.StartProcess, FormsRoles.ParticipateProcess);
+        securityService.ensureAuthorized(token, EventType.UploadAttachmentAuth, Boolean.FALSE, rowId, key);
 
         var context = contextFactory.createContext(token, null, null, null, null, rowId, key, null);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
@@ -158,7 +158,7 @@ public class AttachmentController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("missing id");
         }
-        securityService.ensureAnyAuthorized(token, FormsRoles.StartProcess, FormsRoles.ParticipateProcess, FormsRoles.SeeAfterStart);
+        securityService.ensureAuthorized(token, EventType.DownloadAttachmentAuth, Boolean.FALSE, null, null);
 
         var context = contextFactory.createContext(token, null, null, null, null, null, null, null);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
@@ -225,7 +225,7 @@ public class AttachmentController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("missing id");
         }
-        securityService.ensureAnyAuthorized(token, FormsRoles.StartProcess, FormsRoles.ParticipateProcess);
+        securityService.ensureAuthorized(token, EventType.DeleteAttachmentAuth, Boolean.FALSE, rowId, key);
 
         var context = contextFactory.createContext(token, null, null, null, null, rowId, key, null);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);

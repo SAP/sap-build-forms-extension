@@ -22,6 +22,8 @@ import { UIElement, UserEventType } from "../../features/sessions/definitions"
 import { update } from "../../features/sessions/sessionSlice"
 import { ElementProp } from "../../features/sessions/journal"
 import { isEventValid } from "../../features/sessions/sessionActions"
+import Dialog from "@ui5/webcomponents/dist/Dialog"
+import DialogControl from "./DialogControl"
 
 /**
  *
@@ -80,11 +82,18 @@ export default function (props: ControlProps) {
 
     // create tabs for each (visible) segment
     let tabs: ReactNode[] = []
-    def.elements!.forEach((it, i) => {
-        const segment = FormService.findElementByRowAndKey(rowId, it.key, form)
+    let dialogs: ReactNode[] = []
+    let isAutoSelect = false
+    def.elements!.forEach(async (it, i) => {
+        const childElement = FormService.findElementByRowAndKey(rowId, it.key, form)
 
         // if the is no current segment defined we implicitly set the first segment as selected
-        if (i === 0 && (element?.va as string).length === 0) {
+        if (
+            !isAutoSelect &&
+            (!element?.va || (element?.va as string).length === 0) &&
+            childElement?.vi
+        ) {
+            isAutoSelect = true
             // need to do this delayed/async because it will triffer a re-render of all components
             // and we cannot render within render in React
             setTimeout(
@@ -94,7 +103,7 @@ export default function (props: ControlProps) {
                             def,
                             rowId,
                             prop: ElementProp.Value,
-                            value: segment?.key,
+                            value: childElement?.key,
                         }),
                     ),
                 0,
@@ -102,14 +111,15 @@ export default function (props: ControlProps) {
             return <></>
         }
 
-        if (it.uiElement === UIElement.Segment && segment?.vi) {
+        // Rendering of segments as tabs
+        if (it.uiElement === UIElement.Segment && childElement?.vi) {
             const isSelected = it.key === element?.va
             tabs.push(
                 <Tab
                     key={it.id}
                     data-key={it.key}
                     text={getLabel(texts, it)}
-                    design={calcDesign(segment?.msg)}
+                    design={calcDesign(childElement?.msg)}
                     selected={isSelected}
                 >
                     {isSelected && (
@@ -125,6 +135,11 @@ export default function (props: ControlProps) {
                     {!isSelected && <></>}
                 </Tab>,
             )
+        }
+        // Rendering of dialogs
+        if (it.uiElement === UIElement.Dialog && childElement?.vi) {
+            // console.log(`Found dialog ${it.key}, render it...`)
+            dialogs.push(<DialogControl {...props} def={it} rowId={ROOT_ROW} key={it.key} />)
         }
     })
 
@@ -151,6 +166,7 @@ export default function (props: ControlProps) {
                     {tabs}
                 </TabContainer>
             </FlexBox>
+            {dialogs}
         </>
     )
 }

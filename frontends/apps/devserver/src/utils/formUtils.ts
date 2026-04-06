@@ -469,6 +469,7 @@ export function changeElAtTypeChange(oldEl: Elem, newType: string) {
         delete newEl.categories
         delete newEl.adapter
         delete newEl.hasDescription
+        delete newEl.select
     } else if (oldEl.type == "mixin" && newType != "mixin") {
         delete newEl.path
         delete newEl.mixinName
@@ -490,8 +491,8 @@ export function changeElAtTypeChange(oldEl: Elem, newType: string) {
         delete newEl.valueHelp
     }
     if (
-        ["dialog", "form", "wizard", "searchhelp"].includes(oldEl.type) &&
-        !["dialog", "form", "wizard", "searchhelp"].includes(newType)
+        ["dialog", "form", "wizard", "docform", "searchhelp"].includes(oldEl.type) &&
+        !["dialog", "form", "wizard", "docform", "searchhelp"].includes(newType)
     ) {
         delete newEl.footer
     }
@@ -533,6 +534,7 @@ export function changeElAtTypeChange(oldEl: Elem, newType: string) {
             categories: [],
             adapter: "",
             hasDescription: false,
+            select: SelectValue.None,
         }
     } else if (newType == "table" && oldEl.type != "table") {
         newEl = {

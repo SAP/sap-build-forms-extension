@@ -4,9 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sap.bfx.callback.*;
-import com.sap.bfx.callback.AccessClass;
-import com.sap.bfx.callback.Context;
-import com.sap.bfx.callback.RowVisitor;
 import com.sap.bfx.definition.*;
 import com.sap.bfx.exception.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
@@ -24,19 +21,21 @@ import java.util.function.Predicate;
 /**
  * Form related utility methods
  */
-@Slf4j
-public class FormUtils {
+@Slf4j public class FormUtils {
 
+    public static final String NM_AMOUNT = "a";
     public static final String NM_CHANGED_BY = "cb";
     public static final String NM_CHANGED_AT = "ca";
     public static final String NM_ID = "id";
     public static final String NM_CATEGORY = "c";
     public static final String NM_CONTENT_TYPE = "ct";
+    public static final String NM_CURRENCY = "cur";
     public static final String NM_DEF_NAME = "dn";
     public static final String NM_DEF_VERSION = "dv";
     public static final String NM_DESCRIPTION = "d";
     public static final String NM_DATERANGE_FROM = "f";
     public static final String NM_DATERANGE_TO = "t";
+    public static final String NM_DOC_URL = "docUrl";
     public static final String NM_LINK_TEXT = "v";
     public static final String NM_LINK_HREF = "h";
     public static final String NM_LINK_TARGET = "t";
@@ -161,9 +160,9 @@ public class FormUtils {
         form.getJournal().addRow(element, rowId, (Table) element.getValue());
 
         // calculate visual attributes
-        row.getElements().keySet().forEach(k ->
-                calculateVisualAttributes(form.getSd(), form, row.getElements().get(k), row.getRowId(),
-                        true, true, ctx));
+        row.getElements().keySet().forEach(
+                k -> calculateVisualAttributes(form.getSd(), form, row.getElements().get(k), row.getRowId(), true, true,
+                        ctx));
 
         return row;
     }
@@ -329,7 +328,8 @@ public class FormUtils {
      * @param key
      * @param predicate
      */
-    public static void filter(final Form form, final String rowId, final String key, final Predicate<String> predicate) {
+    public static void filter(final Form form, final String rowId, final String key,
+                              final Predicate<String> predicate) {
         final var element = FormUtils.findElementByRowAndKey(form, rowId, key);
         if (element == null) {
             log.error("Cannot find element for key '{}' in row '{}'!", key, rowId);
@@ -420,15 +420,14 @@ public class FormUtils {
         } else if (dt == Table.class) {
             final var table = new Table((TableElementDefinition) ed);
             Optional.ofNullable(v.get("sf")).ifPresent(it -> table.setSortField(it.asText()));
-            Optional.ofNullable(v.get("sd")).ifPresent(it -> table.setSortOrder(
-                    Table.fromCode(it.asText())));
+            Optional.ofNullable(v.get("sd")).ifPresent(it -> table.setSortOrder(Table.fromCode(it.asText())));
 
             if (v.has("r")) {
                 v.get("r").iterator().forEachRemaining(child -> table.getRows().add(child.asText()));
             }
             if (v.has("d")) {
-                v.get("d").fields().forEachRemaining(entry ->
-                        table.getData().put(entry.getKey(), readElementRow(sd, entry.getValue())));
+                v.get("d").fields()
+                 .forEachRemaining(entry -> table.getData().put(entry.getKey(), readElementRow(sd, entry.getValue())));
             }
             table.setPos(v.get("p").asInt(0));
             table.setPageSize(v.get("ps").asInt(10));
@@ -461,10 +460,34 @@ public class FormUtils {
             return d;
         } else if (dt == LinkData.class) {
             final var l = new LinkData();
-            l.setText(v.get(NM_LINK_TEXT).asText());
-            l.setHRef(v.get(NM_LINK_HREF).asText());
-            l.setTarget(v.get(NM_LINK_TARGET).asText());
+            if (v.get(NM_LINK_TEXT) != null && !v.get(NM_LINK_TEXT).isNull()) {
+                l.setText(v.get(NM_LINK_TEXT).asText());
+            }
+            if (v.get(NM_LINK_HREF) != null && !v.get(NM_LINK_HREF).isNull()) {
+                l.setHRef(v.get(NM_LINK_HREF).asText());
+            }
             return l;
+        } else if (dt == DocFormData.class) {
+            final var d = new DocFormData();
+            var selectedTab = v.get(NM_SELECTED);
+            if ((selectedTab == null || selectedTab.isNull()) && v.has(DefinitionNames.NM_SELECTED_TAB)) {
+                selectedTab = v.get(DefinitionNames.NM_SELECTED_TAB);
+            }
+            if (selectedTab != null && !selectedTab.isNull()) {
+                d.setSelectedTab(selectedTab.asText());
+            }
+            var docUrl = v.get(NM_DOC_URL);
+            if (docUrl != null && !docUrl.isNull()) {
+                d.setDocUrl(docUrl.asText());
+            }
+            return d;
+        } else if (dt == MoneyAmount.class) {
+            final var m = new MoneyAmount();
+            final var a = v.get(NM_AMOUNT);
+            final var c = v.get(NM_CURRENCY);
+            m.setAmount(a != null ? a.decimalValue() : BigDecimal.ZERO);
+            m.setCurrency(c != null ? c.asText() : null);
+            return m;
         }
 
         throw new BadRequestException("unhandled datatype " + dt.getName() + "in readElementData");
@@ -479,14 +502,23 @@ public class FormUtils {
     public static <T> T readElementData(final JsonNode node, final Class<T> clz) {
         if (clz.equals(Boolean.class) || clz.equals(boolean.class)) {
             return (T) Boolean.valueOf(node.get(NM_VALUE).asBoolean());
-        } else if (clz.equals(Integer.class)
-                || clz.equals(int.class)) {
+        } else if (clz.equals(Integer.class) || clz.equals(int.class)) {
             return (T) Integer.valueOf(node.get(NM_VALUE).asInt());
         } else if (clz.equals(String.class)) {
             return (T) node.get(NM_VALUE).asText();
+        } else if (clz.equals(MoneyAmount.class)) {
+            final var m = new MoneyAmount();
+            final var v = node.get(NM_VALUE);
+            if (v != null && !v.isNull()) {
+                final var a = v.get(NM_AMOUNT);
+                final var c = v.get(NM_CURRENCY);
+                m.setAmount(a != null ? a.decimalValue() : BigDecimal.ZERO);
+                m.setCurrency(c != null ? c.asText() : null);
+            }
+            return (T) m;
         }
 
-        throw new BadRequestException("unkown class " + clz.getName().toString() + " in FormUtils.readElementData");
+        throw new BadRequestException("unkown class " + clz.getName() + " in FormUtils.readElementData");
     }
 
     /**
@@ -519,9 +551,8 @@ public class FormUtils {
         elements.put(ed.getKey(), element);
 
         // iterate over all child elements but avoid collection types (because these are handled differently)
-        ed.getChildren().stream()
-                .filter(it1 -> !ed.isCollection() || it1 != ed.getElements())
-                .forEach(it1 -> it1.forEach(it2 -> createAndAddElement(elements, it2, expressions, ctx)));
+        ed.getChildren().stream().filter(it1 -> !ed.isCollection() || it1 != ed.getElements())
+          .forEach(it1 -> it1.forEach(it2 -> createAndAddElement(elements, it2, expressions, ctx)));
     }
 
     /**
@@ -532,8 +563,7 @@ public class FormUtils {
                                                     final Context<? extends AccessClass> ctx) {
         expressions.forEach(it -> {
             try {
-                final Object value = it.getLeft().getDefaultValueEvaluator().eval(ctx, true,
-                        it.getValue().getValue());
+                final Object value = it.getLeft().getDefaultValueEvaluator().eval(ctx, true, it.getValue().getValue());
                 it.getRight().setValue(value);
             } catch (Exception e) {
                 log.error("Error during expression evaluation for element '" + it.getLeft().getName() + "'", e);
@@ -550,19 +580,16 @@ public class FormUtils {
      * @param isInitial
      * @param ctx
      */
-    private static void calculateVisualAttributes(final ScenarioDefinition sd,
-                                                  final ElementRow root,
-                                                  final Element element,
-                                                  final String rowId,
-                                                  final boolean globalEditable,
-                                                  final boolean isInitial,
+    private static void calculateVisualAttributes(final ScenarioDefinition sd, final ElementRow root,
+                                                  final Element element, final String rowId,
+                                                  final boolean globalEditable, final boolean isInitial,
                                                   final Context<? extends AccessClass> ctx) {
 
         final var ed = sd.findElementByKey(element.getKey());
 
         if (isInitial) {
-            element.setVisible(!ed.isVisualDependent() && ed.getVisibleEvaluator().eval(ctx, isInitial,
-                    element.isVisible()));
+            element.setVisible(
+                    !ed.isVisualDependent() && ed.getVisibleEvaluator().eval(ctx, isInitial, element.isVisible()));
             element.setEditable(globalEditable && ed.getEditableEvaluator().eval(ctx, isInitial, element.isEditable()));
             element.setRequired(ed.getRequiredEvaluator().eval(ctx, isInitial, element.isRequired()));
         }
@@ -577,18 +604,20 @@ public class FormUtils {
 
         // TODO(ML) Check the inner findElementByRowAndKey if we can avoid this call and direct access the element?!
         // handling of "structural" children but within the same row
-        ed.getChildren().stream()
-                .filter(it1 -> !ed.isCollection() || it1 != ed.getElements())
-                .forEach(it1 -> it1.forEach(it2 -> {
-                    final var child = FormUtils.findElementByRowAndKey(root, rowId, it2.getKey());
-                    calculateVisualAttributes(sd, root, child, rowId, globalEditable, isInitial, ctx);
-                    if (ed.isVisualDependent()) {
-                        element.setVisible(element.isVisible() || child.isVisible());
-                    }
-                }));
+        ed.getChildren().stream().filter(it1 -> !ed.isCollection() || it1 != ed.getElements())
+          .forEach(it1 -> it1.forEach(it2 -> {
+              final var child = FormUtils.findElementByRowAndKey(root, rowId, it2.getKey());
+              calculateVisualAttributes(sd, root, child, rowId, globalEditable, isInitial, ctx);
+              if (ed.isVisualDependent()) {
+                  element.setVisible(element.isVisible() || child.isVisible());
+              }
+          }));
     }
 
     /**
+     * Find an element by rowId and key. If the element is part of a table, the rowId identifies the row in which
+     * the element is located.
+     *
      * @param root
      * @param rowId
      * @param key
@@ -604,12 +633,15 @@ public class FormUtils {
     }
 
     /**
+     * Find a row by rowId. The rowId identifies the row in which the element is located.
+     *
      * @param root
      * @param parent
      * @param rowId
      * @return
      */
-    public static Pair<ElementRow, Element> findRowById(final ElementRow root, final Element parent, final String rowId) {
+    public static Pair<ElementRow, Element> findRowById(final ElementRow root, final Element parent,
+                                                        final String rowId) {
         // check if we already have the right element
         if (StringUtils.equals(root.getRowId(), rowId)) {
             return new ImmutablePair<>(root, parent);
@@ -645,9 +677,8 @@ public class FormUtils {
      * @param parentElement
      * @return
      */
-    public static Pair<String, Element> findParent(final String rowId, final String key,
-                                                   final ElementRow row, final String parentRowId,
-                                                   final Element parentElement) {
+    public static Pair<String, Element> findParent(final String rowId, final String key, final ElementRow row,
+                                                   final String parentRowId, final Element parentElement) {
         if (row.getRowId().equals(rowId) && row.getElements().containsKey(key)) {
             // found it, return parent rowId and the e
             return new ImmutablePair<>(parentRowId, parentElement);

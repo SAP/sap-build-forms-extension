@@ -1,9 +1,9 @@
 package ${basePackage}.metadata;
 
-import utils.com.sap.Identifier;
+import com.sap.bfx.utils.Identifier;
 import jakarta.annotation.Generated;
 
-@Generated("com.sap.consulting.forms.maven.TemplateService")
+@Generated("com.sap.bfx.maven.TemplateService")
 public enum ${className}FieldsEnum {
 <#list elements as item>
     ${item.definition.name}(${className}Fields.${item.definition.name})<#sep>,</#sep>

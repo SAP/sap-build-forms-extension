@@ -22,6 +22,19 @@ export default function StructureTabTextsInput(props: Props) {
     const classes = useStyles()
     const editTexts = useElementsStore((state) => state.editTexts)
 
+    const getInputValue = (e: any): string => {
+        const target = e?.target as { value?: string; attributes?: NamedNodeMap } | undefined
+        const valueFromTarget = target?.value
+        if (typeof valueFromTarget === "string") {
+            return valueFromTarget
+        }
+
+        const valueFromAttribute = target?.attributes
+            ?.getNamedItem("value")
+            ?.nodeValue
+        return valueFromAttribute ?? ""
+    }
+
     return (
         <Input
             value={
@@ -30,18 +43,18 @@ export default function StructureTabTextsInput(props: Props) {
                 ]?.[`${props.currentName}${props.postfix}` as any] ?? ""
             }
             className={classes.largeInput}
-            onInput={(e) => {
+            onChange={(e) => {
                 var texts: any = JSON.parse(JSON.stringify(props.texts!))
                 if (props.defaultLanguage) {
                     if (!texts![props.defaultLanguage as any]) {
                         texts![props.defaultLanguage as any] = {}
                     }
                     texts![props.defaultLanguage as any][`${props.currentName}${props.postfix}`] =
-                        e.target.attributes.getNamedItem("value")!.nodeValue!
+                        getInputValue(e)
                 } else {
                     texts![Object.keys(props.texts!).sort()[0]][
                         `${props.currentName}${props.postfix}`
-                    ] = e.target.attributes.getNamedItem("value")!.nodeValue!
+                    ] = getInputValue(e)
                 }
                 Object.keys(props.texts!).map((l) => {
                     if (texts![l][`${props.currentName}${props.postfix}`] == undefined) {

@@ -35,8 +35,9 @@ class DeserializationHelper {
         setStringProp(node, element, NM_COL, null);
         setBooleanProp(node, element, NM_SHOW_AS_COLUMN, Boolean.FALSE);
         setStringProp(node, element, NM_CSS, null);
-        setBooleanProp(node, element, NM_SHOW_LABEL, Boolean.FALSE);
+        setBooleanProp(node, element, NM_SHOW_LABEL, Boolean.TRUE);
         setBooleanProp(node, element, NM_SHOW_HELP, Boolean.FALSE);
+        setBooleanProp(node, element, NM_LINE_BREAK, Boolean.FALSE);
         readWizardFormatOptions(node, element);
         readColumnOptions(node, element);
 
@@ -54,10 +55,15 @@ class DeserializationHelper {
                 setMappedProp(node, element, NM_DESIGN, AttachmentElementDefinition::mapDesignType);
                 setStringProp(node, element, NM_FILE_TYPES, "");
                 setMappedProp(node, element, NM_CARDINALITY, AttachmentCardinality::mapUploadType);
+                setMappedProp(node, element, NM_SELECT, AttachmentSelectType::mapSelectType);
                 readCategories(node, element);
                 break;
             case Button:
                 setMappedProp(node, element, NM_DESIGN, ButtonElementDefinition::mapDesignType);
+                setStringProp(node, element, NM_ICON, "");
+                setStringProp(node, element, NM_LINK_HREF, "");
+                break;
+            case Icon:
                 setStringProp(node, element, NM_ICON, "");
                 break;
             case Currency:
@@ -68,17 +74,31 @@ class DeserializationHelper {
                 DeserializationHelper.readAddonElementDefinition(node, element, NM_FOOTER, NM_FOOTER,
                         Constants.TYPE_TOOLBAR, element.getName() + "Footer");
                 break;
+            case DocForm:
+                //TODO: remove the docUrl property in favor of a mixin in the future
             case Form:
                 DeserializationHelper.readAddonElementDefinition(node, element, NM_FOOTER, NM_FOOTER,
                         Constants.TYPE_TOOLBAR, element.getName() + "Footer");
-                DeserializationHelper.readAddonElementDefinition(node, element, NM_HEADER_SEGMENT,
-                        NM_HEADER_SEGMENT, Constants.TYPE_SEGMENT, null);
+                DeserializationHelper.readAddonElementDefinition(node, element, NM_HEADER_SEGMENT, NM_HEADER_SEGMENT,
+                        Constants.TYPE_SEGMENT, null);
                 break;
             case Image:
                 readDimension(node, element);
                 break;
             case Input:
                 setMappedProp(node, element, NM_INPUT_TYPE, InputElementDefinition::mapType);
+                break;
+            case Link:
+                if (node.get(NM_LINK_TEXT) != null || node.get(NM_LINK_HREF) != null) {
+                    LinkData linkData = new LinkData();
+                    if (node.get(NM_LINK_TEXT) != null) {
+                        linkData.setText(node.get(NM_LINK_TEXT).asText());
+                    }
+                    if (node.get(NM_LINK_HREF) != null) {
+                        linkData.setHRef(node.get(NM_LINK_HREF).asText());
+                    }
+                    ((LinkElementDefinition) element).setLinkData(linkData);
+                }
                 break;
             case Mixin:
                 setStringProp(node, element, NM_PATH, "");
@@ -107,10 +127,10 @@ class DeserializationHelper {
                         Constants.TYPE_TOOLBAR, element.getName() + "Toolbar");
                 break;
             case Toolbar:
-                DeserializationHelper.readElementsDefinitions(node, ((ToolbarElementDefinition) element).getLeftElements(),
-                        NM_LEFT_ELEMENTS);
-                DeserializationHelper.readElementsDefinitions(node, ((ToolbarElementDefinition) element).getRightElements(),
-                        NM_RIGHT_ELEMENTS);
+                DeserializationHelper.readElementsDefinitions(node,
+                        ((ToolbarElementDefinition) element).getLeftElements(), NM_LEFT_ELEMENTS);
+                DeserializationHelper.readElementsDefinitions(node,
+                        ((ToolbarElementDefinition) element).getRightElements(), NM_RIGHT_ELEMENTS);
                 break;
             case Wizard:
                 DeserializationHelper.readAddonElementDefinition(node, element, NM_FOOTER, NM_FOOTER,
@@ -162,6 +182,7 @@ class DeserializationHelper {
             case Constants.TYPE_CURRENCY -> new CurrencyElementDefinition();
             case Constants.TYPE_DATE_RANGE_PICKER -> new DateRangeElementDefinition();
             case Constants.TYPE_DIALOG -> new DialogElementDefinition();
+            case Constants.TYPE_DOC_FORMS -> new DocFormElementDefinition();
             case Constants.TYPE_DUMMY -> new DummyElementDefinition();
             case Constants.TYPE_FORM -> new FormElementDefinition();
             case Constants.TYPE_GROUP -> new GroupElementDefinition();
@@ -207,8 +228,8 @@ class DeserializationHelper {
                 case Constants.VALIDATION_TYPE_BEAN -> new BeanValidationRule();
                 case Constants.VALIDATION_TYPE_REGEX -> new RegexValidationRule();
                 case Constants.VALIDATION_TYPE_SPEL -> new SpelValidationRule();
-                default -> throw new FormsCoreException("unknown type '" + it.get(NM_TYPE).asText()
-                        + "' for validation rule");
+                default -> throw new FormsCoreException(
+                        "unknown type '" + it.get(NM_TYPE).asText() + "' for validation rule");
             };
             rule.setSeverity(ValidationRule.mapSeverity(StringUtils.left(it.get(NM_SEVERITY).asText(), 1)));
             rule.setMessageKey(it.get(NM_MESSAGE_KEY).asText());

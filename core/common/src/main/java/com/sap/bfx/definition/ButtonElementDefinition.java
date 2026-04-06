@@ -9,6 +9,7 @@ import lombok.EqualsAndHashCode;
 public class ButtonElementDefinition extends ElementDefinition {
     private ButtonDesignType design = ButtonDesignType.Default;
     private String icon;
+    private String linkHRef;
 
     public ButtonElementDefinition() {
         super(UIElementType.Button);

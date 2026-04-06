@@ -3,7 +3,7 @@ package com.sap.bfx.session;
 import com.sap.bfx.definition.TableElementDefinition;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ public class Table extends Element {
      * @return
      */
     public static SortOrder fromCode(String c) {
-        if (Strings.CI.equals(c, "d")) {
+        if (StringUtils.equalsIgnoreCase(c, "d")) {
             return SortOrder.DESCENDING;
         }
         return SortOrder.ASCENDING;
@@ -63,7 +63,7 @@ public class Table extends Element {
      */
     public boolean deleteRow(final String rowId) {
         data.remove(rowId);
-        return rows.removeIf(it -> Strings.CS.equals(it, rowId));
+        return rows.removeIf(it -> StringUtils.equals(it, rowId));
     }
 
     /**

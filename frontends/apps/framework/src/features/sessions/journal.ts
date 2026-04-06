@@ -242,9 +242,9 @@ export class JournalService {
             for (const key in journal[rowId]) {
                 const element = row.values[key]
                 if (element == null) {
-                    console.warn(
-                        `Error applying backend changes, cannot find element (row='${rowId}', key='${key}')!`,
-                    )
+                    // if the element isn't found we need to add it because if was not visible before and now is...
+                    row.values[key] = { ...journal[rowId][key], key } as Element
+                    console.log(`Added element ${key} to row ${rowId}`)
                     continue
                 }
                 // console.log(`Found element ${key}`)

@@ -1,15 +1,19 @@
 package com.sap.bfx.definition;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Data
+@Setter
+@Getter
 public class LinkData {
 
-    String text;
-    String hRef;
-    String target;
+    String text; //Anzeigetext
+    String hRef; //link URL
+
 
     /**
      *
@@ -21,11 +25,9 @@ public class LinkData {
     /**
      * @param text
      * @param hRef
-     * @param target
      */
-    public LinkData(final String text, final String hRef, final String target) {
+    public LinkData(final String text, final String hRef) {
         this.setText(text);
         this.setHRef(hRef);
-        this.setTarget(target);
     }
 }

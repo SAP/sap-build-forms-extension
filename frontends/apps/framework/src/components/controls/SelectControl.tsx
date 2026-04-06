@@ -29,10 +29,8 @@ export default function (props: ControlProps) {
     const [elementDisabled, setElementDisabled] = useState<boolean>(true)
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
+    const emptySelection = def.vh?.emptySelection ?? false
 
-    /**
-     *
-     */
     useEffect(() => {
         // console.log(`SelectControl: def=${def.id} with vh=${def.vh?.name} and locale=${locale}`)
         if (def.vh && vhs[def.vh.name]) {
@@ -43,6 +41,14 @@ export default function (props: ControlProps) {
             })
         }
     }, [vhs])
+
+    useEffect(() => {
+        const hasValue = typeof element?.va === "string" && element.va.length > 0
+        if (emptySelection || hasValue || options.length === 0 || !element?.ed || !globalEd) {
+            return
+        }
+        void handleChange(dispatch, def, rowId, messages, options[0].value)
+    }, [dispatch, def, rowId, messages, options, emptySelection, element?.va, element?.ed, globalEd])
 
     // console.log(`Element ${def.id} has value-help ${def.vh}`)
 
@@ -69,9 +75,9 @@ export default function (props: ControlProps) {
                     width: "100%",
                 }}
             >
-                {def.el && !element?.rq && (
+                {emptySelection && (
                     <Option
-                        selected={element?.va !== "string" || (element?.va as string) === ""}
+                        selected={typeof element?.va !== "string" || element.va === ""}
                     ></Option>
                 )}
                 {options.map((it, i) => (

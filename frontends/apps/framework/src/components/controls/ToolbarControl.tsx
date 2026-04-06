@@ -11,6 +11,11 @@ export default function (props: ControlProps) {
     const { def, rowId } = props
     const form = useAppSelector((state) => state.session.form)
 
+    // this can occur if toobar-control is called from dialog etc. withat have no toolbar defined. In this
+    // case we simply render nothing
+    if (!def) {
+        return <></>
+    }
     // console.log(`Toolbar for ${def.id}`)
 
     let children: ReactNode[] = []

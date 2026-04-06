@@ -10,6 +10,7 @@ public final class Constants {
     public static final String TYPE_CURRENCY = "currency";
     public static final String TYPE_DATE_RANGE_PICKER = "daterange";
     public static final String TYPE_DIALOG = "dialog";
+    public static final String TYPE_DOC_FORMS = "docform";
     public static final String TYPE_DUMMY = "dummy";
     public static final String TYPE_FORM = "form";
     public static final String TYPE_GROUP = "group";

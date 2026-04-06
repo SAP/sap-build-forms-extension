@@ -3,10 +3,10 @@ package ${basePackage}.metadata;
 import java.util.HashMap;
 import java.util.Map;
 
-import utils.com.sap.Identifier;
+import com.sap.bfx.utils.Identifier;
 import jakarta.annotation.Generated;
 
-@Generated("com.sap.consulting.forms.maven.TemplateService")
+@Generated("com.sap.bfx.maven.TemplateService")
 public class ${className} {
     public final static Map<Identifier, Map<Identifier, Identifier>> MAP = new HashMap<>();
 

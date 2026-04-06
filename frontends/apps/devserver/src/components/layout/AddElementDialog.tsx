@@ -298,6 +298,7 @@ export default function AddElementDialog(props: Props) {
                                             categories: [],
                                             adapter: "",
                                             hasDescription: false,
+                                            select: SelectValue.None,
                                         }
                                     }
 
@@ -307,7 +308,7 @@ export default function AddElementDialog(props: Props) {
                                             var maxSort = props.el?.elements?.reduce(
                                                 (prev, current) =>
                                                     (prev.sort ? prev.sort : -1) >
-                                                    (current.sort ? current.sort : -1)
+                                                        (current.sort ? current.sort : -1)
                                                         ? prev
                                                         : current,
                                             ).sort
@@ -329,7 +330,7 @@ export default function AddElementDialog(props: Props) {
                                                     maxSort = newParent.leftElements?.reduce(
                                                         (prev, current) =>
                                                             (prev.sort ? prev.sort : -1) >
-                                                            (current.sort ? current.sort : -1)
+                                                                (current.sort ? current.sort : -1)
                                                                 ? prev
                                                                 : current,
                                                     ).sort
@@ -341,7 +342,7 @@ export default function AddElementDialog(props: Props) {
                                                     maxSort = newParent.rightElements?.reduce(
                                                         (prev, current) =>
                                                             (prev.sort ? prev.sort : -1) >
-                                                            (current.sort ? current.sort : -1)
+                                                                (current.sort ? current.sort : -1)
                                                                 ? prev
                                                                 : current,
                                                     ).sort
@@ -353,7 +354,7 @@ export default function AddElementDialog(props: Props) {
                                             maxSort = props.treeItemsShown?.elements?.reduce(
                                                 (prev, current) =>
                                                     (prev.sort ? prev.sort : -1) >
-                                                    (current.sort ? current.sort : -1)
+                                                        (current.sort ? current.sort : -1)
                                                         ? prev
                                                         : current,
                                             ).sort
@@ -591,6 +592,9 @@ export default function AddElementDialog(props: Props) {
                     }
                 }}
                 open={props.dialogOpen}
+                onClose={() => {
+                    props.setDialogOpen(false)
+                }}
                 style={{ padding: 0, margin: 0, minWidth: "400px", width: "40%" }}
             >
                 {props.el && (

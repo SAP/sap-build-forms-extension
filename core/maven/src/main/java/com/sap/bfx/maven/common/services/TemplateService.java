@@ -26,8 +26,7 @@ import java.util.*;
  * Service class for generating Java source files based on scenario definitions and mixins. It uses the Freemarker
  * template engine to create access classes, field enums, context factory classes, and mixin mapping structures.
  */
-@Service
-public class TemplateService extends AbstractProcessor {
+@Service public class TemplateService extends AbstractProcessor {
 
     final private static String NM_VERSION = "version";
     final private static String NM_BASE_PACKAGE = "basePackage";
@@ -40,6 +39,7 @@ public class TemplateService extends AbstractProcessor {
     final private static String NM_DEF = "definition";
     final private static String NM_IS_ROOT = "isRoot";
     final private static String NM_ROOT_KEY = "rootKey";
+    final private static String NM_ROOT_DATA_TYPE = "rootDataType";
     final private static String NM_RETURN_DATA_TYPE = "returnDataType";
     final private static String NM_RETURN_DIALOG_DATA_TYPE = "returnDialogType";
     //    final private static String NM_TYPE_DATA_TYPE = "typeDataType";
@@ -56,8 +56,10 @@ public class TemplateService extends AbstractProcessor {
 //            + "ElementDefinition.TimeType;ElementDefinition.DateTimeType;ElementDefinition.DateRangeType";
 
     final private static DataTypeInfo DATA_TYPE_INFO_STRING = new DataTypeInfo("String");
-    final private static DataTypeInfo DATA_TYPE_INFO_ATTACHMENT = new DataTypeInfo("Attachment");
+    final private static DataTypeInfo DATA_TYPE_INFO_ATTACHMENT = new DataTypeInfo("Attachments");
     final private static DataTypeInfo DATA_TYPE_INFO_DATERANGE = new DataTypeInfo("DateRange");
+    final private static DataTypeInfo DATA_TYPE_INFO_CURRENCY = new DataTypeInfo("MoneyAmount");
+    final private static DataTypeInfo DATA_TYPE_INFO_DOCFORM = new DataTypeInfo("DocFormData");
     final private static DataTypeInfo DATA_TYPE_INFO_INTEGER = new DataTypeInfo("Integer");
     final private static DataTypeInfo DATA_TYPE_INFO_BIGDECIMAL = new DataTypeInfo("java.math.BigDecimal");
     final private static DataTypeInfo DATA_TYPE_INFO_DATE = new DataTypeInfo("java.time.LocalDate");
@@ -75,8 +77,7 @@ public class TemplateService extends AbstractProcessor {
      *
      * @param appContext the application context from which to retrieve the MetadataService bean
      */
-    @Autowired
-    public TemplateService(ApplicationContext appContext) {
+    @Autowired public TemplateService(ApplicationContext appContext) {
 
         this.metadataService = appContext.getBean(MetadataService.class);
 
@@ -126,7 +127,7 @@ public class TemplateService extends AbstractProcessor {
         // scan elements to build up the necessary data for access classes
         final var params = new HashMap<String, Map<String, Object>>();
         createNewClassInfo(params, def.getAccessObjectName() + def.getVersion(), def.getVersion(), def.getBasePackage(),
-                false, false, "");
+                false, false, "", "");
 
         final Map<String, List<MixinInfo>> mixins = new HashMap<>();
 
@@ -178,6 +179,12 @@ public class TemplateService extends AbstractProcessor {
                 ae.put(NM_RETURN_DIALOG_DATA_TYPE, info.getDialogReturnType());
                 ae.put(NM_TYPE_DIALOG_DATA_TYPE, info.getDialogType());
             }
+            // For Dialogs we set the according flag to true
+            if (UIElementType.Dialog.equals(ed.getType())) {
+                ae.put(NM_HAS_DIALOG, true);
+                ae.put(NM_RETURN_DIALOG_DATA_TYPE, info.getDialogReturnType());
+            }
+
             // add to the elements lists of ac
 //            log.debug("Adding element '" + ed.getName() + "' to class '" + accessClassName + "'");
             ((List<HashMap<String, Object>>) params.get(accessClassName).get(NM_ELEMENTS)).add(ae);
@@ -191,7 +198,7 @@ public class TemplateService extends AbstractProcessor {
             var ac = params.get(accessClassName);
             if (ac == null) {
                 ac = createNewClassInfo(params, accessClassName, sd.getVersion(), sd.getBasePackage(),
-                        ed.isCollection(), ed.isRootType(), ed.getKey());
+                        ed.isCollection(), ed.isRootType(), ed.getKey(), getDataTypeClassName("", ed).returnType);
             }
 
             // add mixins if there are any for the given type
@@ -228,13 +235,14 @@ public class TemplateService extends AbstractProcessor {
      * @param basePackage     the base package for the generated access class
      * @param isCollection    whether the access class represents a collection type
      * @param isRoot          whether the access class represents a root type
-     * @param key             the key of the element definition if the access class represents a root type
+     * @param rootKey         the key of the element definition if the access class represents a root type
+     * @param rootDataType    the data type of the root element if the access class represents a root type
      * @return the created class info map
      */
     public HashMap<String, Object> createNewClassInfo(final Map<String, Map<String, Object>> params,
                                                       final String accessClassName, final int version,
                                                       final String basePackage, final boolean isCollection,
-                                                      final boolean isRoot, final String key) {
+                                                      final boolean isRoot, final String rootKey, String rootDataType) {
 
         final var ac = new HashMap<String, Object>();
 
@@ -246,7 +254,8 @@ public class TemplateService extends AbstractProcessor {
 //        ac.put(NM_TYPES, new HashSet<Pair<String, String>>());
         ac.put(NM_ROOT_ROW_ID, ElementRow.ROOT);
         ac.put(NM_IS_ROOT, isRoot);
-        ac.put(NM_ROOT_KEY, key);
+        ac.put(NM_ROOT_KEY, rootKey);
+        ac.put(NM_ROOT_DATA_TYPE, rootDataType);
         //TODO(ML) fill singleSelect
 
         params.put(accessClassName, ac);
@@ -501,6 +510,8 @@ public class TemplateService extends AbstractProcessor {
             case Dialog, SearchHelp ->
                     new DataTypeInfo("String", accessClassName + ed.getName(), accessClassName + ed.getName() + "Type");
             case Table -> new DataTypeInfo(accessClassName + ed.getName()/*, accessClassName + ed.getName() + "Type"*/);
+            case Currency -> DATA_TYPE_INFO_CURRENCY;
+            case DocForm -> DATA_TYPE_INFO_DOCFORM;
             default -> DATA_TYPE_INFO_BOOLEAN;
         };
     }

@@ -9,7 +9,6 @@ import { Element, FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import {
     fromInternalDateTime,
-    parseNumber,
     toInternalDate,
     toInternalDateTime,
 } from "../../utils/DataFormatUtils"
@@ -17,7 +16,6 @@ import {
 import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
-import { el } from "date-fns/locale"
 
 /**
  *
@@ -36,25 +34,23 @@ export default function (props: ControlProps) {
     //     console.log(`InputControl for ${def.id} with info ${(element?.er as ElementInfo).severity}`)
     // }
 
-    const convertInput = (e: Element): string | number => {
+    const convertInput = (e?: Element): string => {
         if (typeof element?.va === "string") {
-            return (element!.va as string) ?? ""
+            return element.va
         }
-        // const value = Intl.NumberFormat(new Intl.Locale(getLanguage())).format(
-        //     element!.va as number,
-        const value = (element!.va as number).toString()
-        // console.log(`converted value: ${value}`)
-        return value
+        if (element?.va === undefined || element?.va === null) {
+            return ""
+        }
+        return element.va.toString()
     }
 
     let control = <></>
     switch (def.dataType) {
         case DataType.Date:
-            // console.log(`date: ${def.id} with label ${getLabel(texts, def)} and value ${element?.va}`)
             control = (
                 <DatePicker
                     id={def.key}
-                    value={(element!.va as string) ?? ""}
+                    value={(element?.va as string) ?? ""}
                     onChange={(e) =>
                         handleChange(
                             dispatch,
@@ -80,7 +76,7 @@ export default function (props: ControlProps) {
             control = (
                 <DateTimePicker
                     id={def.key}
-                    value={fromInternalDateTime(element!.va as string, getLanguage()!)}
+                    value={fromInternalDateTime((element?.va as string) ?? "", getLanguage()!)}
                     onChange={(e) =>
                         handleChange(
                             dispatch,
@@ -106,7 +102,7 @@ export default function (props: ControlProps) {
             control = (
                 <TimePicker
                     id={def.key}
-                    value={(element!.va as string) ?? ""}
+                    value={(element?.va as string) ?? ""}
                     onChange={(e) => {
                         handleChange(
                             dispatch,
@@ -131,7 +127,7 @@ export default function (props: ControlProps) {
             control = (
                 <Input
                     id={def.key}
-                    value={convertInput(element!)}
+                    value={convertInput(element)}
                     onChange={(e) => {
                         let value: string | number = e.target.value ?? ""
                         if (def.dataType === DataType.Int) {

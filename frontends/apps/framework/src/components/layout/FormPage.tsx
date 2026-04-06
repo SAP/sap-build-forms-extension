@@ -39,6 +39,7 @@ export default function (props: FormProps) {
     const session = useAppSelector((state) => state.session)
     const [root, setRoot] = useState<Definition>()
     const [footer, setFooter] = useState<Definition>()
+    const isShowMode = window.location.pathname.endsWith("/Show")
 
     useEffect(() => {
         // initial screen size
@@ -102,7 +103,7 @@ export default function (props: FormProps) {
                     {footer && (
                         <Control
                             def={footer}
-                            globalEd={true}
+                            globalEd={!isShowMode}
                             texts={session.def!.texts}
                             vhs={session.vhs}
                             asTableCell={false}
@@ -125,7 +126,7 @@ export default function (props: FormProps) {
                 {root && (
                     <Control
                         def={root}
-                        globalEd={true}
+                        globalEd={!isShowMode}
                         texts={session.def!.texts}
                         vhs={session.vhs}
                         asTableCell={false}

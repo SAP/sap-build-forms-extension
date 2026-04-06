@@ -53,8 +53,8 @@ public class WorkflowInstancesApiExtended extends WorkflowInstancesApi {
      * @throws OpenApiRequestException if an error occurs while attempting to invoke the API
      */
     @Nonnull
-    public WorkflowInstance v1WorkflowInstancesPost(@Nonnull final String environmentId, @Nonnull final WorkflowInstanceStartPayload body) throws OpenApiRequestException {
-        return v1WorkflowInstancesPost(environmentId, body, null);
+    public WorkflowInstance v1WorkflowInstancesPost(@Nonnull final String environmentId, @Nullable final String apiKey, @Nonnull final WorkflowInstanceStartPayload body) throws OpenApiRequestException {
+        return v1WorkflowInstancesPost(environmentId, apiKey, body, null);
     }
 
     /**
@@ -79,7 +79,7 @@ public class WorkflowInstancesApiExtended extends WorkflowInstancesApi {
      * @throws OpenApiRequestException if an error occurs while attempting to invoke the API
      */
     @Nonnull
-    public WorkflowInstance v1WorkflowInstancesPost(@Nonnull final String environmentId, @Nonnull final WorkflowInstanceStartPayload body, @Nullable final String acceptLanguage) throws OpenApiRequestException {
+    public WorkflowInstance v1WorkflowInstancesPost(@Nonnull final String environmentId, @Nullable final String apiKey, @Nonnull final WorkflowInstanceStartPayload body, @Nullable final String acceptLanguage) throws OpenApiRequestException {
         final Object localVarPostBody = body;
 
         // verify the required parameter 'body' is set
@@ -101,6 +101,8 @@ public class WorkflowInstancesApiExtended extends WorkflowInstancesApi {
 
         if (acceptLanguage != null)
             localVarHeaderParams.add("Accept-Language", apiClient.parameterToString(acceptLanguage));
+
+        if (apiKey != null) localVarHeaderParams.add(WorkflowConstants.API_KEY, apiKey);
 
         final String[] localVarAccepts = {
                 "application/json"

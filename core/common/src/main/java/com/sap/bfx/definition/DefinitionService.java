@@ -44,8 +44,7 @@ public class DefinitionService {
             };
             map = om.readValue(is, typeRef);
         } catch (Exception e) {
-            if (!appContext.getEnvironment().getProperty("forms.ignoreMissingDefinitions",
-                    Boolean.class, false)) {
+            if (!appContext.getEnvironment().getProperty("forms.ignoreMissingDefinitions", Boolean.class, false)) {
                 throw ExceptionUtils.from("Error in DefinitionService.init", e);
             } else {
                 log.warn("No definitions found but forms.ignoreMissingDefinitions is set to true, continuing...");

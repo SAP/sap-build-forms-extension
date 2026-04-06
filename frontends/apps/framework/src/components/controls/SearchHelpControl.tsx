@@ -117,7 +117,7 @@ export default function (props: ControlProps) {
         <ControlContainer {...props}>
             <Input
                 id={def.key}
-                value={element!.va as string}
+                value={(element?.va as string) ?? ""}
                 onChange={(e) => handleChange(dispatch, def, rowId, messages, e.target.value ?? "")}
                 onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                 onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
