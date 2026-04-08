@@ -48,6 +48,18 @@ public class XmlValueHelpDef {
     @XmlElement
     private ArrayList<String> languages;
 
+    @XmlElement
+    private String keyKey;
+
+    @XmlElement
+    private List<String> valueKeys;
+
+    @XmlElement
+    private String formatTemplate;
+
+    @XmlElement
+    private String valueHelpType;
+
     @XmlElement(name = "valueHelp")
     private List<XmlValueHelpValue> valueHelpValues;
 }
