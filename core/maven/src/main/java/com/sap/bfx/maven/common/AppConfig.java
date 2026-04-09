@@ -4,6 +4,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ComponentScan({"com.sap.consulting.forms.maven"})
+@ComponentScan({"com.sap.bfx.maven"})
 public class AppConfig {
 }
