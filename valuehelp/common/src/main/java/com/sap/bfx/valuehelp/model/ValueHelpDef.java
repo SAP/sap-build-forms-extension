@@ -8,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Collection;
 import java.util.List;
 
 @Data
@@ -46,7 +45,7 @@ public class ValueHelpDef {
     // It's possible to sent multiple valueKeys to the browser, but only for currency fields. If formatTemplate
     // is sent, this will be evaluated on the backend and then only one text is sent to the brwoser
     @NotNull(message = "ValueKeys cannot be null")
-    private Collection<String> valueKeys;
+    private List<String> valueKeys;
 
     private String formatTemplate;
 

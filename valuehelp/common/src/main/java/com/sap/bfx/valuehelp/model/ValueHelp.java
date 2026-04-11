@@ -6,7 +6,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -28,6 +28,6 @@ public class ValueHelp {
 
     @NotNull(message = "Values cannot be null")
     @Size(min = 1, message = "Values must contain at least one element")
-    private Collection<Map<String, String>> values;
+    private List<Map<String, String>> values;
 
 }
