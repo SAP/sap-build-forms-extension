@@ -1,6 +1,6 @@
-import { JSX, useEffect, useState } from "react"
+import {JSX, useEffect, useState} from "react"
 
-import { useIntl } from "react-intl"
+import {useIntl} from "react-intl"
 
 import {
     Bar,
@@ -32,43 +32,32 @@ import {
     ToolbarButton,
     MessageBoxAction,
 } from "@ui5/webcomponents-react"
-import { ThemingParameters } from "@ui5/webcomponents-react-base"
-import { ListItemClickEventDetail } from "@ui5/webcomponents/dist/List"
+import {ThemingParameters} from "@ui5/webcomponents-react-base"
+import {ListItemClickEventDetail} from "@ui5/webcomponents/dist/List"
 import FCLLayout from "@ui5/webcomponents-fiori/dist/types/FCLLayout"
-import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
+import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
 
-import { apiOk, Margin, MessageOption, Severity, useMessages } from "commons"
+import {apiOk, Margin, MessageOption, Severity, useMessages} from "commons"
 
-import { ValueHelpDef, ValueHelpValue } from "../features/definitions"
+import {ValueHelpDef, ValueHelpValue} from "../features/model"
 import DialogAddValueHelpValue from "./valuehelp/DialogAddValueHelpValue"
 import DialogAddValueHelpDefinition from "./valuehelp/DialogAddValueHelpDefinition"
 import ConfigTab from "./valuehelp/ConfigTab"
 import CurrentValuesTab from "./valuehelp/CurrentValuesTab"
 import DialogUploadFile from "./valuehelp/DialogUploadFile"
-import { useValueHelpState } from "../features/store"
-import { current } from "immer"
+import {useValueHelpState} from "../features/valuehelpstate"
+import {useDisplayState} from "../features/displaystate"
 
 export default function () {
     const intl = useIntl()
     const messages = useMessages()
-    const state = useValueHelpState()
-
-    const [listMode, setListMode] = useState<ListSelectionMode>(ListSelectionMode.Single)
-    const [selectedValueHelpDefs, setSelectedValueHelpDefs] = useState<string[]>([])
+    const valueHelpState = useValueHelpState()
+    const displayState = useDisplayState()
 
     const [currentValueHelpDef, setCurrentValueHelpDef] = useState<ValueHelpDef | undefined>()
     const [valueHelpValue, setValueHelpValue] = useState<ValueHelpValue | undefined>(undefined)
     const [updatedValueHelpValues, setUpdatedValueHelpValues] = useState<ValueHelpValue[]>([])
-
-    const [searchId, setSearchId] = useState<string>("")
-    const [searchAdapter, setSearchAdapter] = useState<string[]>([])
-
-    const [language, setLanguage] = useState<string>()
-
-    const [layout, setLayout] = useState(FCLLayout.OneColumn)
-    const [fullscreen, setFullscreen] = useState<boolean>(false)
-    const [edit, setEdit] = useState<boolean>(false)
 
     const [messageBoxOpen, setMessageBoxOpen] = useState(false)
     const [messageBoxId, setMessageBoxId] = useState("")
@@ -86,30 +75,12 @@ export default function () {
      * Initial data loading and event listener setup.
      */
     useEffect(() => {
-        // const l = document.getElementById("valueHelpList")
-
-        // const handleSelectionChange = (event: any) => {
-        //     setSelectedValueHelpDefs(
-        //         event.detail.selectedItems.map((item: any) => item.textContent),
-        //     )
-        // }
-
-        // if (l != null) {
-        //     l.addEventListener("selection-change", handleSelectionChange)
-        // }
-
         // load definitions
         refresh()
         // async load adpaters
-        state.findAdapters(messages)
+        valueHelpState.findAdapters(messages)
         // async load languages
-        state.findLanguages(messages)
-
-        // return () => {
-        //     if (l != null) {
-        //         l.removeEventListener("selection-change", handleSelectionChange)
-        //     }
-        // }
+        valueHelpState.findLanguages(messages)
     }, [])
 
     /**
@@ -118,8 +89,8 @@ export default function () {
      * @param requestParams
      */
     function refresh(requestParams?: object) {
-        state.clearDefs()
-        state.findDefs(messages, requestParams).then((action: any) => {
+        valueHelpState.clearDefs()
+        valueHelpState.findDefs(messages, requestParams).then((action: any) => {
             if (apiOk(action.status)) {
                 messages.toast(Severity.Success, "msg_valuehelpdefs_loaded")
             }
@@ -130,7 +101,7 @@ export default function () {
      * Filters the ValueHelp definitions based on search criteria.
      */
     function filter() {
-        filterVH(searchId, searchAdapter)
+        filterVH(displayState.searchId, displayState.searchAdapter)
     }
 
     /**
@@ -141,26 +112,26 @@ export default function () {
      */
     function filterVH(s: string | undefined, sAdapter: string[] | undefined) {
         if (s == undefined) {
-            s = searchId
+            s = displayState.searchId
         }
         if (sAdapter == undefined) {
-            sAdapter = searchAdapter
+            sAdapter = displayState.searchAdapter
         }
         if ((s != "" && s != undefined) || sAdapter.length > 0) {
             if (s != "" && s != undefined && sAdapter.length > 0) {
-                refresh({ search: s, adapter: sAdapter })
+                refresh({search: s, adapter: sAdapter})
             } else if (s != "" && s != undefined) {
-                refresh({ search: s })
+                refresh({search: s})
             } else {
-                refresh({ adapter: sAdapter.join(",") })
+                refresh({adapter: sAdapter.join(",")})
             }
         } else {
             refresh(undefined)
         }
-        if (listMode == ListSelectionMode.Multiple) {
-            setSelectedValueHelpDefs(
-                selectedValueHelpDefs.filter((id) =>
-                    state.defs.some((v: ValueHelpDef) => v.id === id),
+        if (displayState.listMode == ListSelectionMode.Multiple) {
+            displayState.setSelectedValueHelpDefs(
+                displayState.selectedValueHelpDefs.filter((id) =>
+                    valueHelpState.defs.some((v: ValueHelpDef) => v.id === id),
                 ),
             )
         }
@@ -173,12 +144,16 @@ export default function () {
      */
     function changeLanguages(v: ValueHelpDef) {
         if (v.languages.length == 0) {
-            if (language != "_" || valueHelpValue?.locale != "_" || valueHelpValue.id != v.id) {
+            if (
+                displayState.language != "_" ||
+                valueHelpValue?.locale != "_" ||
+                valueHelpValue.id != v.id
+            ) {
                 changeLanguage("_", v)
             }
         } else {
             if (
-                language != v.languages[0] ||
+                displayState.language != v.languages[0] ||
                 valueHelpValue?.locale != v.languages[0] ||
                 valueHelpValue.id != v.id
             ) {
@@ -195,7 +170,7 @@ export default function () {
      */
     function changeLanguage(language: string, def: ValueHelpDef) {
         console.log(language)
-        setLanguage(language)
+        displayState.setLanguage(language)
 
         // we only show value of local valuehelps
         if (def.adapter != "local") {
@@ -210,7 +185,7 @@ export default function () {
         if (existingValueHelpValue) {
             setValueHelpValue(existingValueHelpValue)
         } else {
-            state
+            valueHelpState
                 .findLatestValues(messages, def.id, language)
                 .then((action: any) => {
                     if (apiOk(action.status)) {
@@ -251,18 +226,21 @@ export default function () {
      * @param def
      */
     function addValueHelpDef(def: ValueHelpDef) {
-        state.addDef(messages, def).then((action: any) => {
+        valueHelpState.addDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(`ValueHelp definition ${def?.id} has been created successfully`)
-                if (listMode == ListSelectionMode.Multiple) {
-                    setSelectedValueHelpDefs([...selectedValueHelpDefs, def.id])
+                if (displayState.listMode == ListSelectionMode.Multiple) {
+                    displayState.setSelectedValueHelpDefs([
+                        ...displayState.selectedValueHelpDefs,
+                        def.id,
+                    ])
                 }
                 openValueHelpDef(action.data)
                 filter()
-                messages.toast(Severity.Success, "valuehelpdef_created", { id: def.id })
+                messages.toast(Severity.Success, "valuehelpdef_created", {id: def.id})
             } else if (action.status == 409) {
                 console.log("Definition ID is already existent.")
-                messages.dialog(Severity.Error, "err_valuehelpdef_id_existent", { id: def.id }, [
+                messages.dialog(Severity.Error, "err_valuehelpdef_id_existent", {id: def.id}, [
                     MessageOption.Ok,
                 ])
             }
@@ -273,14 +251,14 @@ export default function () {
      * Deletes a ValueHelp definition.
      */
     function deleteValueHelpDef(def: ValueHelpDef) {
-        state.deleteDef(messages, def).then((action: any) => {
+        valueHelpState.deleteDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
                     `ValueHelp definition ${currentValueHelpDef?.id} has been deleted successfully`,
                 )
                 filter()
                 toListView()
-                messages.toast(Severity.Success, "msg_valuehelpdef_deleted", { id: def.id })
+                messages.toast(Severity.Success, "msg_valuehelpdef_deleted", {id: def.id})
             }
         })
     }
@@ -290,31 +268,36 @@ export default function () {
      *
      */
     function deleteSelectedValueHelps() {
-        state.deleteDefs(messages, selectedValueHelpDefs).then((action: any) => {
-            if (action.status == 204) {
-                console.log(`Selected value help definitions have been deleted successfully`)
-                if (selectedValueHelpDefs.includes(currentValueHelpDef?.id!)) {
-                    toListView()
+        valueHelpState
+            .deleteDefs(messages, displayState.selectedValueHelpDefs)
+            .then((action: any) => {
+                if (action.status == 204) {
+                    console.log(`Selected value help definitions have been deleted successfully`)
+                    if (displayState.selectedValueHelpDefs.includes(currentValueHelpDef?.id!)) {
+                        toListView()
+                    }
+                    filter()
+                    // getAdapter()
+                    messages.toast(Severity.Success, "msg_valuehelpdefs_deleted")
+                    displayState.setSelectedValueHelpDefs([])
                 }
-                filter()
-                // getAdapter()
-                messages.toast(Severity.Success, "msg_valuehelpdefs_deleted")
-                setSelectedValueHelpDefs([])
-            }
-        })
+            })
     }
 
     /**
      * Updates the current ValueHelp definition.
      */
     function updateCurrentValueHelp() {
-        state.updateDef(messages, currentValueHelpDef!).then((action: any) => {
+        valueHelpState.updateDef(messages, currentValueHelpDef!).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
                     `ValueHelp definition ${currentValueHelpDef?.id} has been updated successfully`,
                 )
-                if (listMode == ListSelectionMode.Multiple) {
-                    setSelectedValueHelpDefs([...selectedValueHelpDefs, currentValueHelpDef!.id])
+                if (displayState.listMode == ListSelectionMode.Multiple) {
+                    displayState.setSelectedValueHelpDefs([
+                        ...displayState.selectedValueHelpDefs,
+                        currentValueHelpDef!.id,
+                    ])
                 }
                 openValueHelpDef(action.data)
                 filter()
@@ -326,7 +309,7 @@ export default function () {
                 messages.dialog(
                     Severity.Error,
                     "err_valuehelpdef_id_existent",
-                    { id: currentValueHelpDef!.id },
+                    {id: currentValueHelpDef!.id},
                     [MessageOption.Ok],
                 )
             }
@@ -457,27 +440,30 @@ export default function () {
      */
     function download(): void {
         let requestParams = {}
-        if (listMode == ListSelectionMode.Multiple) {
+        if (displayState.listMode == ListSelectionMode.Multiple) {
             if (
-                state.defs.every(
+                valueHelpState.defs.every(
                     (objekt: ValueHelpDef) =>
-                        selectedValueHelpDefs.includes(objekt.id) ||
-                        selectedValueHelpDefs.length < 1,
+                        displayState.selectedValueHelpDefs.includes(objekt.id) ||
+                        displayState.selectedValueHelpDefs.length < 1,
                 )
             ) {
                 //download all displayed
-                requestParams = { search: searchId, adapter: searchAdapter }
+                requestParams = {
+                    search: displayState.searchId,
+                    adapter: displayState.searchAdapter,
+                }
             } else {
                 //download selected
-                requestParams = { ids: selectedValueHelpDefs }
+                requestParams = {ids: displayState.selectedValueHelpDefs}
             }
         } else {
-            requestParams = { search: searchId, adapter: searchAdapter }
+            requestParams = {search: displayState.searchId, adapter: displayState.searchAdapter}
         }
-        state.findDefExport(messages, requestParams).then((action: any) => {
+        valueHelpState.findDefExport(messages, requestParams).then((action: any) => {
             if (apiOk(action.status)) {
                 const url = window.URL.createObjectURL(
-                    new Blob([action.data], { type: "application/xml" }),
+                    new Blob([action.data], {type: "application/xml"}),
                 )
                 const a = document.createElement("a")
                 a.href = url
@@ -543,8 +529,8 @@ export default function () {
             setCurrentValueHelpDef(v)
             setUpdatedValueHelpValues([])
             changeLanguages(v)
-            setLayout(FCLLayout.TwoColumnsMidExpanded)
-            setFullscreen(false)
+            displayState.setLayout(FCLLayout.TwoColumnsMidExpanded)
+            displayState.setFullscreen(false)
         }
     }
 
@@ -566,44 +552,44 @@ export default function () {
      *  Switches the layout to the list view.
      */
     function toListView() {
-        setLayout(FCLLayout.OneColumn)
+        displayState.setLayout(FCLLayout.OneColumn)
         setCurrentValueHelpDef(undefined)
         setValueHelpValue(undefined)
-        setLanguage(undefined)
-        setFullscreen(false)
+        displayState.setLanguage(undefined)
+        displayState.setFullscreen(false)
     }
 
     return (
-        <div style={{ height: "100vh" }}>
+        <div style={{height: "100vh"}}>
             <Bar>
-                <Title level="H1" style={{ fontSize: ThemingParameters.sapFontHeader3Size }}>
-                    {intl.formatMessage({ id: "app_title" })}
+                <Title level="H1" style={{fontSize: ThemingParameters.sapFontHeader3Size}}>
+                    {intl.formatMessage({id: "app_title"})}
                 </Title>
             </Bar>
             <FlexibleColumnLayout
-                layout={layout}
-                style={{ paddingTop: "1em", height: "calc(100% - 44px - 1em)" }}
+                layout={displayState.layout}
+                style={{paddingTop: "1em", height: "calc(100% - 44px - 1em)"}}
                 startColumn={
                     <>
                         <FilterBar
                             onClear={() => {
-                                setSearchId("")
-                                setSearchAdapter([])
+                                displayState.setSearchId("")
+                                displayState.setSearchAdapter([])
                             }}
                             onGo={() => {
                                 filter()
                             }}
                             search={
                                 <Input
-                                    value={searchId}
+                                    value={displayState.searchId}
                                     onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                                        setSearchId(
+                                        displayState.setSearchId(
                                             e.target.attributes.getNamedItem("value")!.nodeValue!,
                                         )
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
-                                            setSearchId(
+                                            displayState.setSearchId(
                                                 // @ts-expect-error
                                                 e.target.attributes.getNamedItem("value")!
                                                     .nodeValue!,
@@ -626,15 +612,17 @@ export default function () {
                             <FilterGroupItem label="Adapter" filterKey="1">
                                 <MultiComboBox
                                     onSelectionChange={(e) => {
-                                        setSearchAdapter(e.detail.items.map((a) => a.id))
+                                        displayState.setSearchAdapter(
+                                            e.detail.items.map((a) => a.id),
+                                        )
                                     }}
                                 >
-                                    {state.adapters.map((item: string) => (
+                                    {valueHelpState.adapters.map((item: string) => (
                                         <MultiComboBoxItem
                                             text={item}
                                             key={item}
                                             id={item}
-                                            selected={searchAdapter.includes(item)}
+                                            selected={displayState.searchAdapter.includes(item)}
                                         />
                                     ))}
                                 </MultiComboBox>
@@ -643,21 +631,27 @@ export default function () {
 
                         <FlexBox direction="Row" justifyContent="SpaceBetween">
                             <FlexBox alignItems="Center">
-                                {listMode == ListSelectionMode.Multiple && (
+                                {displayState.listMode == ListSelectionMode.Multiple && (
                                     <CheckBox
                                         text={"Select all"}
                                         onChange={function () {
                                             if (
-                                                state.defs.every((def: ValueHelpDef) =>
-                                                    selectedValueHelpDefs.includes(def.id),
+                                                valueHelpState.defs.every((def: ValueHelpDef) =>
+                                                    displayState.selectedValueHelpDefs.includes(
+                                                        def.id,
+                                                    ),
                                                 )
                                             ) {
-                                                setSelectedValueHelpDefs([])
+                                                displayState.setSelectedValueHelpDefs([])
                                             } else {
-                                                state.defs.map((e: ValueHelpDef) => {
-                                                    if (!selectedValueHelpDefs.includes(e.id)) {
-                                                        setSelectedValueHelpDefs(
-                                                            state.defs.map(
+                                                valueHelpState.defs.map((e: ValueHelpDef) => {
+                                                    if (
+                                                        !displayState.selectedValueHelpDefs.includes(
+                                                            e.id,
+                                                        )
+                                                    ) {
+                                                        displayState.setSelectedValueHelpDefs(
+                                                            valueHelpState.defs.map(
                                                                 (v: ValueHelpDef) => v.id,
                                                             ),
                                                         )
@@ -665,29 +659,31 @@ export default function () {
                                                 })
                                             }
                                         }}
-                                        checked={state.defs.every((objekt: ValueHelpDef) =>
-                                            selectedValueHelpDefs.includes(objekt.id),
+                                        checked={valueHelpState.defs.every((objekt: ValueHelpDef) =>
+                                            displayState.selectedValueHelpDefs.includes(objekt.id),
                                         )}
                                     />
                                 )}
                                 <Switch
                                     onChange={function () {
-                                        if (listMode == ListSelectionMode.Single) {
-                                            setListMode(ListSelectionMode.Multiple)
+                                        if (displayState.listMode == ListSelectionMode.Single) {
+                                            displayState.setListMode(ListSelectionMode.Multiple)
                                             if (currentValueHelpDef) {
-                                                setSelectedValueHelpDefs([currentValueHelpDef.id])
+                                                displayState.setSelectedValueHelpDefs([
+                                                    currentValueHelpDef.id,
+                                                ])
                                             } else {
-                                                setSelectedValueHelpDefs([])
+                                                displayState.setSelectedValueHelpDefs([])
                                             }
                                         } else {
-                                            setListMode(ListSelectionMode.Single)
-                                            setSelectedValueHelpDefs([])
+                                            displayState.setListMode(ListSelectionMode.Single)
+                                            displayState.setSelectedValueHelpDefs([])
                                         }
                                     }}
-                                    checked={listMode == ListSelectionMode.Multiple}
-                                    style={{ marginLeft: Margin.SMALL }}
+                                    checked={displayState.listMode == ListSelectionMode.Multiple}
+                                    style={{marginLeft: Margin.SMALL}}
                                 />
-                                <Text style={{ marginLeft: Margin.SMALL }}>Multiselect</Text>
+                                <Text style={{marginLeft: Margin.SMALL}}>Multiselect</Text>
                             </FlexBox>
 
                             <FlexBox alignItems="Center" wrap="Wrap">
@@ -703,14 +699,14 @@ export default function () {
                                 <Button
                                     design="Transparent"
                                     icon="download"
-                                    style={{ marginLeft: Margin.SMALL }}
+                                    style={{marginLeft: Margin.SMALL}}
                                     disabled={
-                                        listMode == ListSelectionMode.Multiple &&
-                                        selectedValueHelpDefs.length < 1
+                                        displayState.listMode == ListSelectionMode.Multiple &&
+                                        displayState.selectedValueHelpDefs.length < 1
                                     }
                                     onClick={download}
                                 >
-                                    {listMode == ListSelectionMode.Single
+                                    {displayState.listMode == ListSelectionMode.Single
                                         ? "Download"
                                         : "Download selected"}
                                 </Button>
@@ -723,20 +719,26 @@ export default function () {
                                 >
                                     New Value Help
                                 </Button>
-                                {listMode == ListSelectionMode.Multiple && (
+                                {displayState.listMode == ListSelectionMode.Multiple && (
                                     <Button
                                         design="Transparent"
                                         icon="delete"
-                                        style={{ marginLeft: Margin.SMALL }}
-                                        disabled={selectedValueHelpDefs.length < 1}
+                                        style={{marginLeft: Margin.SMALL}}
+                                        disabled={displayState.selectedValueHelpDefs.length < 1}
                                         onClick={() => {
                                             openMessageBox(
                                                 MessageBoxType.Confirm,
-                                                selectedValueHelpDefs.length > 5 ? (
+                                                displayState.selectedValueHelpDefs.length > 5 ? (
                                                     <p>
                                                         Delete{" "}
                                                         <i>
-                                                            <b>{selectedValueHelpDefs.length}</b>
+                                                            <b>
+                                                                {
+                                                                    displayState
+                                                                        .selectedValueHelpDefs
+                                                                        .length
+                                                                }
+                                                            </b>
                                                         </i>{" "}
                                                         selected ValueHelp definitions?
                                                     </p>
@@ -745,7 +747,9 @@ export default function () {
                                                         Delete ValueHelp definitions{" "}
                                                         <i>
                                                             <b>
-                                                                {selectedValueHelpDefs.join(", ")}
+                                                                {displayState.selectedValueHelpDefs.join(
+                                                                    ", ",
+                                                                )}
                                                             </b>
                                                         </i>{" "}
                                                         ?
@@ -763,37 +767,41 @@ export default function () {
 
                         <List
                             headerText="Value Helps"
-                            selectionMode={listMode}
+                            selectionMode={displayState.listMode}
                             id="valueHelpList"
                             onItemClick={(
                                 e: Ui5CustomEvent<ListDomRef, ListItemClickEventDetail>,
                             ) => {
-                                if (listMode == ListSelectionMode.Multiple) {
-                                    if (selectedValueHelpDefs.includes(e.detail.item.id)) {
+                                if (displayState.listMode == ListSelectionMode.Multiple) {
+                                    if (
+                                        displayState.selectedValueHelpDefs.includes(
+                                            e.detail.item.id,
+                                        )
+                                    ) {
                                         //remove
-                                        setSelectedValueHelpDefs(
-                                            selectedValueHelpDefs.filter(
+                                        displayState.setSelectedValueHelpDefs(
+                                            displayState.selectedValueHelpDefs.filter(
                                                 (a) => a !== e.detail.item.id,
                                             ),
                                         )
                                     } else {
                                         //add
-                                        setSelectedValueHelpDefs([
-                                            ...selectedValueHelpDefs,
+                                        displayState.setSelectedValueHelpDefs([
+                                            ...displayState.selectedValueHelpDefs,
                                             e.detail.item.id,
                                         ])
                                     }
                                 }
 
                                 openValueHelpDef(
-                                    state.defs.find(
+                                    valueHelpState.defs.find(
                                         (valueHelp: ValueHelpDef) =>
                                             valueHelp.id === e.detail.item.id,
                                     ),
                                 )
                             }}
                         >
-                            {state.defs.map((item: ValueHelpDef) => (
+                            {valueHelpState.defs.map((item: ValueHelpDef) => (
                                 <ListItemStandard
                                     description={
                                         item.description
@@ -807,7 +815,7 @@ export default function () {
                                     icon={"navigation-right-arrow"}
                                     iconEnd={true}
                                     navigated={currentValueHelpDef?.id == item.id}
-                                    selected={selectedValueHelpDefs.includes(item.id)}
+                                    selected={displayState.selectedValueHelpDefs.includes(item.id)}
                                 >
                                     {item.id}
                                 </ListItemStandard>
@@ -822,7 +830,7 @@ export default function () {
                                 <FlexBox wrap="Wrap">
                                     <FlexBox direction="Column">
                                         <>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
+                                            <FlexBox style={{paddingBlock: 2}}>
                                                 <Label>Description:</Label>
                                                 <Text
                                                     style={{
@@ -833,7 +841,7 @@ export default function () {
                                                     {currentValueHelpDef?.description}
                                                 </Text>
                                             </FlexBox>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
+                                            <FlexBox style={{paddingBlock: 2}}>
                                                 <Label>TTL:</Label>
                                                 {currentValueHelpDef?.ttl == -1 && (
                                                     <Text
@@ -867,7 +875,7 @@ export default function () {
                                                         </Text>
                                                     )}
                                             </FlexBox>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
+                                            <FlexBox style={{paddingBlock: 2}}>
                                                 <Label>Adapter:</Label>
                                                 <Text
                                                     style={{
@@ -890,10 +898,12 @@ export default function () {
                                         <ToolbarButton
                                             design="Transparent"
                                             onClick={() => {
-                                                setEdit(!edit)
+                                                displayState.setEdit(!displayState.edit)
                                             }}
                                             text={intl.formatMessage({
-                                                id: edit ? "common_show" : "common_edit",
+                                                id: displayState.edit
+                                                    ? "common_show"
+                                                    : "common_edit",
                                             })}
                                         />
                                         <ToolbarButton
@@ -911,13 +921,13 @@ export default function () {
                                                     "DeleteValueHelpDef",
                                                 )
                                             }}
-                                            text={intl.formatMessage({ id: "common_delete" })}
+                                            text={intl.formatMessage({id: "common_delete"})}
                                         />
                                         <ToolbarButton
                                             icon="save"
                                             onClick={updateCurrentValueHelp}
                                             design="Emphasized"
-                                            text={intl.formatMessage({ id: "common_save" })}
+                                            text={intl.formatMessage({id: "common_save"})}
                                         />
                                     </Toolbar>
                                 }
@@ -926,15 +936,19 @@ export default function () {
                                 navigationBar={
                                     <Toolbar design="Transparent">
                                         <ToolbarButton
-                                            icon={fullscreen ? "exit-full-screen" : "full-screen"}
+                                            icon={
+                                                displayState.fullscreen
+                                                    ? "exit-full-screen"
+                                                    : "full-screen"
+                                            }
                                             design={ButtonDesign.Transparent}
                                             onClick={() => {
-                                                setLayout(
-                                                    fullscreen
+                                                displayState.setLayout(
+                                                    displayState.fullscreen
                                                         ? FCLLayout.TwoColumnsMidExpanded
                                                         : FCLLayout.MidColumnFullScreen,
                                                 )
-                                                setFullscreen(!fullscreen)
+                                                displayState.setFullscreen(!displayState.fullscreen)
                                             }}
                                         />
                                         <ToolbarButton
@@ -952,23 +966,23 @@ export default function () {
                         <TabContainer
                             contentBackgroundDesign="Solid"
                             headerBackgroundDesign="Solid"
-                            style={{ width: "100%" }}
+                            style={{width: "100%"}}
                             tabLayout="Standard"
                         >
                             <ConfigTab
                                 currentValueHelpDef={currentValueHelpDef}
                                 setCurrentValueHelpDef={setCurrentValueHelpDef}
                                 openMessageBox={openMessageBox}
-                                edit={edit}
+                                edit={displayState.edit}
                                 changeLanguages={changeLanguages}
-                                availableLanguages={state.languages}
+                                availableLanguages={valueHelpState.languages}
                             />
                             {currentValueHelpDef?.adapter === "local" && (
                                 <CurrentValuesTab
-                                    edit={edit}
+                                    edit={displayState.edit}
                                     currentValueHelpDef={currentValueHelpDef}
                                     valueHelpValue={valueHelpValue}
-                                    language={language}
+                                    language={displayState.language}
                                     setCurrentValueHelpDef={setCurrentValueHelpDef}
                                     changeValueHelpValue={changeValueHelpValue}
                                     changeLanguage={changeLanguage}
@@ -1005,7 +1019,7 @@ export default function () {
                 addValueHelpDef={addValueHelpDef}
                 isIdExistent={isDefIdExistent}
                 setIsIdExistent={setIsDefIdExistent}
-                availableLanguages={state.languages}
+                availableLanguages={valueHelpState.languages}
             />
             <DialogAddValueHelpValue
                 dialogAddValueOpen={dialogAddValueOpen}

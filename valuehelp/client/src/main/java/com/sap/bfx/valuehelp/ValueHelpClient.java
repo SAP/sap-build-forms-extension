@@ -45,17 +45,23 @@ public class ValueHelpClient {
      * @param locale
      * @return
      */
-    public List<Map<String, String>> findValues(String id, Locale locale) {
+    public GetValueHelpResponse findValues(String id, Locale locale) {
         final var response =
                 stub.getValueHelp(GetValueHelpRequest.newBuilder().setId(id).setLocale(locale.toString()).build());
 
-        final var result = new ArrayList<Map<String, String>>();
+        final var result = new GetValueHelpResponse();
+        result.setId(response.getId());
+        result.setLocale(response.getLocale());
+        result.setVersion(response.getVersion());
+        result.setKeyKey(response.getKeyKey());
+        result.setFormatTemplate(response.getFormatTemplate());
+        response.getValueKeyList().forEach(it -> {
+            result.getValueKeys().add(it);
+        });
         response.getValuesList().forEach(it -> {
             final var row = new HashMap<String, String>();
-            it.getValueList().forEach(it1 -> {
-                row.put(it1.getKey(), it1.getValue());
-            });
-            result.add(row);
+            row.putAll(it.getItemsMap());
+            result.getValues().add(row);
         });
 
         return result;

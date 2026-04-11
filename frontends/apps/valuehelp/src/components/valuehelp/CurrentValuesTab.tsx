@@ -19,7 +19,7 @@ import {
 import InputType from "@ui5/webcomponents/dist/types/InputType"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 
-import { ValueHelpDef, ValueHelpValue } from "../../features/definitions"
+import {ValueHelpDef, ValueHelpValue} from "../../features/model"
 
 /**
  *  The properties for the DialogAddValueHelpValue component.
@@ -29,9 +29,13 @@ interface DialogAddValueHelpValueProps {
     currentValueHelpDef: ValueHelpDef | undefined
     valueHelpValue: ValueHelpValue | undefined
     language: string | undefined
+
     setCurrentValueHelpDef(v: ValueHelpDef): void
+
     changeValueHelpValue(v: ValueHelpValue): void
+
     changeLanguage(language: string, def: ValueHelpDef): void
+
     setDialogAddValueOpen(v: boolean): void
 }
 
@@ -66,7 +70,7 @@ export default function (props: DialogAddValueHelpValueProps) {
                 </FormItem>
                 <FormItem labelContent={<Label>Valid until</Label>}>
                     {props.valueHelpValue != undefined && (
-                        <Label style={{ marginBlock: 10 }}>{props.valueHelpValue.validUntil}</Label>
+                        <Label style={{marginBlock: 10}}>{props.valueHelpValue.validUntil}</Label>
                     )}
                 </FormItem>
                 <FormItem labelContent={<Label>Values</Label>}>
@@ -92,18 +96,18 @@ export default function (props: DialogAddValueHelpValueProps) {
                                                 <TableCell>
                                                     {props.edit &&
                                                         props.currentValueHelpDef?.adapter ==
-                                                            "local" && (
+                                                        "local" && (
                                                             <Input
                                                                 type={InputType.Text}
                                                                 value={
                                                                     props.valueHelpValue?.values[
                                                                         key
-                                                                    ]
+                                                                        ]
                                                                 }
                                                                 placeholder={
                                                                     props.valueHelpValue?.values[
                                                                         key
-                                                                    ]
+                                                                        ]
                                                                 }
                                                                 onChange={(
                                                                     e: Ui5CustomEvent<
@@ -122,12 +126,12 @@ export default function (props: DialogAddValueHelpValueProps) {
                                                                         values: v,
                                                                     })
                                                                 }}
-                                                                style={{ width: "100%" }}
+                                                                style={{width: "100%"}}
                                                             />
                                                         )}
                                                     {(!props.edit ||
                                                         props.currentValueHelpDef?.adapter !=
-                                                            "local") && (
+                                                        "local") && (
                                                         <Text>
                                                             {props.valueHelpValue?.values[key]}
                                                         </Text>
@@ -136,7 +140,7 @@ export default function (props: DialogAddValueHelpValueProps) {
                                                 <TableCell>
                                                     {props.edit &&
                                                         props.currentValueHelpDef?.adapter ==
-                                                            "local" && (
+                                                        "local" && (
                                                             <Button
                                                                 icon="decline"
                                                                 design={ButtonDesign.Transparent}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import {useState} from "react"
 
 import {
     Bar,
@@ -12,16 +12,16 @@ import {
     Label,
     MultiComboBox,
     MultiComboBoxItem,
+    Option,
     RadioButton,
     Select,
-    Option,
 } from "@ui5/webcomponents-react"
 import InputType from "@ui5/webcomponents/dist/types/InputType"
 
-import { Margin } from "commons"
+import {Margin} from "commons"
 
-import { ValueHelpDef } from "../../features/definitions"
-import { useValueHelpState } from "../../features/store"
+import {ValueHelpDef} from "../../features/model"
+import {useValueHelpState} from "../../features/valuehelpstate"
 
 /**
  * Props for the DialogAddValueHelpDefinition component
@@ -30,8 +30,11 @@ interface DialogAddValueHelpDefinitionProps {
     dialogAddDefOpen: boolean
     isIdExistent: boolean
     availableLanguages: string[]
+
     setDialogAddDefOpen(o: boolean): void
+
     addValueHelpDef(d: ValueHelpDef): void
+
     setIsIdExistent(b: boolean): void
 }
 
@@ -56,11 +59,11 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
 
     return (
         <Dialog
-            style={{ paddingTop: Margin.SMALL, paddingInline: Margin.TINY }}
+            style={{paddingTop: Margin.SMALL, paddingInline: Margin.TINY}}
             footer={
                 <Bar
                     design="Footer"
-                    style={{ paddingBlock: Margin.TINY }}
+                    style={{paddingBlock: Margin.TINY}}
                     endContent={
                         <Button
                             onClick={function _a() {
@@ -81,7 +84,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
                 >
                     <Button
                         design="Emphasized"
-                        style={{ marginInline: Margin.TINY }}
+                        style={{marginInline: Margin.TINY}}
                         onClick={async function _a() {
                             if (
                                 newDefId.trim().length > 0 &&
@@ -126,7 +129,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
             open={props.dialogAddDefOpen}
         >
             <Form
-                style={{ padding: Margin.TINY, width: "100%" }}
+                style={{padding: Margin.TINY, width: "100%"}}
                 layout="S1 M1 L1 XL1"
                 labelSpan="S1 M1 L1 XL1"
             >
@@ -191,7 +194,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
                             {newDefTtlCheckbox == 1 && (
                                 <Input
                                     value={newDefTtl}
-                                    style={{ width: 87 }}
+                                    style={{width: 87}}
                                     type={InputType.Number}
                                     valueState={
                                         Number(newDefTtl) > 0 && Number.isInteger(Number(newDefTtl))
@@ -247,7 +250,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
                         onSelectionChange={function Xs(e) {
                             setNewDefLanguages(e.detail.items.map((i) => i.id))
                         }}
-                        style={{ maxWidth: "150px" }}
+                        style={{maxWidth: "150px"}}
                     >
                         {props.availableLanguages.map((l) => {
                             return (

@@ -11,6 +11,10 @@ export interface ValueHelpDef {
     config: string
     description: string
     languages: string[]
+    formatTemplate?: string
+    keyKey: string
+    type: string
+    valueKeys?: string[]
 }
 
 /**

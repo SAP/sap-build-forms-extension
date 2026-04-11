@@ -20,20 +20,18 @@ message GetValueHelpRequest {
   string locale = 2;
 }
 
-message ValueHelpValue {
-  string key = 1;
-  string value = 2;
-}
-
-message ValueHelpValues {
-  repeated ValueHelpValue value = 1;
+message ValueHelpRow {
+  map<string, string> items = 1;
 }
 
 message GetValueHelpResponse {
   string id = 1;
   string locale = 2;
   uint64 version = 3;
-  repeated ValueHelpValues values = 4;
+  string keyKey = 4;
+  repeated string valueKey = 5;
+  string formatTemplate = 6;
+  repeated ValueHelpRow values = 7;
 }
 
 //-----------------------------------------------------------------------------

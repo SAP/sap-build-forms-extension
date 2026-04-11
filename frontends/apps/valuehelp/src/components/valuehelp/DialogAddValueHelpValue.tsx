@@ -1,9 +1,9 @@
-import { useState } from "react"
+import {useState} from "react"
 
-import { createUseStyles } from "react-jss"
-import { Bar, Button, Dialog, Form, FormItem, Input, Label } from "@ui5/webcomponents-react"
+import {createUseStyles} from "react-jss"
+import {Bar, Button, Dialog, Form, FormItem, Input, Label} from "@ui5/webcomponents-react"
 
-import { ValueHelpValue } from "../../features/definitions"
+import {ValueHelpValue} from "../../features/model"
 
 /**
  * Dialog to Add a Value Help Value
@@ -11,7 +11,9 @@ import { ValueHelpValue } from "../../features/definitions"
 interface DialogAddValueHelpValueProps {
     dialogAddValueOpen: boolean
     valueHelpValue: ValueHelpValue
+
     setDialogAddValueOpen(o: boolean): void
+
     changeValueHelpValue(changedValueHelpValue: ValueHelpValue): void
 }
 
@@ -61,14 +63,14 @@ export default function (props: DialogAddValueHelpValueProps) {
                 >
                     <Button
                         design="Emphasized"
-                        style={{ marginInline: 2 }}
+                        style={{marginInline: 2}}
                         onClick={function _a() {
                             if (Object.hasOwn(props.valueHelpValue.values, newValueKey)) {
                                 setIsKeyExistent(true)
                             } else if (newValueKey.trim().length > 0) {
                                 var v = props.valueHelpValue.values
                                 v[newValueKey] = newValueValue
-                                props.changeValueHelpValue({ ...props.valueHelpValue, values: v })
+                                props.changeValueHelpValue({...props.valueHelpValue, values: v})
                                 setNewValueKey("")
                                 setNewValueValue("")
                                 props.setDialogAddValueOpen(false)
