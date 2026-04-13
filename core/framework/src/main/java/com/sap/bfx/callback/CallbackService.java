@@ -135,12 +135,7 @@ public class CallbackService {
         if (ehm != null && ehm.containsKey(sourceKey)) {
             try {
                 final var info = ehm.get(sourceKey);
-
                 log.debug("CallbackService.callEvent: event-info: {}", info.toString());
-                // if validation is required then execute validation
-                if (info.isValidating()) {
-                    validate(ctx);
-                }
 
                 // execute all before handlers
                 for (var it : info.handlers) {
@@ -154,6 +149,12 @@ public class CallbackService {
                         }
                     }
                 }
+
+                // if validation is required then execute validation
+                if (!result.isStopProcessing() && info.isValidating()) {
+                    validate(ctx);
+                }
+
                 // execute all on handlers, results are forwarded through iteration
                 if (!result.isStopProcessing()) {
                     for (var it : info.handlers) {
@@ -168,6 +169,12 @@ public class CallbackService {
                         }
                     }
                 }
+
+                // if re-validation is required, then execute it
+                if (!result.isStopProcessing() && result.isValidate()) {
+                    validate(ctx);
+                }
+
                 // execute all after handlers
                 if (!result.isStopProcessing()) {
                     for (var it : info.handlers) {
@@ -181,10 +188,6 @@ public class CallbackService {
                             }
                         }
                     }
-                }
-                // if re-validation is required, then execute it
-                if (result.isValidate()) {
-                    validate(ctx);
                 }
             } catch (Throwable t) {
                 throw ExceptionUtils.fromCallback(t, type.name());
@@ -203,11 +206,6 @@ public class CallbackService {
                 throw new FormsCoreException(
                         String.format("No handlers found for '%s' of '%s' in version '%d'", type, sourceKey, version));
             }
-        }
-
-        // if a post event processing validation is set, then execute it now
-        if (result.isValidate()) {
-            validate(ctx);
         }
 
         return result;
@@ -263,7 +261,7 @@ public class CallbackService {
                         log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), it.getKey(),
                                 version, it.getClass().getName());
                     }
-                }
+                });
             });
         } else {
             log.warn("No Event handlers defined!");
