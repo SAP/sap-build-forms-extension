@@ -7,15 +7,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sap.bfx.api.scenario.json.FieldResponse;
 import com.sap.bfx.api.scenario.json.ScenarioBaseUrlResponse;
 import com.sap.bfx.api.scenario.json.serializer.*;
+import com.sap.bfx.callback.CallbackService;
+import com.sap.bfx.callback.ContextFactory;
+import com.sap.bfx.callback.FormsApi;
 import com.sap.bfx.definition.DateRange;
-import com.sap.bfx.definition.DefinitionService;
 import com.sap.bfx.definition.EventType;
+import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.security.SecurityService;
-import com.sap.bfx.session.ElementRow;
-import com.sap.bfx.session.Form;
-import com.sap.bfx.session.FormsService;
-import com.sap.bfx.session.Table;
+import com.sap.bfx.session.*;
 import com.sap.bfx.utils.IdentifierUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,7 +38,10 @@ import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@RestController @RequestMapping("api/v1/scenario") @Slf4j public class ScenarioController {
+@RestController
+@RequestMapping("api/v1/scenario")
+@Slf4j
+public class ScenarioController {
 
     public static final String N_A = "n/a";
     public static final String SCENARIO_FIELD_NAME = "scenarioFieldName";
@@ -61,15 +64,20 @@ import java.util.stream.Collectors;
     }
 
     private final FormsService formsService;
-    private final DefinitionService definitionService;
     private final SecurityService securityService;
+    private final CallbackService callbackService;
+    private final ContextFactory contextFactory;
+    private final SessionService sessionService;
     private final ObjectMapper om;
 
-    @Autowired public ScenarioController(final FormsService formsService, final DefinitionService definitionService,
-                                         final SecurityService securityService) {
+    @Autowired
+    public ScenarioController(final FormsService formsService, final SecurityService securityService, CallbackService callbackService,
+                              ContextFactory contextFactory, SessionService sessionService) {
         this.formsService = formsService;
-        this.definitionService = definitionService;
+        this.callbackService = callbackService;
         this.securityService = securityService;
+        this.contextFactory = contextFactory;
+        this.sessionService = sessionService;
         om = JsonMapper.builder().addModule(new JavaTimeModule()).build();
         final SimpleModule module = new SimpleModule();
         module.addSerializer(DateRange.class, new DateRangeSerializer());
@@ -160,7 +168,8 @@ import java.util.stream.Collectors;
         }
     }
 
-    @SuppressWarnings("unchecked") private <T> T getObjectViaObjectMapper(Object objValue, Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+    private <T> T getObjectViaObjectMapper(Object objValue, Class<T> clazz) {
         try {
             if (clazz == String.class && objValue instanceof String) {
                 return (T) objValue;
@@ -178,7 +187,9 @@ import java.util.stream.Collectors;
     }
 
     @GetMapping(value = "/forms-scenario-base-url", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK) @ResponseBody @Operation(summary = "Get forms scenario base URL",
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get forms scenario base URL",
             description = "This operation returns the string of forms scenario base URL, where the SessionController of the scenario is executed.")
     public ResponseEntity<ScenarioBaseUrlResponse> getFormsScenarioBaseUrl(HttpServletRequest request,
                                                                            AbstractAuthenticationToken token) {
@@ -188,8 +199,10 @@ import java.util.stream.Collectors;
         return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ScenarioBaseUrlResponse(serverName));
     }
 
-    @GetMapping(value = "/fieldAsBoolean", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as boolean",
+    @GetMapping(value = "/fieldAsBoolean", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as boolean",
             description = "This operation returns one boolean field of a form process.")
     public ResponseEntity<FieldResponse<Boolean>> getFieldAsBoolean(
             @RequestParam(required = true) String formsProcessId,
@@ -206,11 +219,13 @@ import java.util.stream.Collectors;
         Form form = formsService.loadById(formsProcessId);
         Boolean fieldValue = this.getScenarioFieldValue(form, scenarioFieldName, Boolean.class);
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldValue));
+                .body(new FieldResponse<>(scenarioFieldName, fieldValue));
     }
 
-    @GetMapping(value = "/fieldAsDate", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as date",
+    @GetMapping(value = "/fieldAsDate", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as date",
             description = "This operation returns one date field of a form process in the format yyyy-MM-dd.")
     //@ApiResponse(responseCode = "200", description = "Date is in the format yyyy-MM-dd", content = @Content(schema = @Schema(implementation = FieldResponse.class, /*format = "yyyy-MM-dd", description = "Time is in the format yyyy-MM-dd",*/ example = "{\"fieldValue\":\"2025-07-03\"}")))
     public ResponseEntity<FieldResponse<String>> getFieldAsDate(@RequestParam(required = true) String formsProcessId,
@@ -229,11 +244,13 @@ import java.util.stream.Collectors;
         String fieldDate =
                 (String) this.getObjectViaObjectMapper(fieldValue, sourceClassToTargetClass.get(String.class));
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldDate));
+                .body(new FieldResponse<>(scenarioFieldName, fieldDate));
     }
 
-    @GetMapping(value = "/fieldAsTime", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as time",
+    @GetMapping(value = "/fieldAsTime", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as time",
             description = "This operation returns one time field of a form process in the format HH:mm.")
     //@ApiResponse(responseCode = "200", description = "Time is in the format HH:mm", content = @Content(schema = @Schema(implementation = FieldResponse.class, /*format = "HH:mm", description = "Time is in the format HH:mm",*/ example = "{\"fieldValue\":\"10:25\"}")))
     public ResponseEntity<FieldResponse<String>> getFieldAsTime(@RequestParam(required = true) String formsProcessId,
@@ -252,12 +269,14 @@ import java.util.stream.Collectors;
         String fieldTime =
                 (String) this.getObjectViaObjectMapper(fieldValue, sourceClassToTargetClass.get(String.class));
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldTime));
+                .body(new FieldResponse<>(scenarioFieldName, fieldTime));
     }
 
 
-    @GetMapping(value = "/fieldAsDateRange", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as date range",
+    @GetMapping(value = "/fieldAsDateRange", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as date range",
             description = "This operation returns one date range field of a form process.")
     public ResponseEntity<FieldResponse<Map<String, String>>> getFieldAsDateRange(
             @RequestParam(required = true) String formsProcessId,
@@ -276,11 +295,13 @@ import java.util.stream.Collectors;
         Map<String, String> fieldDateRange = (Map<String, String>) this.getObjectViaObjectMapper(fieldValue,
                 sourceClassToTargetClass.get(DateRange.class));
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldDateRange));
+                .body(new FieldResponse<>(scenarioFieldName, fieldDateRange));
     }
 
-    @GetMapping(value = "/fieldAsDateTime", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as datetime",
+    @GetMapping(value = "/fieldAsDateTime", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as datetime",
             description = "This operation returns one date time field of a form process in the format yyyy-MM-dd'T'HH:mm:ss.")
     //@ApiResponse(responseCode = "200", description = "Datetime is in the format yyyy-MM-dd'T'HH:mm:ss", content = @Content(schema = @Schema(implementation = FieldResponse.class, /*format = "yyyy-MM-dd'T'HH:mm:ss", description = "Datetime is in the format yyyy-MM-dd'T'HH:mm:ss",*/ example = "{\"fieldValue\":\"2025-07-03T10:25\"}")))
     public ResponseEntity<FieldResponse<String>> getFieldAsDateTime(
@@ -300,11 +321,13 @@ import java.util.stream.Collectors;
         String fieldDateTime =
                 (String) this.getObjectViaObjectMapper(fieldValue, sourceClassToTargetClass.get(String.class));
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldDateTime));
+                .body(new FieldResponse<>(scenarioFieldName, fieldDateTime));
     }
 
-    @GetMapping(value = "/fieldAsString", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as string",
+    @GetMapping(value = "/fieldAsString", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as string",
             description = "This operation returns one string field of a form process.")
     public ResponseEntity<FieldResponse<String>> getFieldAsString(@RequestParam(required = true) String formsProcessId,
                                                                   @RequestParam(required = true)
@@ -321,11 +344,13 @@ import java.util.stream.Collectors;
         Form form = formsService.loadById(formsProcessId);
         String fieldValue = this.getScenarioFieldValue(form, scenarioFieldName, String.class);
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldValue));
+                .body(new FieldResponse<>(scenarioFieldName, fieldValue));
     }
 
-    @GetMapping(value = "/fieldAsInteger", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as integer",
+    @GetMapping(value = "/fieldAsInteger", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as integer",
             description = "This operation returns one integer field of a form process.")
     public ResponseEntity<FieldResponse<Integer>> getFieldAsInteger(
             @RequestParam(required = true) String formsProcessId,
@@ -342,11 +367,13 @@ import java.util.stream.Collectors;
         Form form = formsService.loadById(formsProcessId);
         Integer fieldValue = this.getScenarioFieldValue(form, scenarioFieldName, Integer.class);
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldValue));
+                .body(new FieldResponse<>(scenarioFieldName, fieldValue));
     }
 
-    @GetMapping(value = "/fieldAsDecimal", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get field as decimal",
+    @GetMapping(value = "/fieldAsDecimal", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get field as decimal",
             description = "This operation returns one decimal field of a form process.")
     public ResponseEntity<FieldResponse<BigDecimal>> getFieldAsDecimal(
             @RequestParam(required = true) String formsProcessId,
@@ -363,11 +390,13 @@ import java.util.stream.Collectors;
         Form form = formsService.loadById(formsProcessId);
         BigDecimal fieldValue = this.getScenarioFieldValue(form, scenarioFieldName, BigDecimal.class);
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, fieldValue));
+                .body(new FieldResponse<>(scenarioFieldName, fieldValue));
     }
 
-    @GetMapping(value = "/collection", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get collection",
+    @GetMapping(value = "/collection", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get collection",
             description = "This operation returns a collection (table) of a form process.")
     public ResponseEntity<FieldResponse<Collection<Object>>> getCollection(
             @RequestParam(required = true) String formsProcessId,
@@ -384,10 +413,11 @@ import java.util.stream.Collectors;
         Form form = formsService.loadById(formsProcessId);
         Collection<Object> targetColl = getObjectCollection(scenarioFieldName, form);
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, targetColl));
+                .body(new FieldResponse<>(scenarioFieldName, targetColl));
     }
 
-    @SuppressWarnings("unchecked") private Collection<Object> getObjectCollection(String scenarioFieldName, Form form) {
+    @SuppressWarnings("unchecked")
+    private Collection<Object> getObjectCollection(String scenarioFieldName, Form form) {
         Collection<Object> sourceColl = this.getScenarioFieldValue(form, scenarioFieldName, Collection.class);
         Collection<Object> targetColl = sourceColl.stream().map(o -> this.getObjectViaObjectMapper(o,
                 sourceClassToTargetClass.get(o.getClass()))).collect(Collectors.toList());
@@ -395,7 +425,9 @@ import java.util.stream.Collectors;
     }
 
     @GetMapping(value = "/collectionSerialized", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK) @ResponseBody @Operation(summary = "Get collection in a serialized string",
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get collection in a serialized string",
             description = "This operation returns a collection (table) of a form process in a serialized string.")
     public ResponseEntity<FieldResponse<String>> getCollectionSerialized(
             @RequestParam(required = true) String formsProcessId,
@@ -418,10 +450,11 @@ import java.util.stream.Collectors;
             throw new RuntimeException(e);
         }
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>(scenarioFieldName, jsonSerialized));
+                .body(new FieldResponse<>(scenarioFieldName, jsonSerialized));
     }
 
-    @GetMapping(value = "/fields", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
+    @GetMapping(value = "/fields", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     @Operation(summary = "Get fields", description = "This operation returns multiple fields from a form process.")
     public ResponseEntity<FieldResponse<Map<String, Object>>> getFields(
@@ -452,8 +485,10 @@ import java.util.stream.Collectors;
         return fieldMap;
     }
 
-    @GetMapping(value = "/fieldsSerialized", produces = MediaType.APPLICATION_JSON_VALUE) @ResponseStatus(HttpStatus.OK)
-    @ResponseBody @Operation(summary = "Get fields in a serialized string",
+    @GetMapping(value = "/fieldsSerialized", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Get fields in a serialized string",
             description = "This operation returns multiple fields from a form process in a serialized string.")
     public ResponseEntity<FieldResponse<String>> getFieldsSerialized(
             @RequestParam(required = true) String formsProcessId,
@@ -477,32 +512,83 @@ import java.util.stream.Collectors;
             throw new RuntimeException(e);
         }
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>("fieldValue", jsonSerialized));
+                .body(new FieldResponse<>("fieldValue", jsonSerialized));
     }
 
-    @PostMapping(value = "/event/{eventName}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK) @ResponseBody @Operation(summary = "Trigger event",
+    @PostMapping(value = "/event/{formsProcessId}/{eventName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    @Operation(summary = "Trigger event",
             description = "This operation triggers the execution of a scenario event for a form process.")
-    public ResponseEntity<String> triggerEvent(@PathVariable(required = true) String eventName,
+    public ResponseEntity<String> triggerEvent(@PathVariable(required = true) String formsProcessId, @PathVariable(required = true) String eventName,
                                                AbstractAuthenticationToken token) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
         if (StringUtils.isBlank(eventName)) {
             throw new BadRequestException("Missing eventName");
         }
         securityService.ensureAuthorized(token, EventType.PostScenarioControllerAuth, null, null);
-        log.error("EventName:{}", eventName);
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Attention: currently not implemented");
+        log.debug("FormsProcessId:{},EventName:{}", formsProcessId, eventName);
+        Form form = formsService.loadById(formsProcessId);
+        final var preCtx =
+                contextFactory.createContext(token, form.getSd(), null, null, null, Form.ROOT, eventName, null);
+        var session = sessionService.create(form.getSd(), form, preCtx);
+        var ctx = contextFactory.createContext(token, form.getSd(), session, preCtx.getDisplayState(), preCtx.getLocale(), preCtx.getSource().getRowId(), preCtx.getSource().getKey(), preCtx.getTaskInstanceId());
+        var result = callbackService.callEvent(session, Form.ROOT, eventName, EventType.TriggerEvent, ctx, null);
+        // persist into DB
+        //if (ctx.getSaveIntoDB()) {
+        FormsApi formsApi = ctx.getApi(FormsApi.class);
+        formsApi.save();
+        //}
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Execution of triggerEvent() is done!");
     }
 
-    @PostMapping(value = "/process/{stateValue}", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK) @ResponseBody
+    @PostMapping(value = "/process/{formsProcessId}/{stateValue}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
     @Operation(summary = "Set process state", description = "This operation sets a state for a form process.")
-    public ResponseEntity<String> setProcessState(@PathVariable(required = true) String stateValue,
+    public ResponseEntity<String> setProcessState(@PathVariable(required = true) String formsProcessId, @PathVariable(required = true) String stateValue,
                                                   AbstractAuthenticationToken token) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
         if (StringUtils.isBlank(stateValue)) {
             throw new BadRequestException("Missing stateValue");
         }
         securityService.ensureAuthorized(token, EventType.PostScenarioControllerAuth, null, null);
-        log.error("ProcessState:{}", stateValue);
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Attention: currently not implemented");
+        log.debug("FormsProcessId:{},ProcessState:{}", formsProcessId, stateValue);
+        Form form = formsService.loadById(formsProcessId);
+        try {
+            switch (stateValue.toLowerCase()) {
+                case "draft":
+                    form.setState(ProcessState.Draft);
+                    break;
+                case "submitted":
+                    form.setState(ProcessState.Submitted);
+                    break;
+                case "running":
+                    form.setState(ProcessState.Running);
+                    break;
+                case "cancelled":
+                    form.setState(ProcessState.Cancelled);
+                    break;
+                case "finished":
+                    form.setState(ProcessState.Finished);
+                    break;
+                default:
+                    form.setState(ProcessState.valueOf(stateValue));
+                    break;
+            }
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("The stateValue is not valid");
+        }
+        final var preCtx =
+                contextFactory.createContext(token, form.getSd(), null, null, null, Form.ROOT, null, null);
+        var session = sessionService.create(form.getSd(), form, preCtx);
+        var ctx = contextFactory.createContext(token, form.getSd(), session, preCtx.getDisplayState(), preCtx.getLocale(), preCtx.getSource().getRowId(), preCtx.getSource().getKey(), preCtx.getTaskInstanceId());
+        FormsApi formsApi = ctx.getApi(FormsApi.class);
+        formsApi.save();
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Execution of setProcessState() is done!");
     }
 }
