@@ -22,7 +22,6 @@ public class SessionService {
     private final PersonalizationService personalizationService;
 
     /**
-     * @param scenarioService
      * @param acFactory
      * @param redis
      * @param personalizationService

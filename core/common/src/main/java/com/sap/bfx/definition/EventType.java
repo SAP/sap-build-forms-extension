@@ -15,6 +15,7 @@ public enum EventType implements Identifier {
     LeaveFocus("leaveFocus"),
     Open("open"),
     Sort("sort"),
+    TriggerEvent("triggerEvent"),
     FindValueHelpAuth("findValueHelpAuth"),
     UploadAttachmentAuth("uploadAttachmentAuth"),
     DownloadAttachmentAuth("downloadAttachmentAuth"),
