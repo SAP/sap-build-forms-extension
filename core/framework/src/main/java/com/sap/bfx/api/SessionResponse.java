@@ -21,8 +21,7 @@ import java.util.*;
 
 import static com.sap.bfx.definition.DefinitionNames.*;
 
-@Data
-class SessionResponse {
+@Data class SessionResponse {
     private String sessionId;
     private Locale locale;
     private ElementMap values;
@@ -82,8 +81,7 @@ class SessionResponse {
          *                 serializing Objects value contains, if any.
          * @throws IOException
          */
-        @Override
-        public void serialize(SessionResponse value, JsonGenerator gen, SerializerProvider provider)
+        @Override public void serialize(SessionResponse value, JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
 
             gen.writeStartObject();
@@ -127,10 +125,9 @@ class SessionResponse {
          * @param provider
          * @throws IOException
          */
-        private void serializeDef(final ScenarioDefinition sd,
-                                  final Locale locale,
-                                  final CallbackService callbackService,
-                                  JsonGenerator gen, SerializerProvider provider) throws IOException {
+        private void serializeDef(final ScenarioDefinition sd, final Locale locale,
+                                  final CallbackService callbackService, JsonGenerator gen, SerializerProvider provider)
+                throws IOException {
 
             gen.writeStartObject();
             // texts
@@ -156,8 +153,8 @@ class SessionResponse {
          */
         private void serializeElementsDef(final String fieldName, final List<ElementDefinition> elements,
                                           final Map<String, CallbackService.EventHandlerInfo> eventHandlersMap,
-                                          JsonGenerator gen,
-                                          SerializerProvider provider, ArrayList<ElementDefinition> parents) throws IOException {
+                                          JsonGenerator gen, SerializerProvider provider,
+                                          ArrayList<ElementDefinition> parents) throws IOException {
 
             if (!elements.isEmpty()) {
                 gen.writeFieldName(fieldName);
@@ -181,9 +178,8 @@ class SessionResponse {
          */
         private void serializeElementDef(final ElementDefinition element,
                                          final Map<String, CallbackService.EventHandlerInfo> eventHandlersMap,
-                                         JsonGenerator gen,
-                                         SerializerProvider provider, ArrayList<ElementDefinition> parentElements)
-                throws IOException {
+                                         JsonGenerator gen, SerializerProvider provider,
+                                         ArrayList<ElementDefinition> parentElements) throws IOException {
             gen.writeStartObject();
             // Element data itself
             gen.writeStringField("id", element.getName());
@@ -198,11 +194,12 @@ class SessionResponse {
             if (StringUtils.isNotBlank(element.getCss())) {
                 gen.writeStringField("css", element.getCss());
             }
-            if (element.isShowLabel()) {
-                gen.writeBooleanField("showLabel", true);
-            }
+            gen.writeBooleanField("showLabel", element.isShowLabel());
             if (element.isShowHelp()) {
                 gen.writeBooleanField("showHelp", true);
+            }
+            if (element.isLineBreak()) {
+                gen.writeBooleanField("lineBreak", true);
             }
 
             boolean isRootWizard = parentElements.stream().anyMatch(e -> e.getType() == UIElementType.Wizard);
@@ -228,7 +225,8 @@ class SessionResponse {
                     gen.writeObjectFieldStart("vh");
                     gen.writeStringField(NM_NAME, ((HasValueHelp) element).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((HasValueHelp) element).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((HasValueHelp) element).getValueHelp().isEmptySelection());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((HasValueHelp) element).getValueHelp().isEmptySelection());
                     gen.writeStringField(NM_DISPLAY_FORMAT, ((HasValueHelp) element).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
@@ -239,7 +237,7 @@ class SessionResponse {
             // event handlers
             if (eventHandlersMap != null && eventHandlersMap.containsKey(element.getKey())) {
                 var events = eventHandlersMap.get(element.getKey()).getHandlers().stream()
-                        .map(it -> it.getType().getIdentifier()).toArray(String[]::new);
+                                             .map(it -> it.getType().getIdentifier()).toArray(String[]::new);
                 gen.writeFieldName("events");
                 gen.writeArray(events, 0, events.length);
             }
@@ -255,15 +253,22 @@ class SessionResponse {
                     break;
                 case Attachment:
                     if (((AttachmentElementDefinition) element).getCardinality() != null) {
-                        gen.writeStringField(NM_TYPE, ((AttachmentElementDefinition) element)
-                                .getCardinality().getIdentifier());
+                        gen.writeStringField(NM_TYPE,
+                                ((AttachmentElementDefinition) element).getCardinality().getIdentifier());
+                    }
+                    if (((AttachmentElementDefinition) element).getSelect() != null) {
+                        gen.writeStringField(NM_SELECT,
+                                ((AttachmentElementDefinition) element).getSelect().getIdentifier());
                     }
                     if (((AttachmentElementDefinition) element).getValueHelp() != null) {
                         gen.writeObjectFieldStart("vh");
                         gen.writeStringField(NM_NAME, ((AttachmentElementDefinition) element).getValueHelp().getName());
-                        gen.writeBooleanField(NM_VALIDATE, ((AttachmentElementDefinition) element).getValueHelp().isValidate());
-                        gen.writeBooleanField(NM_EMPTY_SELECTION, ((AttachmentElementDefinition) element).getValueHelp().isEmptySelection());
-                        gen.writeStringField(NM_DISPLAY_FORMAT, ((AttachmentElementDefinition) element).getValueHelp().getDisplayFormat());
+                        gen.writeBooleanField(NM_VALIDATE,
+                                ((AttachmentElementDefinition) element).getValueHelp().isValidate());
+                        gen.writeBooleanField(NM_EMPTY_SELECTION,
+                                ((AttachmentElementDefinition) element).getValueHelp().isEmptySelection());
+                        gen.writeStringField(NM_DISPLAY_FORMAT,
+                                ((AttachmentElementDefinition) element).getValueHelp().getDisplayFormat());
                         gen.writeEndObject();
                     }
                     if (StringUtils.isNotBlank(((AttachmentElementDefinition) element).getFileTypes())) {
@@ -286,8 +291,8 @@ class SessionResponse {
                         gen.writeEndObject();
                     }
                     gen.writeEndArray();
-                    gen.writeBooleanField(NM_HAS_DESCRIPTION, ((AttachmentElementDefinition) element)
-                            .isHasDescription());
+                    gen.writeBooleanField(NM_HAS_DESCRIPTION,
+                            ((AttachmentElementDefinition) element).isHasDescription());
                     break;
                 case Button:
                     if (((ButtonElementDefinition) element).getDesign() != null) {
@@ -296,6 +301,14 @@ class SessionResponse {
                     }
                     if (StringUtils.isNoneBlank(((ButtonElementDefinition) element).getIcon())) {
                         gen.writeStringField(NM_ICON, ((ButtonElementDefinition) element).getIcon());
+                    }
+                    if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getLinkHRef())) {
+                        gen.writeStringField("linkHRef", ((ButtonElementDefinition) element).getLinkHRef());
+                    }
+                    break;
+                case Icon:
+                    if (StringUtils.isNotBlank(((IconElementDefinition) element).getIcon())) {
+                        gen.writeStringField(NM_ICON, ((IconElementDefinition) element).getIcon());
                     }
                     break;
                 case Dialog:
@@ -310,18 +323,37 @@ class SessionResponse {
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(element);
                         temp.add(((DialogElementDefinition) element).getFooter());
-                        this.serializeElementDef(((DialogElementDefinition) element).getFooter(),
+                        this.serializeElementDef(((DialogElementDefinition) element).getFooter(), eventHandlersMap, gen,
+                                provider, temp);
+                    }
+                    break;
+                case DocForm:
+                    if (((DocFormElementDefinition) element).getFooter() != null) {
+                        gen.writeFieldName("footer");
+                        ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
+                        temp.add(element);
+                        temp.add(((DocFormElementDefinition) element).getFooter());
+                        this.serializeElementDef(((DocFormElementDefinition) element).getFooter(), eventHandlersMap,
+                                gen, provider, temp);
+                    }
+                    if (((DocFormElementDefinition) element).getHeaderSegment() != null) {
+                        gen.writeFieldName("header");
+                        ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
+                        temp.add(element);
+                        temp.add(((DocFormElementDefinition) element).getHeaderSegment());
+                        this.serializeElementDef(((DocFormElementDefinition) element).getHeaderSegment(),
                                 eventHandlersMap, gen, provider, temp);
                     }
                     break;
+
                 case Form:
                     if (((FormElementDefinition) element).getFooter() != null) {
                         gen.writeFieldName("footer");
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(element);
                         temp.add(((FormElementDefinition) element).getFooter());
-                        this.serializeElementDef(((FormElementDefinition) element).getFooter(),
-                                eventHandlersMap, gen, provider, temp);
+                        this.serializeElementDef(((FormElementDefinition) element).getFooter(), eventHandlersMap, gen,
+                                provider, temp);
                     }
                     if (((FormElementDefinition) element).getHeaderSegment() != null) {
                         gen.writeFieldName("header");
@@ -355,34 +387,31 @@ class SessionResponse {
                     }
                     break;
                 case Table:
-                    gen.writeStringField("type",
-                            ((TableElementDefinition) element).getStyle().getIdentifier());
-                    gen.writeStringField("select",
-                            ((TableElementDefinition) element).getSelect().getIdentifier());
+                    gen.writeStringField("type", ((TableElementDefinition) element).getStyle().getIdentifier());
+                    gen.writeStringField("select", ((TableElementDefinition) element).getSelect().getIdentifier());
                     if (((TableElementDefinition) element).getToolbar() != null) {
                         gen.writeFieldName("toolbar");
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(element);
                         temp.add(((TableElementDefinition) element).getToolbar());
-                        this.serializeElementDef(((TableElementDefinition) element).getToolbar(),
-                                eventHandlersMap, gen, provider, temp);
+                        this.serializeElementDef(((TableElementDefinition) element).getToolbar(), eventHandlersMap, gen,
+                                provider, temp);
                     }
-                    ;
                     break;
                 case Toolbar:
                     if (((ToolbarElementDefinition) element).getRightElements() != null) {
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(element);
                         this.serializeElementsDef("rightElements",
-                                ((ToolbarElementDefinition) element).getRightElements(),
-                                eventHandlersMap, gen, provider, temp);
+                                ((ToolbarElementDefinition) element).getRightElements(), eventHandlersMap, gen,
+                                provider, temp);
                     }
                     if (((ToolbarElementDefinition) element).getLeftElements() != null) {
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(element);
                         this.serializeElementsDef("leftElements",
-                                ((ToolbarElementDefinition) element).getLeftElements(),
-                                eventHandlersMap, gen, provider, temp);
+                                ((ToolbarElementDefinition) element).getLeftElements(), eventHandlersMap, gen, provider,
+                                temp);
                     }
                     break;
                 case Wizard:
@@ -390,8 +419,8 @@ class SessionResponse {
                         gen.writeFieldName("footer");
                         ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
                         temp.add(((WizardElementDefinition) element).getFooter());
-                        this.serializeElementDef(((WizardElementDefinition) element).getFooter(),
-                                eventHandlersMap, gen, provider, temp);
+                        this.serializeElementDef(((WizardElementDefinition) element).getFooter(), eventHandlersMap, gen,
+                                provider, temp);
                     }
 
                     // TODO(ML) Check all other element-types and add according handling of additional fields here!!
@@ -491,7 +520,8 @@ class SessionResponse {
                 gen.writeEndArray();
 
                 gen.writeObjectFieldStart("d");
-                for (var it : (journal != null) ? journal.getNecessaryRows(rowId, key, table) : table.getCurrentRows()) {
+                for (var it : (journal != null) ? journal.getNecessaryRows(rowId, key, table) :
+                        table.getCurrentRows()) {
                     gen.writeFieldName(it);
                     serializeElementRow(table.getData().get(it), gen, provider);
                 }
@@ -515,7 +545,6 @@ class SessionResponse {
                 gen.writeStartObject();
                 gen.writeStringField(FormUtils.NM_LINK_TEXT, ((LinkData) value).getText());
                 gen.writeStringField(FormUtils.NM_LINK_HREF, ((LinkData) value).getHRef());
-                gen.writeStringField(FormUtils.NM_LINK_TARGET, ((LinkData) value).getTarget());
                 gen.writeEndObject();
             } else if (value instanceof Attachments attachments) {
                 gen.writeStartArray();
@@ -535,6 +564,11 @@ class SessionResponse {
                     gen.writeEndObject();
                 }
                 gen.writeEndArray();
+            } else if (value instanceof MoneyAmount) {
+                gen.writeStartObject();
+                gen.writeStringField(FormUtils.NM_CURRENCY, ((MoneyAmount) value).getCurrency());
+                gen.writeNumberField(FormUtils.NM_AMOUNT, ((MoneyAmount) value).getAmount());
+                gen.writeEndObject();
             } else {
                 gen.writeObject(value);
             }

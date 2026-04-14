@@ -39,8 +39,8 @@ public class CallbackService {
      * @return the resulting `CallbackResult` after executing the lifecycle hook
      */
     @SuppressWarnings("rawtypes")
-    public CallbackResult callLifecycleHook(final LifecycleHookType type,
-                                            final Context<? extends AccessClass> ctx, CallbackResult previous) {
+    public CallbackResult callLifecycleHook(final LifecycleHookType type, final Context<? extends AccessClass> ctx,
+                                            CallbackResult previous) {
 
         final var optDefinition = definitionService.findActiveDefinition();
         if (optDefinition.isEmpty()) {
@@ -137,12 +137,7 @@ public class CallbackService {
         if (ehm != null && ehm.containsKey(sourceKey)) {
             try {
                 final var info = ehm.get(sourceKey);
-
                 log.debug("CallbackService.callEvent: event-info: {}", info.toString());
-                // if validation is required then execute validation
-                if (info.isValidating()) {
-                    validate(ctx);
-                }
 
                 // execute all before handlers
                 for (var it : info.handlers) {
@@ -156,6 +151,12 @@ public class CallbackService {
                         }
                     }
                 }
+
+                // if validation is required then execute validation
+                if (!result.isStopProcessing() && info.isValidating()) {
+                    validate(ctx);
+                }
+
                 // execute all on handlers, results are forwarded through iteration
                 if (!result.isStopProcessing()) {
                     for (var it : info.handlers) {
@@ -170,6 +171,12 @@ public class CallbackService {
                         }
                     }
                 }
+
+                // if re-validation is required, then execute it
+                if (!result.isStopProcessing() && result.isValidate()) {
+                    validate(ctx);
+                }
+
                 // execute all after handlers
                 if (!result.isStopProcessing()) {
                     for (var it : info.handlers) {
@@ -183,10 +190,6 @@ public class CallbackService {
                             }
                         }
                     }
-                }
-                // if re-validation is required, then execute it
-                if (result.isValidate()) {
-                    validate(ctx);
                 }
             } catch (Throwable t) {
                 throw ExceptionUtils.fromCallback(t, type.name());
@@ -205,11 +208,6 @@ public class CallbackService {
                 throw new FormsCoreException(String.format("No handlers found for '%s' of '%s' in version '%d'",
                         type, sourceKey, version));
             }
-        }
-
-        // if a post event processing validation is set, then execute it now
-        if (result.isValidate()) {
-            validate(ctx);
         }
 
         return result;
@@ -251,20 +249,23 @@ public class CallbackService {
             log.info("found event handlers:");
             eventHandlerMap.clear();
             handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(it -> {
-                log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + it.getKey());
-                for (var version : versions) {
-                    final var sd = scenarioService.findDefinitionByVersion(version).get();
-                    final var ed = sd.findElementByKey(it.getKey());
-                    if (ed != null && it.match(ed.getKey(), it.getType(), version)) {
-                        // this event handler matches for the given version. Storing it in the
-                        // event-handler-map
-                        var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
-                        var eventInfo = ehm.computeIfAbsent(ed.getKey(), k -> new EventHandlerInfo(version, ed));
-                        eventInfo.add(it);
-                        log.info("  Event '{}' for '{}' in version '{}' added -> '{}'",
-                                it.getType(), it.getKey(), version, it.getClass().getName());
+                it.getKeys().forEach(key -> {
+                    log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + key);
+                    for (var version : versions) {
+                        final var sd = scenarioService.findDefinitionByVersion(version).get();
+                        final var ed = sd.findElementByKey((String) key);
+                        if ((ed != null && it.match(ed.getKey(), it.getType(), version))
+                                || it.getType().equals(EventType.TriggerEvent)) {
+                            // this event handler matches for the given version. Storing it in the
+                            // event-handler-map
+                            var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
+                            var eventInfo = ehm.computeIfAbsent(ed.getKey(), k -> new EventHandlerInfo(version, ed));
+                            eventInfo.add(it);
+                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), key, version,
+                                    it.getClass().getName());
+                        }
                     }
-                }
+                });
             });
         } else {
             log.warn("No Event handlers defined!");

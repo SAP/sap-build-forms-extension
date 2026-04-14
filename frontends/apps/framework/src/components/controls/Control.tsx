@@ -4,11 +4,18 @@ import { AxiosResponse } from "axios"
 import { MessageIntf } from "commons"
 
 import { Definition, UIElement, UserEventType } from "../../features/sessions/definitions"
-import { DateRange, FormService, TableInfo } from "../../features/sessions/forms"
+import {
+    CurrencyAmount,
+    DateRange,
+    DocFormData,
+    FormService,
+    TableInfo,
+} from "../../features/sessions/forms"
 import { useAppSelector } from "../../features/store"
 import { SessionResponse, triggerEvent } from "../../features/sessions/sessionActions"
 
 import ButtonControl from "./ButtonControl"
+import CurrencyControl from "./CurrencyControl"
 import FormControl from "./FormControl"
 import GroupControl from "./GroupControl"
 import InputControl from "./InputControl"
@@ -32,6 +39,10 @@ import { ElementProp } from "../../features/sessions/journal"
 import DateRangeControl from "./DateRangeControl"
 import DialogControl from "./DialogControl"
 import AutocompleteControl from "./AutoCompleteControl"
+import IconControl from "./IconControl"
+import ImageControl from "./ImageControl"
+import LinkControl from "./LinkControl"
+import DocFormControl from "./DocFormControl"
 
 /**
  *
@@ -98,7 +109,15 @@ export function handleChange(
     def: Definition,
     rowId: string | undefined,
     messages: MessageIntf,
-    value: string | boolean | DateRange | TableInfo | number | undefined,
+    value:
+        | string
+        | boolean
+        | DateRange
+        | TableInfo
+        | CurrencyAmount
+        | DocFormData
+        | number
+        | undefined,
 ): Promise<any> {
     dispatch(
         update({
@@ -348,6 +367,7 @@ export interface ControlProps {
     slot?: string
     vhs: Record<string, number>
     design?: string
+    onAfterAction?: () => Promise<void> | void
 }
 
 /**
@@ -356,7 +376,7 @@ export interface ControlProps {
  * @returns
  */
 export default function (props: ControlProps) {
-    const { asTableCell, def, rowId } = props
+    const { def, rowId } = props
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
 
@@ -379,16 +399,26 @@ export default function (props: ControlProps) {
             return <ButtonControl {...props} />
         } else if (def.uiElement === UIElement.Checkbox) {
             return <CheckboxControl {...props} />
+        } else if (def.uiElement === UIElement.Currency) {
+            return <CurrencyControl {...props} />
         } else if (def.uiElement === UIElement.Dialog) {
             return <DialogControl {...props} />
         } else if (def.uiElement === UIElement.DateRange) {
             return <DateRangeControl {...props} />
+        } else if (def.uiElement === UIElement.DocForm) {
+            return <DocFormControl {...props} />
         } else if (def.uiElement === UIElement.Dummy) {
             return <DummyControl {...props} />
         } else if (def.uiElement === UIElement.Form) {
             return <FormControl {...props} />
         } else if (def.uiElement === UIElement.Group) {
             return <GroupControl {...props} />
+        } else if (def.uiElement === UIElement.Icon) {
+            return <IconControl {...props} />
+        } else if (def.uiElement === UIElement.Image) {
+            return <ImageControl {...props} />
+        } else if (def.uiElement === UIElement.Link) {
+            return <LinkControl {...props} />
         } else if (def.uiElement === UIElement.Input) {
             return <InputControl {...props} />
         } else if (def.uiElement === UIElement.MultiSelect) {

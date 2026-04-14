@@ -148,6 +148,12 @@ function renderCell(
             return (
                 <Control {...props} rowId={row.id} def={def} asTableCell={true} globalEd={false} />
             )
+        case UIElement.Icon:
+            return <Control {...props} rowId={row.id} def={def} asTableCell={true} />
+        case UIElement.Image:
+            return <Control {...props} rowId={row.id} def={def} asTableCell={true} />
+        case UIElement.Link:
+            return <Control {...props} rowId={row.id} def={def} asTableCell={true} />
         case UIElement.DateRange:
             return <Text>{intl.formatDate(v as string)}</Text>
         case UIElement.MultiSelect:
@@ -198,8 +204,9 @@ function renderCell(
  */
 function formatSelected(element?: Element) {
     let ids = ""
-    if (element) {
-        Object.entries((element?.va as TableInfo).d!).forEach(([key, row]) => {
+    const table = element?.va as TableInfo | undefined
+    if (table?.d) {
+        Object.entries(table.d).forEach(([key, row]) => {
             if (row.sel) {
                 if (ids.length > 0) {
                     ids += " "
@@ -235,7 +242,16 @@ export default function (props: ControlProps) {
 
     const mode = def.select == "single" ? "Single" : def.select == "multiple" ? "Multiple" : "None"
     const inline = def.type === "inline"
-    const table = element!.va! as TableInfo
+    const table =
+        (element?.va as TableInfo | undefined) ??
+        ({
+            p: 0,
+            ps: PAGE_SIZES[0],
+            s: 0,
+            r: [],
+            d: {},
+            sd: "a",
+        } as TableInfo)
 
     // console.log(`Table ${def.id}, number of rows: ${(value?.va as ElementMapRow[]).length}`)
 
@@ -254,6 +270,23 @@ export default function (props: ControlProps) {
             setVhsLoaded(true)
         })
     }, [element])
+
+    /**
+     * Adjust page when total rows change or table size changes
+     */
+    useEffect(() => {
+        const currentPage = Math.floor(table.p / table.ps) + 1
+        const lastPage = Math.max(Math.ceil(table.s / table.ps), 1)
+
+        if (currentPage > lastPage) {
+            const newPosition = (lastPage - 1) * table.ps
+            ;(async () => {
+                setLoading(true)
+                await handleBrowseTable(dispatch, def, rowId, messages, newPosition)
+                setLoading(false)
+            })()
+        }
+    }, [table.s, table.ps, table.p, dispatch, def, rowId, messages])
 
     /**
      *
@@ -380,6 +413,8 @@ export default function (props: ControlProps) {
             if (evt.detail.selectedItems[i].dataset["key"]) {
                 const ps = parseInt(evt.detail.selectedItems[i].dataset.key!)
                 setLoading(true)
+                // Reset to first page when changing page size
+                await handleBrowseTable(dispatch, def, rowId, messages, 0)
                 await handleChangeTablePageSize(dispatch, def, rowId, messages, ps)
                 setLoading(false)
                 break
@@ -416,23 +451,19 @@ export default function (props: ControlProps) {
             columns.push(
                 <TableHeaderCell
                     key={d.key}
-                    minWidth="7rem"
+                    minWidth="10rem"
                     style={{ display: "flex", alignContent: "center", justifyContent: "center" }}
                 >
                     <Text style={{ marginRight: ".5rem" }}>{getLabel(texts, d)}</Text>
-                    {d.key === (element?.va as TableInfo).sf && (
+                    {d.key === table.sf && (
                         <Icon
-                            name={
-                                (element?.va as TableInfo).sd === "d"
-                                    ? "sort-descending"
-                                    : "sort-ascending"
-                            }
+                            name={table.sd === "d" ? "sort-descending" : "sort-ascending"}
                             style={{ color: "var(--sapButton_TextColor)" }}
                             mode="Interactive"
                             onClick={() => handleSortClick(d.key)}
                         />
                     )}
-                    {d.key !== (element?.va as TableInfo).sf && (
+                    {d.key !== table.sf && (
                         <Icon
                             name="sort"
                             mode="Interactive"
@@ -510,6 +541,35 @@ export default function (props: ControlProps) {
 
     const lastPage = Math.max(Math.ceil(table.s / table.ps), 1)
     const currPage = Math.floor(table.p / table.ps) + 1
+    const tableRenderKey = `${rowId ?? "_"}-${def.key}-${table.p}-${table.ps}-${table.s}-${(table.r ?? []).join("|")}`
+
+    const handleToolbarActionCompleted = async () => {
+        setLoading(true)
+        await handleBrowseTable(dispatch, def, rowId, messages, table.p)
+        setLoading(false)
+    }
+
+    /**
+     * Handle page input change, constraining to valid range
+     */
+    const handlePageInputChange = async (evt: any) => {
+        const inputValue = evt.target.value.trim()
+        const pageNum = inputValue === "" ? 1 : parseInt(inputValue)
+
+        if (isNaN(pageNum)) return
+
+        // Constrain to valid range [1, lastPage]
+        const constrainedPage = Math.max(1, Math.min(pageNum, lastPage))
+
+        // If the entered page is outside valid range, update input to show constrained value
+        if (pageNum !== constrainedPage) {
+            evt.target.value = "" + constrainedPage
+        }
+
+        setLoading(true)
+        await handleBrowseTable(dispatch, def, rowId, messages, (constrainedPage - 1) * table.ps)
+        setLoading(false)
+    }
     // console.log(
     //     `table.p=${table.p}, table.ps=${table.ps}, table.s=${table.s}, lastPage=${lastPage}, currPage=${currPage}`,
     // )
@@ -517,12 +577,20 @@ export default function (props: ControlProps) {
 
     return (
         <div>
-            {def.toolbar && <Control {...props} key={def.toolbar.key} def={def.toolbar} />}
+            {def.toolbar && (
+                <Control
+                    {...props}
+                    key={def.toolbar.key}
+                    def={def.toolbar}
+                    onAfterAction={handleToolbarActionCompleted}
+                />
+            )}
             <Table
+                key={tableRenderKey}
                 headerRow={<TableHeaderRow sticky>{columns}</TableHeaderRow>}
                 style={{ width: "100%" }}
                 noDataText={intl.formatMessage({ id: "common_no_data" })}
-                overflowMode="Popin"
+                overflowMode="Scroll"
                 rowActionCount={calculateActionCount()}
                 loading={loading}
                 loadingDelay={1}
@@ -541,7 +609,7 @@ export default function (props: ControlProps) {
                         onChange={handleRowSelect}
                     />
                 )}
-                {rows.length > 0 && rows}
+                {rows}
             </Table>
             <Bar
                 startContent={
@@ -576,7 +644,11 @@ export default function (props: ControlProps) {
                             disabled={currPage === 1}
                             onClick={handlePrevPageButtonClick}
                         />
-                        <Input value={"" + currPage} style={{ width: "3em" }}></Input>
+                        <Input 
+                            value={"" + currPage} 
+                            style={{ width: "3em" }}
+                            onChange={handlePageInputChange}
+                        ></Input>
                         <Text>&nbsp;/&nbsp;{lastPage}</Text>
                         <Button
                             id={def.key + "_nextPage"}

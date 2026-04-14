@@ -1,7 +1,6 @@
 package com.sap.bfx.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.sap.bfx.valuehelp.ValueHelpClient;
 import com.sap.bfx.callback.CallbackService;
 import com.sap.bfx.callback.ConfigurationService;
 import com.sap.bfx.callback.ContextFactory;
@@ -11,9 +10,9 @@ import com.sap.bfx.definition.EventType;
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.NotFoundException;
-import com.sap.bfx.security.FormsRoles;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.session.*;
+import com.sap.bfx.valuehelp.ValueHelpClient;
 import com.sap.bfx.workflow.TaskInputContext;
 import com.sap.bfx.workflow.WorkflowService;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -44,11 +43,7 @@ import java.util.concurrent.CountDownLatch;
  * see <a href=
  * "https://technicalsand.com/streaming-data-spring-boot-restful-web-service/">here</a>.
  */
-@RestController
-@RequestMapping("api/v1/sessions")
-@Slf4j
-@Hidden
-public class SessionController {
+@RestController @RequestMapping("api/v1/sessions") @Slf4j @Hidden public class SessionController {
 
     private final DefinitionService definitionService;
     private final SessionService sessionService;
@@ -77,12 +72,13 @@ public class SessionController {
      * @param configurationService configuration service
      * @param securityService      security service
      */
-    @Autowired
-    public SessionController(final DefinitionService scenarioService, final SessionService sessionService,
-                             final CallbackService callbackService, final ValueHelpClient valueHelpClient,
-                             final TaskExecutor taskExecutor, final ControllerUtils utils,
-                             final ContextFactory contextFactory, final WorkflowService workflowService,
-                             final FormsService formsService, final ConfigurationService configurationService, final SecurityService securityService) {
+    @Autowired public SessionController(final DefinitionService scenarioService, final SessionService sessionService,
+                                        final CallbackService callbackService, final ValueHelpClient valueHelpClient,
+                                        final TaskExecutor taskExecutor, final ControllerUtils utils,
+                                        final ContextFactory contextFactory, final WorkflowService workflowService,
+                                        final FormsService formsService,
+                                        final ConfigurationService configurationService,
+                                        final SecurityService securityService) {
         this.definitionService = scenarioService;
         this.sessionService = sessionService;
         this.callbackService = callbackService;
@@ -106,8 +102,7 @@ public class SessionController {
      * @return json response for client
      * @throws Exception in case of errors
      */
-    @PatchMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
+    @PatchMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE) @ResponseBody
     public ResponseEntity<byte[]> patchSession(AbstractAuthenticationToken token, @RequestBody JsonNode node)
             throws Exception {
 
@@ -134,20 +129,22 @@ public class SessionController {
         // load session from store
         final var session = sessionService.findById(sessionId);
         if (StringUtils.isNotBlank(session.getTaskInstanceId())) {
-            securityService.ensureAuthorized(token, FormsRoles.ParticipateProcess);
-            String principalPropagationDestinationName = configurationService.getWorkflowRuntimePrincipalPropagationDestinationName();
+            securityService.ensureAuthorized(token, EventType.TaskExecutionAuth, Boolean.FALSE, sourceRowId, sourceKey);
+            String principalPropagationDestinationName =
+                    configurationService.getWorkflowRuntimePrincipalPropagationDestinationName();
             if (StringUtils.isBlank(principalPropagationDestinationName)) {
                 throw new NotFoundException("No destination name available to read workflow task!");
             }
-            if (!workflowService.isTaskExecutable(principalPropagationDestinationName, session.getTaskInstanceId(), utils.getSimplifiedPrincipalName(token.getName()), false)) {
+            if (!workflowService.isTaskExecutable(principalPropagationDestinationName, session.getTaskInstanceId(),
+                    utils.getSimplifiedPrincipalName(token.getName()), false)) {
                 throw new NotFoundException("Task " + session.getTaskInstanceId() + " is no longer executable");
             }
         } else {
             // non task execution cases
-            securityService.ensureAuthorized(token, FormsRoles.StartProcess);
+            securityService.ensureAuthorized(token, EventType.StartProcessAuth, Boolean.FALSE, sourceRowId, sourceKey);
         }
-        var context = contextFactory.createContext(token, null, null, null, null,
-                sourceRowId, sourceKey, session.getTaskInstanceId());
+        var context = contextFactory.createContext(token, null, null, null, null, sourceRowId, sourceKey,
+                session.getTaskInstanceId());
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
 
         // read scenario-definition
@@ -189,10 +186,8 @@ public class SessionController {
         // wait until session is stored...
         wg.await();
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.noCache())
-                .body(jsonResponse.toByteArray());
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).cacheControl(CacheControl.noCache())
+                             .body(jsonResponse.toByteArray());
     }
 
     /**
@@ -208,8 +203,7 @@ public class SessionController {
      * @return json response for client
      * @throws Exception in case of errors
      */
-    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseBody
+    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE) @ResponseBody
     ResponseEntity<byte[]> createSession(AbstractAuthenticationToken token, Principal principal,
                                          @RequestBody CreateSessionRequest request) throws Exception {
         log.info("Create-session called with {} for user {}", request.toString(),
@@ -236,10 +230,11 @@ public class SessionController {
         // define form
         Form form = null;
         if (isTaskContext) {
-            securityService.ensureAuthorized(token, FormsRoles.ParticipateProcess);
+            securityService.ensureAuthorized(token, EventType.TaskExecutionAuth, Boolean.FALSE, null, null);
             // handle loading the forms information from workflow engine (in detail from task input data) and
             // continue with loading the necessary information (e.g. according scenario definition version)
-            String principalPropagationDestinationName = configurationService.getWorkflowRuntimePrincipalPropagationDestinationName();
+            String principalPropagationDestinationName =
+                    configurationService.getWorkflowRuntimePrincipalPropagationDestinationName();
             if (StringUtils.isBlank(principalPropagationDestinationName)) {
                 throw new NotFoundException("No destination name available to read workflow task!");
             }
@@ -247,8 +242,8 @@ public class SessionController {
                     utils.getSimplifiedPrincipalName(principal.getName()), true)) {
                 throw new NotFoundException("Task " + taskInstanceId + " is no longer executable");
             }
-            TaskInputContext taskInputContext = workflowService.findFormByTask(principalPropagationDestinationName,
-                    taskInstanceId);
+            TaskInputContext taskInputContext =
+                    workflowService.findFormByTask(principalPropagationDestinationName, taskInstanceId);
             if (null == taskInputContext) {
                 throw new NotFoundException("No form information found for task " + taskInstanceId + "!");
             }
@@ -257,16 +252,16 @@ public class SessionController {
             form = formsService.loadById(taskInputContext.getFormsProcessID());
         }
         if (isShowContext) {
-            securityService.ensureAnyAuthorized(token, FormsRoles.StartProcess, FormsRoles.ParticipateProcess, FormsRoles.SeeAfterStart);
+            securityService.ensureAuthorized(token, EventType.ShowContextAuth, Boolean.FALSE, null, null);
             form = formsService.loadById(formsId);
         }
         if (isInitContext) {
-            securityService.ensureAuthorized(token, FormsRoles.StartProcess);
+            securityService.ensureAuthorized(token, EventType.StartProcessAuth, Boolean.FALSE, null, null);
         }
 
         // Callback at begin of round-trip
-        final var preContext = contextFactory.createContext(token, null, null, state,
-                locale, null, null, taskInstanceId);
+        final var preContext =
+                contextFactory.createContext(token, null, null, state, locale, null, null, taskInstanceId);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, preContext, null);
 
         // Collect and define variables for context
@@ -290,8 +285,9 @@ public class SessionController {
         // create session (and form), this will also set the access-class into the
         // context!
         var session = sessionService.create(sd, form, preContext);
-        var context = contextFactory.createContext(token, sd, session, preContext.getDisplayState(),
-                preContext.getLocale(), null, null, preContext.getTaskInstanceId());
+        var context =
+                contextFactory.createContext(token, sd, session, preContext.getDisplayState(), preContext.getLocale(),
+                        null, null, preContext.getTaskInstanceId());
 
         if (isTaskContext) {
             session.setTaskInstanceId(taskInstanceId);
@@ -335,17 +331,14 @@ public class SessionController {
         wg.await();
         log.info("Session created and stored. returning call...");
 
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.noCache())
-                .body(jsonResponse.toByteArray());
+        return ResponseEntity.status(HttpStatus.CREATED).contentType(MediaType.APPLICATION_JSON)
+                             .cacheControl(CacheControl.noCache()).body(jsonResponse.toByteArray());
     }
 
     /**
      * Request class for creating a new session.
      */
-    @Data
-    static class CreateSessionRequest {
+    @Data static class CreateSessionRequest {
         private String state;
         private String task;
         private String locale;

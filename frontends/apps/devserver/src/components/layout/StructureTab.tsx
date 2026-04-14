@@ -1,8 +1,9 @@
-import { FlexBox, Label, Switch } from "@ui5/webcomponents-react"
+import { FlexBox, Input, Label, Switch, Icon } from "@ui5/webcomponents-react"
 import { useState } from "react"
 import { Elem, Parent, Scenario } from "../../utils/scenarioDefinitions"
 import StructureTabTree from "./StructureTabTree"
 import StructureTabTable from "./StructureTabTable"
+import { VariantFilterProvider } from "./VariantFilterContext"
 
 interface Props {
     version: number
@@ -27,19 +28,56 @@ interface Props {
     setSelectedTreeItem: (e: any) => void
     setRenderTable: (e: any) => void
     setCopiedEl: (e: any) => void
+    selectedVariants: string[]
+    registerFlushPendingNameCommit?: (fn: (() => void) | undefined) => void
 }
 
 export default function StructureTab(props: Props) {
     const [tableView, setTableView] = useState(false)
+    const [search, setSearch] = useState<string>("")
 
     return (
-        <FlexBox direction="Column">
-            <FlexBox justifyContent="End" alignItems="End">
-                <FlexBox justifyContent="Center" alignItems="Center" direction="Row">
-                    <Label style={{ marginRight: "1rem" }}>Table view</Label>
+        <VariantFilterProvider selectedVariants={props.selectedVariants}>
+            <FlexBox direction="Column">
+            <FlexBox
+                justifyContent="SpaceBetween"
+                alignItems="Center"
+                style={{ marginBottom: "1rem", gap: "1rem" }}
+            >
+                <FlexBox style={{ flex: 1 }} />
+
+                <FlexBox justifyContent="Center" alignItems="Center" style={{ flex: 1 }}>
+                    <Input
+                        icon={<Icon name="search" />}
+                        style={{ width: "100%", minWidth: "300px" }}
+                        onInput={(e) => {
+                            const searchValue = e.target.value ? e.target.value.trim() : "";
+                            setSearch(searchValue);
+                        }}
+                        type="Text"
+                        valueState="None"
+                        value={search}
+                        showClearIcon={true}
+                        placeholder="Search for element name"
+                    />
+                </FlexBox>
+
+                <FlexBox
+                    justifyContent="End"
+                    alignItems="Center"
+                    direction="Row"
+                    style={{ flex: 1, gap: "0.5rem" }}
+                >
+                    <Label>Table view</Label>
                     <Switch
                         onChange={(e) => {
-                            setTableView(e.target.checked!)
+                            const nextTableView = e.target.checked!
+                            setTableView(nextTableView)
+
+                            // When switching from table to tree, refresh data from store first.
+                            if (!nextTableView) {
+                                props.setUpdate((prev: number) => prev + 1)
+                            }
                         }}
                     />
                 </FlexBox>
@@ -67,6 +105,8 @@ export default function StructureTab(props: Props) {
                     setParents={props.setParents}
                     copiedEl={props.copiedEl}
                     setCopiedEl={props.setCopiedEl}
+                    search={search}  // ADD THIS
+                    registerFlushPendingNameCommit={props.registerFlushPendingNameCommit}
                 />
             )}
             {tableView && (
@@ -88,8 +128,10 @@ export default function StructureTab(props: Props) {
                     setUpdate={props.setUpdate}
                     renderTable={props.renderTable}
                     setRenderTable={props.setRenderTable}
+                    search={search}  // ADD THIS
                 />
             )}
-        </FlexBox>
+            </FlexBox>
+        </VariantFilterProvider>
     )
 }

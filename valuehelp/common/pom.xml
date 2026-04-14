@@ -15,6 +15,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.sap.build-forms-extension</groupId>
+            <artifactId>core-common</artifactId>
+            <version>${forms.version}</version>
+        </dependency>
+        <dependency>
             <groupId>net.devh</groupId>
             <artifactId>grpc-client-spring-boot-starter</artifactId>
             <version>${spring-grpc.version}</version>
@@ -38,11 +43,6 @@
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
             <version>${hibernate.validator.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sap.build-forms-extension</groupId>
-            <artifactId>core-common</artifactId>
-            <version>${forms.version}</version>
         </dependency>
     </dependencies>
 

@@ -132,6 +132,9 @@ export default function (props: DialogAddLanguageProps) {
             }
             headerText="Add language"
             open={props.dialogAddLanguageOpen}
+            onClose={() => {
+                props.setDialogAddLanguageOpen(false)
+            }}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
                 <FormItem labelContent={<Label required>Language name</Label>}>

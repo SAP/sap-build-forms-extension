@@ -1,5 +1,4 @@
-import { JSX, useEffect, useState } from "react"
-
+import { JSX, useEffect, useRef, useState } from "react"
 import { createUseStyles } from "react-jss"
 
 import {
@@ -13,7 +12,10 @@ import {
     MessageBox,
     MessageBoxAction,
     MessageBoxType,
+    MultiComboBox,
+    MultiComboBoxItem,
     Option,
+    Panel,
     Select,
     Switch,
     Tab,
@@ -30,6 +32,7 @@ import useElementsStore from "../state/elements"
 import { backendDispatch } from "../utils/backend"
 import useMessagesStore from "../state/messages"
 import { Elem, Scenario, tabs, Mixin, Parent, ElementPart } from "../utils/scenarioDefinitions"
+import { collectVariantsFromElements } from "../utils/variantUtils"
 import Structure from "./layout/StructureTab"
 import LanguagesTab from "./layout/LanguagesTab"
 import CopyDialog from "./layout/CopyDialog"
@@ -38,20 +41,29 @@ import AddElementDialog from "./layout/AddElementDialog"
 
 const useStyles = createUseStyles({
     selectScenarioMixin: {
-        marginTop: 20,
-        width: 300,
-        marginRight: 20,
+        minWidth: 260,
+        maxWidth: 420,
+        marginRight: 16,
     },
     selectVersion: {
-        marginTop: 20,
+        minWidth: 260,
+        maxWidth: 420,
     },
     generalDataForm: {
         alignItems: "center",
-        paddingBlock: 20,
+        paddingBlock: 8,
     },
     button: {
         marginLeft: 30,
         fontSize: "medium",
+    },
+    dropdownContainer: {
+        gap: '1rem',
+        padding: '0.5rem 0 0.75rem 0',
+    },
+    selectVariants: {
+        minWidth: 260,
+        maxWidth: 420,
     },
 })
 
@@ -127,6 +139,19 @@ export default function () {
             : "en",
     )
     const [copiedEl, setCopiedEl] = useState<Elem | undefined>()
+    const [panelCollapsed, setPanelCollapsed] = useState<boolean>(true)
+    const [selectedVariants, setSelectedVariants] = useState<string[]>([])
+
+    const availableVariants = treeItemsShown
+        ? collectVariantsFromElements(treeItemsShown.elements)
+        : []
+
+    useEffect(() => {
+        setSelectedVariants((current) =>
+            current.filter((variant) => availableVariants.includes(variant)),
+        )
+    }, [treeItemsShown])
+    const flushPendingNameCommitRef = useRef<(() => void) | undefined>(undefined)
 
     useEffect(() => {
         setEl(undefined)
@@ -255,12 +280,10 @@ export default function () {
                                                     setUpdate(update + 1)
                                                     setRenderTable((prev) => prev + 1)
 
-                                                    // Convert response data to array
                                                     const messages = Array.isArray(action.data)
                                                         ? action.data
                                                         : Object.keys(action.data).map((k) => action.data[k])
 
-                                                    // Check if there are any error or warning messages
                                                     const hasErrors = messages.some((msg: any) =>
                                                         msg.severity === "e" || msg.severity === "w"
                                                     )
@@ -301,6 +324,11 @@ export default function () {
                                     <Button
                                         icon="save"
                                         onClick={function Ta() {
+                                            flushPendingNameCommitRef.current?.()
+                                            ;(document.activeElement as HTMLElement | null)?.blur()
+
+                                            const latestTreeItems = useElementsStore.getState().elements
+
                                             var newItems1: any
                                             var newItems2: any
 
@@ -309,7 +337,7 @@ export default function () {
                                                 "PUT",
                                                 Object.assign(
                                                     {},
-                                                    treeItems.filter(
+                                                    latestTreeItems.filter(
                                                         (item: any) => item.defaultLanguage != null,
                                                     ),
                                                 ),
@@ -322,7 +350,7 @@ export default function () {
                                                         "PUT",
                                                         Object.assign(
                                                             {},
-                                                            treeItems.filter(
+                                                            latestTreeItems.filter(
                                                                 (item: any) =>
                                                                     item.defaultLanguage == null,
                                                             ),
@@ -378,189 +406,221 @@ export default function () {
                 }
                 content={
                     <>
-                        <Select
-                            onChange={function Ta(e) {
-                                setScenarioMixin(e.detail.selectedOption.textContent!.toString())
-                            }}
-                            className={classes.selectScenarioMixin}
+                        <FlexBox 
+                            direction="Row" 
+                            alignItems="Center" 
+                            className={classes.dropdownContainer}
                         >
-                            {[
-                                "Scenario",
-                                ...new Set(
-                                    treeItems
-                                        .filter(
-                                            (t1: Scenario | Mixin) => !("defaultLanguage" in t1),
-                                        )
-                                        .map((t: Scenario | Mixin) => t.name),
-                                ),
-                            ].map((item: any) => {
-                                if (item == "Scenario") {
-                                    return (
-                                        <Option
-                                            key={item}
-                                            icon="document"
-                                            selected={scenarioMixin == item}
-                                        >
-                                            {item}
-                                        </Option>
-                                    )
-                                } else {
-                                    return (
-                                        <Option
-                                            key={item}
-                                            icon="add-document"
-                                            selected={scenarioMixin == item}
-                                        >
-                                            {item}
-                                        </Option>
-                                    )
-                                }
-                            })}
-                        </Select>
-
-                        <Select
-                            onChange={function Ta(e) {
-                                setVersion(
-                                    Number(
-                                        e.detail.selectedOption
-                                            .textContent!.toString()
-                                            .substring(8),
-                                    ).valueOf(),
-                                )
-                            }}
-                            className={classes.selectVersion}
-                        >
-                            {[
-                                ...new Set(
-                                    treeItems
-                                        .filter(
-                                            (item: any) =>
-                                                item.name == scenarioMixin ||
-                                                (scenarioMixin == "Scenario" &&
-                                                    item.defaultLanguage != null),
-                                        )
-                                        .map((obj: Scenario | Mixin) => obj.version),
-                                ),
-                            ]
-                                .sort()
-                                .map((item: any) => {
-                                    return <Option key={item}>Version {item}</Option>
-                                })}
-                        </Select>
-
-                        <Form
-                            layout="S1 M1 L2 XL2"
-                            labelSpan="S10 M4 L4 XL2"
-                            className={classes.generalDataForm}
-                        >
-                            <FormItem labelContent={<Label>Name</Label>}>
-                                <Input
-                                    placeholder={treeItemsShown?.name}
-                                    value={treeItemsShown?.name}
-                                    onChange={(e) => {
-                                        editBaseData({
-                                            scenarioMixinName: scenarioMixin,
-                                            version: version,
-                                            name: e.target.attributes.getNamedItem("value")!
-                                                .nodeValue!,
-                                        })
-                                        if (scenarioMixin != "Scenario") {
-                                            setScenarioMixin(
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
+                            <Select
+                                onChange={function Ta(e) {
+                                    setScenarioMixin(e.detail.selectedOption.textContent!.toString())
+                                }}
+                                className={classes.selectScenarioMixin}
+                            >
+                                {[
+                                    "Scenario",
+                                    ...new Set(
+                                        treeItems
+                                            .filter(
+                                                (t1: Scenario | Mixin) => !("defaultLanguage" in t1),
                                             )
-                                        }
-                                    }}
-                                />
-                            </FormItem>
-                            {treeItemsShown && "active" in treeItemsShown && (
-                                <FormItem labelContent={<Label>Active</Label>}>
-                                    <Switch
+                                            .map((t: Scenario | Mixin) => t.name),
+                                    ),
+                                ].map((item: any) => {
+                                    if (item == "Scenario") {
+                                        return (
+                                            <Option
+                                                key={item}
+                                                icon="document"
+                                                selected={scenarioMixin == item}
+                                            >
+                                                {item}
+                                            </Option>
+                                        )
+                                    } else {
+                                        return (
+                                            <Option
+                                                key={item}
+                                                icon="add-document"
+                                                selected={scenarioMixin == item}
+                                            >
+                                                {item}
+                                            </Option>
+                                        )
+                                    }
+                                })}
+                            </Select>
+
+                            <Select
+                                onChange={function Ta(e) {
+                                    setVersion(
+                                        Number(
+                                            e.detail.selectedOption
+                                                .textContent!.toString()
+                                                .substring(8),
+                                        ).valueOf(),
+                                    )
+                                }}
+                                className={classes.selectVersion}
+                            >
+                                {[
+                                    ...new Set(
+                                        treeItems
+                                            .filter(
+                                                (item: any) =>
+                                                    item.name == scenarioMixin ||
+                                                    (scenarioMixin == "Scenario" &&
+                                                        item.defaultLanguage != null),
+                                            )
+                                            .map((obj: Scenario | Mixin) => obj.version),
+                                    ),
+                                ]
+                                    .sort()
+                                    .map((item: any) => {
+                                        return <Option key={item}>Version {item}</Option>
+                                    })}
+                            </Select>
+
+                            <MultiComboBox
+                                className={classes.selectVariants}
+                                placeholder="Select variants"
+                                onSelectionChange={(e: any) => {
+                                    const selected = Array.from(e.target.items || [])
+                                        .filter((item: any) => item.selected)
+                                        .map((item: any) => item.text)
+                                    setSelectedVariants(selected)
+                                }}
+                            >
+                                {availableVariants.map((variant) => (
+                                    <MultiComboBoxItem
+                                        key={variant}
+                                        text={variant}
+                                        selected={selectedVariants.includes(variant)}
+                                    />
+                                ))}
+                            </MultiComboBox>
+                        </FlexBox>
+
+                        <Panel 
+                            headerText="General Information" 
+                            headerLevel="H6" 
+                            collapsed={panelCollapsed}
+                            onToggle={(e) => setPanelCollapsed(e.detail.collapsed)}
+                        >
+                            <Form
+                                layout="S1 M1 L2 XL2"
+                                labelSpan="S10 M4 L4 XL2"
+                                className={classes.generalDataForm}
+                            >
+                                <FormItem labelContent={<Label>Name</Label>}>
+                                    <Input
+                                        placeholder={treeItemsShown?.name}
+                                        value={treeItemsShown?.name}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
                                                 version: version,
-                                                active: e.target.checked!,
+                                                name: e.target.attributes.getNamedItem("value")!
+                                                    .nodeValue!,
                                             })
+                                            if (scenarioMixin != "Scenario") {
+                                                setScenarioMixin(
+                                                    e.target.attributes.getNamedItem("value")!
+                                                        .nodeValue!,
+                                                )
+                                            }
                                         }}
-                                        checked={treeItemsShown?.active}
                                     />
                                 </FormItem>
-                            )}
-                            <FormItem labelContent={<Label>Access Object</Label>}>
-                                <Input
-                                    placeholder={treeItemsShown?.accessObject}
-                                    value={treeItemsShown?.accessObject}
-                                    onChange={(e) => {
-                                        editBaseData({
-                                            scenarioMixinName: scenarioMixin,
-                                            version: version,
-                                            accessObject:
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
-                                        })
-                                        setUpdate(update + 1)
-                                    }}
-                                />
-                            </FormItem>
-                            <FormItem labelContent={<Label>Base Package</Label>}>
-                                <Input
-                                    placeholder={treeItemsShown?.basePackage}
-                                    value={treeItemsShown?.basePackage}
-                                    onChange={(e) => {
-                                        editBaseData({
-                                            scenarioMixinName: scenarioMixin,
-                                            version: version,
-                                            basePackage:
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
-                                        })
-                                        setUpdate(update + 1)
-                                    }}
-                                />
-                            </FormItem>
-                            {treeItemsShown && "defaultLanguage" in treeItemsShown && (
-                                <FormItem labelContent={<Label>Default Language</Label>}>
-                                    <Select
-                                        onChange={function Ta(e) {
+                               {treeItemsShown && "active" in treeItemsShown && (
+                                    <FormItem labelContent={<Label>Active</Label>}>
+                                        <Switch
+                                            onChange={(e) => {
+                                                editBaseData({
+                                                    scenarioMixinName: scenarioMixin,
+                                                    version: version,
+                                                    active: e.target.checked!,
+                                                })
+                                            }}
+                                            checked={treeItemsShown?.active}
+                                        />
+                                    </FormItem>
+                                )} 
+                                <FormItem labelContent={<Label>Access Object</Label>}>
+                                    <Input
+                                        placeholder={treeItemsShown?.accessObject}
+                                        value={treeItemsShown?.accessObject}
+                                        onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
                                                 version: version,
-                                                defaultLanguage:
-                                                    e.detail.selectedOption.textContent!.toString(),
+                                                accessObject:
+                                                    e.target.attributes.getNamedItem("value")!
+                                                        .nodeValue!,
                                             })
                                             setUpdate(update + 1)
                                         }}
-                                    >
-                                        {treeItemsShown.defaultLanguage &&
-                                            !(
-                                                Object.keys(treeItemsShown.texts!) as Array<string>
-                                            ).includes(treeItemsShown.defaultLanguage) && (
-                                                <Option
-                                                    selected={true}
-                                                    key={treeItemsShown.defaultLanguage}
-                                                >
-                                                    {treeItemsShown.defaultLanguage}
-                                                </Option>
-                                            )}
-                                        {(Object.keys(treeItemsShown.texts!) as Array<string>)
-                                            .sort()
-                                            .map((key) => {
-                                                return (
-                                                    <Option
-                                                        selected={
-                                                            key == treeItemsShown?.defaultLanguage
-                                                        }
-                                                        key={key}
-                                                    >
-                                                        {key}
-                                                    </Option>
-                                                )
-                                            })}
-                                    </Select>
+                                    />
                                 </FormItem>
-                            )}
-                        </Form>
+                                <FormItem labelContent={<Label>Base Package</Label>}>
+                                    <Input
+                                        placeholder={treeItemsShown?.basePackage}
+                                        value={treeItemsShown?.basePackage}
+                                        onChange={(e) => {
+                                            editBaseData({
+                                                scenarioMixinName: scenarioMixin,
+                                                version: version,
+                                                basePackage:
+                                                    e.target.attributes.getNamedItem("value")!
+                                                        .nodeValue!,
+                                            })
+                                            setUpdate(update + 1)
+                                        }}
+                                    />
+                                </FormItem>
+                                {treeItemsShown && "defaultLanguage" in treeItemsShown && (
+                                    <FormItem labelContent={<Label>Default Language</Label>}>
+                                        <Select
+                                            onChange={function Ta(e) {
+                                                editBaseData({
+                                                    scenarioMixinName: scenarioMixin,
+                                                    version: version,
+                                                    defaultLanguage:
+                                                        e.detail.selectedOption.textContent!.toString(),
+                                                })
+                                                setUpdate(update + 1)
+                                            }}
+                                        >
+                                            {treeItemsShown.defaultLanguage &&
+                                                !(
+                                                    Object.keys(treeItemsShown.texts!) as Array<string>
+                                                ).includes(treeItemsShown.defaultLanguage) && (
+                                                    <Option
+                                                        selected={true}
+                                                        key={treeItemsShown.defaultLanguage}
+                                                    >
+                                                        {treeItemsShown.defaultLanguage}
+                                                    </Option>
+                                                )}
+                                            {(Object.keys(treeItemsShown.texts!) as Array<string>)
+                                                .sort()
+                                                .map((key) => {
+                                                    return (
+                                                        <Option
+                                                            selected={
+                                                                key == treeItemsShown?.defaultLanguage
+                                                            }
+                                                            key={key}
+                                                        >
+                                                            {key}
+                                                        </Option>
+                                                    )
+                                                })}
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            </Form>
+                        </Panel>
 
                         <TabContainer
                             onTabSelect={function _a(e) {
@@ -568,7 +628,7 @@ export default function () {
                                 setElement(undefined)
                                 setTab(e.detail.tab.id)
                             }}
-                            style={{ width: "100%" }}
+                            style={{ width: "100%", marginTop: "0.5rem", marginBottom: "0.5rem" }}
                         >
                             {tabs.map((t) => {
                                 return (
@@ -611,6 +671,10 @@ export default function () {
                                 setCopiedEl={setCopiedEl}
                                 renderTable={renderTable}
                                 setRenderTable={setRenderTable}
+                                selectedVariants={selectedVariants}
+                                registerFlushPendingNameCommit={(fn) => {
+                                    flushPendingNameCommitRef.current = fn
+                                }}
                             />
                         )}
 
@@ -728,7 +792,6 @@ export default function () {
                                     scenarioMixinName: scenarioMixin,
                                 })
 
-                                // Show toast notification
                                 toast(Severity.None, "element_deleted")
 
                                 setUpdate(update + 1)

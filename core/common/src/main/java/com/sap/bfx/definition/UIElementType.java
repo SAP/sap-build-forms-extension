@@ -12,6 +12,7 @@ public enum UIElementType implements Identifier {
     Currency(Constants.TYPE_CURRENCY),
     DateRangePicker(Constants.TYPE_DATE_RANGE_PICKER),
     Dialog(Constants.TYPE_DIALOG),
+    DocForm(Constants.TYPE_DOC_FORMS),
     Dummy(Constants.TYPE_DUMMY),
     Form(Constants.TYPE_FORM),
     Group(Constants.TYPE_GROUP),

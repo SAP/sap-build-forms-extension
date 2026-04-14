@@ -38,6 +38,7 @@ export default function (props: ControlProps) {
     const [elementDisabled, setElementDisabled] = useState<boolean>(true)
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
+    const emptySelection = def.vh?.emptySelection ?? false
 
     useEffect(() => {
         if (def.vh && vhs[def.vh.name]) {
@@ -69,14 +70,20 @@ export default function (props: ControlProps) {
                 valueState={elementInfo2ValueState(element?.msg)}
                 valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
             >
-                {options.map((it) => (
-                    <MultiComboBoxItem
-                        key={it.value}
-                        text={it.name}
-                        data-id={it.value}
-                        selected={(element?.va as string).search(it.value + ";") > -1}
-                    />
-                ))}
+                {options.map((it) => {
+                    let isSelected = false
+                    if (!emptySelection && element?.va && typeof element.va === "string") {
+                        isSelected = element.va.search(it.value + ";") > -1
+                    }
+                    return (
+                        <MultiComboBoxItem
+                            key={it.value}
+                            text={it.name}
+                            data-id={it.value}
+                            selected={isSelected}
+                        />
+                    )
+                })}
             </MultiComboBox>
         </ControlContainer>
     )

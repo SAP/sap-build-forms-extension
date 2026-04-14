@@ -1,4 +1,4 @@
-import { Icon, MessageStrip } from "@ui5/webcomponents-react"
+import { Icon, Label, MessageStrip } from "@ui5/webcomponents-react"
 
 import { ControlProps } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
@@ -42,6 +42,7 @@ export default function (props: ControlProps) {
     if (withContainer) {
         return (
             <ControlContainer {...props} asTableCell={true}>
+                <Label></Label>
                 <MessageStrip
                     id={def.key}
                     design={mapDesign(def.design)}

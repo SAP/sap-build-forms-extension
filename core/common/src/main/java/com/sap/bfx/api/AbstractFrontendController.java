@@ -115,7 +115,8 @@ public abstract class AbstractFrontendController {
             path = m.group(1);
             log.debug("Translated path is '{}'", path);
 
-            if (StringUtils.endsWithIgnoreCase(path, ".js")) {
+            if (StringUtils.endsWithIgnoreCase(path, ".js")
+                    || StringUtils.endsWithIgnoreCase(path, ".mjs")) {
                 mimeType = "text/javascript";
             } else if (StringUtils.endsWithIgnoreCase(path, "css")) {
                 mimeType = "text/css";

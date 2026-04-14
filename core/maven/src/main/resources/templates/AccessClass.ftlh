@@ -43,9 +43,9 @@
 
 package ${basePackage}.metadata;
 
-import com.sap.consulting.forms.definition.*;
-import com.sap.consulting.forms.callback.*;
-import com.sap.consulting.forms.session.*;
+import com.sap.bfx.definition.*;
+import com.sap.bfx.callback.*;
+import com.sap.bfx.session.*;
 import jakarta.annotation.Generated;
 import org.apache.commons.lang3.StringUtils;
 
@@ -55,7 +55,7 @@ import java.util.Optional;
 import java.util.Collections;
 import java.util.function.Predicate;
 
-@Generated("com.sap.consulting.forms.maven.TemplateService")
+@Generated("com.sap.bfx.maven.TemplateService")
 @SuppressWarnings("unused")
 public class ${className} implements AccessClass {
 <#--
@@ -80,11 +80,11 @@ public class ${className} implements AccessClass {
     }
 
 <#if isRoot>
-    public String getRootValue() {
-        return form.getValue(this.rowId, "${rootKey}", String.class).orElse(null);
+    public ${rootDataType} getRootValue() {
+        return form.getValue(this.rowId, "${rootKey}", ${rootDataType}.class).orElse(null);
     }
 
-    public void setRootValue(final String value) {
+    public void setRootValue(final ${rootDataType} value) {
         form.setValue(this.rowId, "${rootKey}", value);
     }
 </#if>

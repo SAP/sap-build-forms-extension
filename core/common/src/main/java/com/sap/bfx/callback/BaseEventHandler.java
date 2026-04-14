@@ -2,11 +2,14 @@ package com.sap.bfx.callback;
 
 import com.sap.bfx.definition.EventType;
 import com.sap.bfx.utils.Identifier;
-import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public abstract class BaseEventHandler<AC extends AccessClass> implements EventHandler<AC> {
 
-    private final String key;
+    private final Set<String> keys = new HashSet<>();
     private final EventType type;
     private final VersionSelector versionSelector;
     private final Priority order;
@@ -22,7 +25,7 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
     protected BaseEventHandler(final Identifier identifier, final EventType type, final Priority order,
                                final boolean validating, final VersionSelector versionSelector) {
 
-        this.key = identifier.getIdentifier();
+        this.keys.add(identifier.getIdentifier());
         this.type = type;
         this.order = order;
         this.validating = validating;
@@ -46,9 +49,36 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
         this(identifier, type, Priority.DEFAULT, validating, VersionSelector.all());
     }
 
+    /**
+     *
+     * @param type
+     * @param order
+     * @param validating
+     * @param versionSelector
+     * @param identifiers
+     */
+    protected BaseEventHandler(EventType type, Priority order, boolean validating, VersionSelector versionSelector,
+                               final Identifier... identifiers) {
+
+        this.keys.addAll(Arrays.stream(identifiers).map(Identifier::getIdentifier).toList());
+        this.type = type;
+        this.order = order;
+        this.validating = validating;
+        this.versionSelector = versionSelector;
+    }
+
+    /**
+     *
+     * @param type
+     * @param identifiers
+     */
+    protected BaseEventHandler(EventType type, Identifier... identifiers) {
+        this(type, Priority.DEFAULT, false, VersionSelector.all(), identifiers);
+    }
+
     @Override
     public boolean match(final String key, final EventType type, final int version) {
-        var matches = StringUtils.equals(this.key, key) && this.type == type;
+        var matches = this.keys.contains(key) && this.type == type;
         if (version != VersionSelector.IGNORE) {
             matches = matches && this.versionSelector.match(version);
         }
@@ -76,8 +106,8 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
     }
 
     @Override
-    public String getKey() {
-        return this.key;
+    public Set<String> getKeys() {
+        return this.keys;
     }
 
     @Override

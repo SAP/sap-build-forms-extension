@@ -92,7 +92,7 @@ export default function CopyDialog(props: Props) {
                                                 props.treeItemsShown?.elements?.reduce(
                                                     (prev, current) =>
                                                         (prev.sort ? prev.sort : -1) >
-                                                        (current.sort ? current.sort : -1)
+                                                            (current.sort ? current.sort : -1)
                                                             ? prev
                                                             : current,
                                                 ).sort ?? 0
@@ -112,10 +112,10 @@ export default function CopyDialog(props: Props) {
                                             },
                                             scenarioMixinName: props.scenarioMixinName,
                                         })
-                                        
+
                                         // Show toast notification
                                         toast(Severity.None, "element_pasted")
-                                        
+
                                         props.setUpdate(props.update + 1)
                                     }
                                     props.setDialogOpen(false)
@@ -144,6 +144,9 @@ export default function CopyDialog(props: Props) {
                 setPostfix(`${(Math.random() + 1).toString(36).substring(7)}`)
             }}
             open={props.dialogOpen}
+            onClose={() => {
+                props.setDialogOpen(false)
+            }}
             style={{ padding: 3, margin: 3, minWidth: 400, width: "20%" }}
         >
             <Form layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">

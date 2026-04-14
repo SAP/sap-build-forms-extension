@@ -20,7 +20,6 @@ import {
     Text,
     Tree,
 } from "@ui5/webcomponents-react"
-import { useState } from "react"
 import { createUseStyles } from "react-jss"
 import ElementTypeSelect from "./ElementTypeSelect"
 import {
@@ -74,6 +73,8 @@ interface Props {
     setUpdate: (e: any) => void
     setSelectedTreeItem: (e: any) => void
     setCopiedEl: (e: any) => void
+    search: string
+    registerFlushPendingNameCommit?: (fn: (() => void) | undefined) => void
 }
 
 const useStyles = createUseStyles({
@@ -107,10 +108,160 @@ export default function StructureTabTree(props: Props) {
     const editDetailData = useElementsStore((state) => state.editDetailData)
     const editTexts = useElementsStore((state) => state.editTexts)
 
-    const [mode, setMode] = useState<ListSelectionMode>(ListSelectionMode.Single)
-    const [search, setSearch] = useState<string>("")
+    const [mode, setMode] = React.useState<ListSelectionMode>(ListSelectionMode.Single)
+    const [nameDraft, setNameDraft] = React.useState<string>(props.el?.name ?? "")
+const treeRef = React.useRef<HTMLElement>(null)
+const currentNameRef = React.useRef<string | undefined>(props.el?.name)
+const textsRef = React.useRef<any>(props.treeItemsShown?.texts ?? {})
+const nameCommitTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+const isTypingNameRef = React.useRef<boolean>(false)
+const nameDraftRef = React.useRef<string>(props.el?.name ?? "")
+
+React.useEffect(() => {
+    currentNameRef.current = props.el?.name
+}, [props.el?.name])
+
+React.useEffect(() => {
+    textsRef.current = props.treeItemsShown?.texts ?? {}
+}, [props.treeItemsShown?.texts])
+
+React.useEffect(() => {
+    if (nameCommitTimeoutRef.current) {
+        clearTimeout(nameCommitTimeoutRef.current)
+        nameCommitTimeoutRef.current = null
+    }
+    isTypingNameRef.current = false
+    const value = props.el?.name ?? ""
+    setNameDraft(value)
+    nameDraftRef.current = value
+}, [props.element])
+
+React.useEffect(() => {
+    if (!isTypingNameRef.current) {
+        const value = props.el?.name ?? ""
+        setNameDraft(value)
+        nameDraftRef.current = value
+    }
+}, [props.el?.name])
+
+React.useEffect(() => {
+    return () => {
+        if (nameCommitTimeoutRef.current) {
+            clearTimeout(nameCommitTimeoutRef.current)
+        }
+    }
+}, [])
+
+    const flushPendingNameCommit = () => {
+        if (nameCommitTimeoutRef.current) {
+            clearTimeout(nameCommitTimeoutRef.current)
+            nameCommitTimeoutRef.current = null
+        }
+
+        if (isTypingNameRef.current) {
+            commitNameChange(nameDraftRef.current)
+            isTypingNameRef.current = false
+        }
+    }
+
+React.useEffect(() => {
+    props.registerFlushPendingNameCommit?.(flushPendingNameCommit)
+    return () => {
+        props.registerFlushPendingNameCommit?.(undefined)
+    }
+}, [props.registerFlushPendingNameCommit, flushPendingNameCommit])
+
+    const commitNameChange = (newName: string) => {
+        if (!props.el) {
+            return
+        }
+
+        const oldName = currentNameRef.current
+        if (oldName === newName) {
+            return
+        }
+
+        if (props.treeItemsShown?.root != undefined && props.treeItemsShown?.root === oldName) {
+            editBaseData({
+                scenarioMixinName: props.scenarioMixinName,
+                version: props.version,
+                root: newName,
+            })
+        }
+
+        const newEl = { ...props.el, name: newName }
+
+        if (oldName != null && oldName !== newName) {
+            const texts = JSON.parse(JSON.stringify(textsRef.current ?? {}))
+            const postfixes = [
+                TextPostfix.short,
+                TextPostfix.long,
+                TextPostfix.title,
+                TextPostfix.doc,
+            ]
+
+            Object.keys(texts).forEach((language) => {
+                if (!texts[language]) {
+                    texts[language] = {}
+                }
+                postfixes.forEach((postfix) => {
+                    const oldKey = `${oldName}${postfix}`
+                    const newKey = `${newName}${postfix}`
+
+                    if (texts[language][newKey] === undefined) {
+                        texts[language][newKey] = texts[language][oldKey] ?? ""
+                    }
+                    delete texts[language][oldKey]
+                })
+            })
+
+            textsRef.current = texts
+            editTexts({
+                version: props.version,
+                texts: texts,
+                scenarioMixinName: props.scenarioMixinName,
+            })
+        }
+
+        currentNameRef.current = newName
+        props.setEl(newEl)
+        editDetailData({
+            version: props.version,
+            indexes: props.element,
+            newEl: newEl,
+            scenarioMixinName: props.scenarioMixinName,
+        })
+        props.setUpdate((prev: number) => prev + 1)
+    }
+
+React.useEffect(() => {
+    if (props.search && props.treeItemsShown?.elements) {
+        const timeoutId = setTimeout(() => {
+            const matchedIndex = findIndexByName(props.search)
+            if (matchedIndex) {
+                changeElement(matchedIndex)
+                
+                setTimeout(() => {
+                    const treeElement = treeRef.current
+                    if (treeElement) {
+                        const selectedItem = treeElement.querySelector(`[id="${matchedIndex}"]`)
+                        if (selectedItem) {
+                            selectedItem.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center' 
+                            })
+                        }
+                    }
+                }, 300)
+            }
+        }, 500)
+
+        return () => clearTimeout(timeoutId)
+    }
+}, [props.search])
 
     function changeElement(i: string) {
+        flushPendingNameCommit()
         props.setElement(i)
 
         var parentsInternally = []
@@ -200,9 +351,10 @@ export default function StructureTabTree(props: Props) {
                 const element = elements[i];
                 const currentIndex = parentIndex ? `${parentIndex}${i}x` : `${i}x`;
 
-                if (element.name === name) return currentIndex;
-                if (element.footer?.name === name) return `${currentIndex}fx`;
-                if (element.headerSegment?.name === name) return `${currentIndex}hx`;
+                // Case-insensitive partial match
+                if (element.name?.toLowerCase().includes(name.toLowerCase())) return currentIndex;
+                if (element.footer?.name?.toLowerCase().includes(name.toLowerCase())) return `${currentIndex}fx`;
+                if (element.headerSegment?.name?.toLowerCase().includes(name.toLowerCase())) return `${currentIndex}hx`;
 
                 if (element.elements?.length > 0) {
                     const found = findInElements(element.elements, currentIndex);
@@ -227,11 +379,13 @@ export default function StructureTabTree(props: Props) {
     return (
         <SplitterLayout
             style={{
-                height: "700px",
+                height: "calc(100vh - 200px)",
                 width: "100%",
+                overflow: "hidden" 
+
             }}
         >
-            <SplitterElement className={classes.splitterLeft}>
+            <SplitterElement className={classes.splitterLeft} >
                 <StructureTabActions
                     setAddDialogOpen={props.setAddDialogOpen}
                     copiedEl={props.copiedEl}
@@ -246,7 +400,7 @@ export default function StructureTabTree(props: Props) {
                     parents={props.parents}
                     setParents={props.setParents}
                     scenarioMixinName={props.scenarioMixinName}
-                    search={search}
+                    search={props.search} 
                     treeItemsShown={props.treeItemsShown}
                     update={props.update}
                     setUpdate={props.setUpdate}
@@ -254,37 +408,26 @@ export default function StructureTabTree(props: Props) {
                     showDelete={true}
                     showSort={true}
                 />
-                <div style={{ width: "100%", overflow: "auto" }}>
-                    <div
-                        style={{ justifyContent: "center", alignItems: "center", display: "flex" }}
-                    >
-                        <Input
-                            icon={<Icon name="search" />}
-                            style={{ width: "90%", marginBlock: 20, justifyContent: "center" }}
-                            onChange={function _s() { }}
-                            onInput={function _s(e) {
-                                setSearch(e.target.value ? e.target.value.trim() : "")
-                            }}
-                            onKeyDown={function _s(e) {
-                                if (e.key === "Enter" && search.trim()) {
-                                    const searchName = search.trim();
-                                    const foundIndex = findIndexByName(searchName);
-                                    if (foundIndex) {
-                                        changeElement(foundIndex);
-                                    }
-                                }
-                            }}
-                            type="Text"
-                            valueState="None"
-                            value={search}
-                            showClearIcon={true}
-                            placeholder="Search for element name"
-                        />
-                    </div>
+                <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+                    <div style={{ overflow: "auto", flex: 1 }}>
                     <Breadcrumbs
                         design="Standard"
                         onItemClick={function Ki(e) {
-                            changeElement(e.detail.item.id)
+                            const itemId = e.detail.item.id
+                            changeElement(itemId)
+                            
+                            setTimeout(() => {
+                                const treeElement = treeRef.current
+                                if (treeElement) {
+                                    const selectedItem = treeElement.querySelector(`[id="${itemId}"]`)
+                                    if (selectedItem) {
+                                        selectedItem.scrollIntoView({ 
+                                            behavior: 'smooth', 
+                                            block: 'center' 
+                                        })
+                                    }
+                                }
+                            }, 100)
                         }}
                         separators="Slash"
                         style={{ paddingBottom: 10 }}
@@ -297,7 +440,9 @@ export default function StructureTabTree(props: Props) {
                             )
                         })}
                     </Breadcrumbs>
-                    <Tree style={{ width: '99%' }}
+                    <Tree 
+                        ref={treeRef}
+                        style={{ width: '99%' }}
                         onItemClick={function Ta() {
                             if (mode == ListSelectionMode.Delete) {
                                 setMode(ListSelectionMode.Single)
@@ -323,7 +468,8 @@ export default function StructureTabTree(props: Props) {
                                             <i>{e.detail.item.title}</i>{" "}
                                         </b>
                                         and all its child nodes?
-                                        <br />
+                                        
+
                                         This operation cannot be undone.
                                     </>,
                                 )
@@ -353,7 +499,7 @@ export default function StructureTabTree(props: Props) {
                             <TreeItems
                                 items={props.treeItemsShown.elements!}
                                 id={""}
-                                searchString={search}
+                                searchString={props.search}
                                 scenarioVersion={props.version}
                                 sortBefore=""
                                 element={props.element}
@@ -363,6 +509,7 @@ export default function StructureTabTree(props: Props) {
                             />
                         )}
                     </Tree>
+                    </div>
                 </div>
             </SplitterElement>
             <SplitterElement>
@@ -372,13 +519,12 @@ export default function StructureTabTree(props: Props) {
                             layout="S1 M1 L1 XL1"
                             labelSpan="S1 M2 L3 XL3"
                             headerText={props.el?.name}
-                        //style={{ paddingBlock: 30 }}
                         >
                             {(props.el?.name || props.el?.name == "") && (
                                 <FormItem labelContent={<Label>Name</Label>}>
                                     <Input
-                                        value={props.el?.name}
-                                        placeholder={props.el?.name}
+                                        value={nameDraft}
+                                        placeholder={nameDraft}
                                         className={classes.largeInput}
                                         valueState={
                                             messages.length > 0 &&
@@ -438,58 +584,31 @@ export default function StructureTabTree(props: Props) {
                                             )
                                         }
                                         onInput={(e) => {
-                                            const oldName = props.el?.name
-                                            var newName: any =
+                                            const newName =
                                                 e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!
+                                                    .nodeValue! as string
 
-                                            if (
-                                                props.treeItemsShown?.root != undefined &&
-                                                props.treeItemsShown?.root === oldName
-                                            ) {
-                                                editBaseData({
-                                                    scenarioMixinName: props.scenarioMixinName,
-                                                    version: props.version,
-                                                    root: newName,
-                                                })
+                                            isTypingNameRef.current = true
+                                            setNameDraft(newName)
+                                            nameDraftRef.current = newName
+
+                                            if (nameCommitTimeoutRef.current) {
+                                                clearTimeout(nameCommitTimeoutRef.current)
                                             }
 
-                                            const newEl = { ...props.el, name: newName }
-                                            var texts: any = JSON.parse(
-                                                JSON.stringify(props.treeItemsShown?.texts!),
-                                            )
-
-                                            Object.keys(props.treeItemsShown?.texts!).map((l) => {
-                                                texts![l][`${newName}.short`] =
-                                                    texts![l][`${oldName}.short` as any]
-                                                delete texts![l][`${oldName}.short`]
-
-                                                texts[l]![`${newName}.long`] =
-                                                    texts![l][`${oldName}.long` as any]
-                                                delete texts![l][`${oldName}.long`]
-
-                                                texts![l][`${newName}.title`] =
-                                                    texts![l][`${oldName}.title` as any]
-                                                delete texts![l][`${oldName}.title`]
-
-                                                texts[l][`${newName}.doc`] =
-                                                    texts[l][`${oldName}.doc` as any]
-                                                delete texts[l][`${oldName}.doc`]
-                                            })
-
-                                            props.setEl(newEl)
-                                            editDetailData({
-                                                version: props.version,
-                                                indexes: props.element,
-                                                newEl: newEl,
-                                                scenarioMixinName: props.scenarioMixinName,
-                                            })
-                                            editTexts({
-                                                version: props.version,
-                                                texts: texts,
-                                                scenarioMixinName: props.scenarioMixinName,
-                                            })
-                                            props.setUpdate(props.update + 1)
+                                            nameCommitTimeoutRef.current = setTimeout(() => {
+                                                commitNameChange(newName)
+                                                isTypingNameRef.current = false
+                                                nameCommitTimeoutRef.current = null
+                                            }, 350)
+                                        }}
+                                        onBlur={() => {
+                                            if (nameCommitTimeoutRef.current) {
+                                                clearTimeout(nameCommitTimeoutRef.current)
+                                                nameCommitTimeoutRef.current = null
+                                            }
+                                            commitNameChange(nameDraftRef.current)
+                                            isTypingNameRef.current = false
                                         }}
                                     />
                                 </FormItem>
@@ -720,7 +839,7 @@ export default function StructureTabTree(props: Props) {
                                 </FormItem>
                             )}
 
-                            {(props.el?.type == "button" || props.el?.type == "alert") && (
+                            {(props.el?.type == "button" || props.el?.type == "alert" || props.el?.type == "icon") && (
                                 <FormItem labelContent={<Label>Icon</Label>}>
                                     <div
                                         style={{
@@ -927,8 +1046,8 @@ export default function StructureTabTree(props: Props) {
                                     </FormItem>
                                     <FormItem labelContent={<Label>Adapter</Label>}>
                                         <Input
-                                            value={props.el?.adapter}
-                                            placeholder={props.el?.adapter}
+                                            value={props.el?.adapter || "database"}
+                                            placeholder={props.el?.adapter || "database"}
                                             className={classes.largeInput}
                                             onInput={(e) => {
                                                 props.setNewEl({
@@ -1033,7 +1152,7 @@ export default function StructureTabTree(props: Props) {
                                     </FormItem>
                                 )}
 
-                            {props.el?.type == "table" && (
+                            {(props.el?.type == "table" || props.el?.type == "attachment") && (
                                 <>
                                     <FormItem labelContent={<Label>Select</Label>}>
                                         <Select
@@ -1066,6 +1185,11 @@ export default function StructureTabTree(props: Props) {
                                             )}
                                         </Select>
                                     </FormItem>
+                                </>
+                            )}
+
+                            {props.el?.type == "table" && (
+                                <>
                                     <FormItem labelContent={<Label>Style</Label>}>
                                         <Select
                                             className={classes.largeInput}
@@ -1097,38 +1221,19 @@ export default function StructureTabTree(props: Props) {
                                             )}
                                         </Select>
                                     </FormItem>
+                                    <FormItem labelContent={<Label>Pagesize</Label>}>
+                                        <Input
+                                            className={classes.largeInput}
+                                            value={(props.el?.pageSize ?? 10).toString()}
+                                            onInput={(e) => {
+                                                props.setNewEl({
+                                                    ...props.el,
+                                                    pageSize: parseInt(e.target.value) || 10,
+                                                })
+                                            }}
+                                        />
+                                    </FormItem>
                                 </>
-                            )}
-
-                            {props.el?.type == "input" && (
-                                <FormItem labelContent={<Label>Input type</Label>}>
-                                    <Select
-                                        className={classes.largeInput}
-                                        onChange={function Ta(e) {
-                                            props.setNewEl({
-                                                ...props.el,
-                                                inputType:
-                                                    InputValue[
-                                                    e.detail.selectedOption.innerText!.toString() as keyof typeof InputValue
-                                                    ],
-                                            })
-                                        }}
-                                    >
-                                        {(Object.keys(InputValue) as Array<string>).map((key) => {
-                                            return (
-                                                <Option
-                                                    selected={
-                                                        props.el?.inputType?.toString() ==
-                                                        InputValue[key as keyof typeof InputValue]
-                                                    }
-                                                    key={key}
-                                                >
-                                                    {key}
-                                                </Option>
-                                            )
-                                        })}
-                                    </Select>
-                                </FormItem>
                             )}
 
                             {(props.el?.type == "image" ||
@@ -1180,7 +1285,6 @@ export default function StructureTabTree(props: Props) {
 
                             {(props.el?.type == "input" ||
                                 props.el?.type == "alert" ||
-                                props.el?.type == "image" ||
                                 props.el?.type == "icon" ||
                                 props.el?.type == "text" ||
                                 props.el?.type == "select" ||
@@ -1202,6 +1306,151 @@ export default function StructureTabTree(props: Props) {
                                         />
                                     </FormItem>
                                 )}
+
+                            {(props.el?.type == "button" || props.el?.type == "link") && (
+                                <>
+                                    <FormItem labelContent={<Label>Link URL</Label>}>
+                                        <Input
+                                            value={props.el?.linkHRef}
+                                            placeholder="https://example.com"
+                                            className={classes.largeInput}
+                                            onInput={(e) => {
+                                                props.setNewEl({
+                                                    ...props.el,
+                                                    linkHRef:
+                                                        e.target.attributes.getNamedItem("value")!
+                                                            .nodeValue!,
+                                                })
+                                            }}
+                                        />
+                                    </FormItem>
+                                    {props.el?.type == "link" && (
+                                        <FormItem labelContent={<Label>Link Text</Label>}>
+                                            <Input
+                                                value={props.el?.linkText}
+                                                className={classes.largeInput}
+                                                onInput={(e) => {
+                                                    props.setNewEl({
+                                                        ...props.el,
+                                                        linkText:
+                                                            e.target.attributes.getNamedItem("value")!
+                                                                .nodeValue!,
+                                                    })
+                                                }}
+                                            />
+                                        </FormItem>
+                                    )}
+                                </>
+                            )}
+
+                            {props.el?.type == "image" && (
+                                <FormItem labelContent={<Label>Image URL / URI</Label>}>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            gap: "10px",
+                                            width: "90%",
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "row",
+                                                gap: "10px",
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <Input
+                                                value={props.el?.defaultValue}
+                                                placeholder="https://example.com/image.jpg or data:image/png;base64,..."
+                                                className={classes.largeInput}
+                                                style={{ flex: 1 }}
+                                                onInput={(e) => {
+                                                    props.setNewEl({
+                                                        ...props.el,
+                                                        defaultValue:
+                                                            e.target.attributes.getNamedItem("value")!
+                                                                .nodeValue!,
+                                                    })
+                                                }}
+                                            />
+                                            <Button
+                                                icon="upload"
+                                                onClick={() => {
+                                                    const input = document.createElement("input")
+                                                    input.type = "file"
+                                                    input.accept = "image/*"
+                                                    input.onchange = (e: Event) => {
+                                                        const target = e.target as HTMLInputElement
+                                                        const file = target.files?.[0]
+                                                        if (file) {
+                                                            const reader = new FileReader()
+                                                            reader.onload = (event) => {
+                                                                const dataUri = event.target?.result as string
+                                                                props.setNewEl({
+                                                                    ...props.el,
+                                                                    defaultValue: dataUri,
+                                                                })
+                                                            }
+                                                            reader.readAsDataURL(file)
+                                                        }
+                                                    }
+                                                    input.click()
+                                                }}
+                                            >
+                                                Choose File
+                                            </Button>
+                                        </div>
+                                        {props.el?.defaultValue && (
+                                            <img
+                                                src={props.el.defaultValue}
+                                                alt="Preview"
+                                                style={{
+                                                    maxWidth: "200px",
+                                                    maxHeight: "200px",
+                                                    objectFit: "contain",
+                                                    border: "1px solid #ccc",
+                                                    borderRadius: "4px",
+                                                }}
+                                            />
+                                        )}
+                                    </div>
+                                </FormItem>
+                            )}
+
+                            {(props.el?.type == "input" ||
+                                props.el?.type == "edit" ||
+                                props.el?.type == "autocomplete") && (
+                                <FormItem labelContent={<Label>Input Type</Label>}>
+                                    <Select
+                                        className={classes.largeInput}
+                                        onChange={function Ta(e) {
+                                            props.setNewEl({
+                                                ...props.el,
+                                                inputType:
+                                                    InputValue[
+                                                    e.detail.selectedOption.innerText!.toString() as keyof typeof InputValue
+                                                    ],
+                                            })
+                                        }}
+                                    >
+                                        {(Object.keys(InputValue) as Array<string>).map((key) => {
+                                            return (
+                                                <Option
+                                                    selected={
+                                                        props.el?.inputType?.toString() ==
+                                                        InputValue[key as keyof typeof InputValue]
+                                                    }
+                                                    key={key}
+                                                >
+                                                    {key}
+                                                </Option>
+                                            )
+                                        })}
+                                    </Select>
+                                </FormItem>
+                            )}
 
                             {(props.el?.col || props.el?.col == "") && (
                                 <FormItem labelContent={<Label>Col</Label>}>
@@ -1480,6 +1729,36 @@ export default function StructureTabTree(props: Props) {
                                     }}
                                 />
                             </FormItem>
+                            {(
+                                props.el?.type === "alert" ||
+                                props.el?.type === "attachment" ||
+                                props.el?.type === "button" ||
+                                props.el?.type === "checkbox" ||
+                                props.el?.type === "currency" ||
+                                props.el?.type === "daterange" ||
+                                props.el?.type === "edit" ||
+                                props.el?.type === "icon" ||
+                                props.el?.type === "image" ||
+                                props.el?.type === "input" ||
+                                props.el?.type === "link" ||
+                                props.el?.type === "multiselect" ||
+                                props.el?.type === "radio" ||
+                                props.el?.type === "select" ||
+                                props.el?.type === "table" ||
+                                props.el?.type === "text"
+                            ) && (
+                                <FormItem labelContent={<Label>Line break</Label>}>
+                                    <CheckBox
+                                        checked={props.el.lineBreak}
+                                        onChange={(e) => {
+                                            props.setNewEl({
+                                                ...props.el,
+                                                lineBreak: e.target.checked!,
+                                            })
+                                        }}
+                                    />
+                                </FormItem>
+                            )}
                             {props.parents.find((e) => e.elem.type == "wizard") && (
                                 <FormItem labelContent={<Label>Wizard format options</Label>}>
                                     <Form

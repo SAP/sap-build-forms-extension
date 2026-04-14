@@ -2,6 +2,8 @@ package com.sap.bfx.callback;
 
 import com.sap.bfx.definition.EventType;
 
+import java.util.Set;
+
 /**
  * Event handler interface.
  *
@@ -68,9 +70,9 @@ public interface EventHandler<AC extends AccessClass> {
     EventType getType();
 
     /**
-     * Get the event key this handler is for.
+     * Get the event keys this handler is for.
      *
-     * @return the event key
+     * @return the event keys
      */
-    String getKey();
+    Set<String> getKeys();
 }

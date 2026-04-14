@@ -30,12 +30,12 @@
                 <configuration>
                     <artifactSet>
                         <includes>
-                            <include>com/sap/consulting/forms/p13n/**</include>
+                            <include>com/sap/bfx/p13n/**</include>
                         </includes>
                     </artifactSet>
                     <filters>
                         <filter>
-                            <artifact>com/sap/consulting/forms/p13n/**</artifact>
+                            <artifact>com/sap/bfx/p13n/**</artifact>
                         </filter>
                     </filters>
                     <transformers>

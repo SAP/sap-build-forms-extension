@@ -21,6 +21,8 @@ export default function (props: ControlProps) {
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
 
+    // console.log(`DialogControl: ${def.key} - ${element?.vi}`)
+
     let headerText = element?.va
     if (typeof headerText !== "string" || headerText.length === 0) {
         headerText = getLabel(texts, def)

@@ -44,7 +44,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<Personalization> findAll(@RequestParam(required = false) String user, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findAllPersonalizations(user);
     }
 
@@ -55,7 +55,7 @@ public class PersonalizationController {
         if (null == id) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         var resultOpt = service.findPersonalizationById(id);
         if (resultOpt.isEmpty()) {
             throw new NotFoundException("Cannot find personalization with id '" + id + "'");
@@ -67,7 +67,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Map<String, ?> findAllValues(@RequestParam Locale locale, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         try {
             return service.getValuesForStaticPersonalizations(locale);
         } catch (NullPointerException e) {
@@ -81,7 +81,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllValueKeys(@RequestParam(required = false) String search, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findValueKeys(search);
     }
 
@@ -92,7 +92,7 @@ public class PersonalizationController {
         if (StringUtils.isBlank(key)) {
             throw new BadRequestException("Missing key");
         }
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findValuesForKey(key);
     }
 
@@ -100,7 +100,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllApps(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findApps();
     }
 
@@ -115,7 +115,7 @@ public class PersonalizationController {
             throw new BadRequestException("Key must not begin with '_'.");
         }
         //TODO OB: Check on more?
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NEdit, P13NRoles.P13NEnduser);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit, P13NRoles.P13NEnduser);
         if (service.isPersonalizationExistent(personalization)) {
             // TODO OB: Own exception?
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Personalization already exists.");
@@ -134,7 +134,7 @@ public class PersonalizationController {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEnduser);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEnduser);
         checkOnYourOwnUsername(token, username);
         return service.findPersonalizationsByUserForUser(username);
     }
@@ -152,7 +152,7 @@ public class PersonalizationController {
         if (StringUtils.isBlank(application)) {
             throw new BadRequestException("Missing application");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEnduser);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEnduser);
         checkOnYourOwnUsername(token, username);
         return service.findPersonalizationsByUserAndAppForUser(username, application);
     }
@@ -172,7 +172,7 @@ public class PersonalizationController {
         if (Arrays.stream(personalizations).anyMatch(Objects::isNull)) {
             throw new BadRequestException("Missing personalization");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEnduser);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEnduser);
         checkOnYourOwnUsername(token, username);
         for (var personalization : personalizations) {
             var resultOpt = service.findPersonalizationById(personalization.getId());
@@ -233,7 +233,7 @@ public class PersonalizationController {
         if (username.equals("_") && application.equals("_")) {
             throw new BadRequestException("User '_' and application '_' cannot be deleted");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEnduser);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEnduser);
         checkOnYourOwnUsername(token, username);
         if (!username.equals("_") && service.findPersonalizationsByUserForAdmin(username).isEmpty()) {
             throw new NotFoundException("Cannot find user with username '" + username + "'");
@@ -259,7 +259,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllUser(@RequestParam(required = false) String search, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findUsers(search);
     }
 
@@ -270,7 +270,7 @@ public class PersonalizationController {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findPersonalizationsByUserForAdmin(username);
     }
 
@@ -287,7 +287,7 @@ public class PersonalizationController {
         if (StringUtils.isBlank(application)) {
             throw new BadRequestException("Missing application");
         }
-        securityService.ensureAnyAuthorized(token, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NDisplay, P13NRoles.P13NEdit);
         return service.findPersonalizationsByUserAndAppForAdmin(username, application);
     }
 
@@ -306,7 +306,7 @@ public class PersonalizationController {
         if (Arrays.stream(personalizations).anyMatch(Objects::isNull)) {
             throw new BadRequestException("Missing personalization");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit);
         for (var personalization : personalizations) {
             var resultOpt = service.findPersonalizationById(personalization.getId());
             if (resultOpt.isEmpty()) {
@@ -341,7 +341,7 @@ public class PersonalizationController {
         if (username.equals("_")) {
             throw new BadRequestException("User '_' cannot be deleted");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit);
         var resultOpt = service.findPersonalizationsByUserForAdmin(username);
         if (resultOpt.isEmpty()) {
             throw new NotFoundException("Cannot find user with username '" + username + "'");
@@ -361,7 +361,7 @@ public class PersonalizationController {
         if (username.equals("_") && application.equals("_")) {
             throw new BadRequestException("User '_' and application '_' cannot be deleted");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit);
 
         if (ids == null) {
             if (service.findPersonalizationsByUserForAdmin(username).isEmpty()) {
@@ -404,7 +404,7 @@ public class PersonalizationController {
         if (values.stream().anyMatch(Objects::isNull)) {
             throw new BadRequestException("Missing value");
         }
-        securityService.ensureAuthorized(token, P13NRoles.P13NEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit);
         //test for consistency
         if (!values.isEmpty()) {
             Set<String> keys = values
