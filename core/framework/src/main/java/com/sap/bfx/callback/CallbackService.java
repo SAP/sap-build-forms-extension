@@ -255,11 +255,11 @@ public class CallbackService {
                 for (var version : versions) {
                     final var sd = scenarioService.findDefinitionByVersion(version).get();
                     final var ed = sd.findElementByKey(it.getKey());
-                    if (ed != null && it.match(ed.getKey(), it.getType(), version)) {
+                    if ((ed != null && it.match(ed.getKey(), it.getType(), version)) || it.getType().equals(EventType.TriggerEvent)) {
                         // this event handler matches for the given version. Storing it in the
                         // event-handler-map
                         var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
-                        var eventInfo = ehm.computeIfAbsent(ed.getKey(), k -> new EventHandlerInfo(version, ed));
+                        var eventInfo = ehm.computeIfAbsent(it.getKey(), k -> new EventHandlerInfo(version, ed));
                         eventInfo.add(it);
                         log.info("  Event '{}' for '{}' in version '{}' added -> '{}'",
                                 it.getType(), it.getKey(), version, it.getClass().getName());

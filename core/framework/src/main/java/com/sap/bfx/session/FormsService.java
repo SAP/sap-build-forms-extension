@@ -209,8 +209,9 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
     private void deserializeElements(Form form, InputStream is) throws IOException {
         final var jp = om.createParser(is);
         final var node = jp.getCodec().readTree(jp);
-        final var d = FormUtils.readElementRow(defService.findDefinitionByVersion(
-                form.getScenarioVersion()).get(), (JsonNode) node);
+        final var sd = defService.findDefinitionByVersion(form.getScenarioVersion()).get();
+        final var d = FormUtils.readElementRow(sd, (JsonNode) node);
+        form.setSd(sd);
         form.setRowId(d.getRowId());
         form.setElements(d.getElements());
     }
