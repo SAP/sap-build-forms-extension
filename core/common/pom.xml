@@ -130,5 +130,10 @@
             <artifactId>openapi-core</artifactId>
             <version>${sap-cloud-openapi-core.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.sap.hcp.cf.logging</groupId>
+            <artifactId>cf-java-logging-support-logback</artifactId>
+            <version>${cf-java-logging-support-logback.version}</version>
+        </dependency>
     </dependencies>
 </project>
