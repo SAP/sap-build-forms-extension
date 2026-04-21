@@ -6,6 +6,7 @@ import {
 
 import { DataType, Definition } from "../../src/features/sessions/definitions"
 import { ElementDataType } from "../../src/features/sessions/forms"
+import { getLanguage } from "commons"
 
 export const DEFAULT_LOCALE = "en"
 const INTERNAL_DATE_FORMAT = "yyyy-MM-dd"
@@ -84,27 +85,42 @@ function checkLocale(locale: string): string {
 }
 
 /**
+ * Get effective locale with priority:
+ * 1. Session locale (if provided)
+ * 2. Browser language as fallback
+ * 
+ * @param sessionLocale the locale from the session state
+ * @returns normalized locale string
+ */
+export function getEffectiveLocale(sessionLocale?: string): string {
+    if (sessionLocale) {
+        return checkLocale(sessionLocale)
+    }
+    return checkLocale(getLanguage())
+}
+
+/**
  * Format a Date object into a locale-specific date string
  * @param d
- * @param locale
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns
  */
-export function formatDate(d: string, locale: string): string {
-    locale = checkLocale(locale)
+export function formatDate(d: string, locale?: string): string {
+    const effectiveLocale = getEffectiveLocale(locale)
     const dateObj = new Date(d)
-    return format(dateObj, "P", { locale: LOCALES[locale] })
+    return format(dateObj, "P", { locale: LOCALES[effectiveLocale] })
 }
 
 /**
  * Convert Date object to internal format (yyyy-MM-dd)
  * 
  * @param localeDate Date object from UI5 DatePicker
- * @param locale the locale identifier
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns internal date format (yyyy-MM-dd) or undefined if invalid
  */
 export function toInternalDate(
     localeDate: string | Date | Date[],
-    locale: string,
+    locale?: string,
 ): string | undefined {
     if (localeDate instanceof Date) {
         return isValidDate(localeDate) 
@@ -119,10 +135,10 @@ export function toInternalDate(
  * Convert Time to internal format (HH:mm:ss)
  * 
  * @param localeTime Date object from UI5 TimePicker
- * @param locale the locale identifier
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns internal time format (HH:mm:ss) or undefined if invalid
  */
-export function toInternalTime(localeTime: string | Date | undefined, locale: string): string | undefined {
+export function toInternalTime(localeTime: string | Date | undefined, locale?: string): string | undefined {
     if (localeTime instanceof Date) {
         return isValidDate(localeTime) 
             ? format(localeTime, INTERNAL_TIME_FORMAT) 
@@ -135,10 +151,10 @@ export function toInternalTime(localeTime: string | Date | undefined, locale: st
  * Convert internal time format (HH:mm:ss) to locale-specific time string
  * 
  * @param internalTime 
- * @param locale 
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns 
  */
-export function fromInternalTime(internalTime: string, locale: string): string {
+export function fromInternalTime(internalTime: string, locale?: string): string {
     if (!internalTime) {
         return ""
     }
@@ -150,10 +166,10 @@ export function fromInternalTime(internalTime: string, locale: string): string {
             return ""
         }
         
-        locale = checkLocale(locale)
+        const effectiveLocale = getEffectiveLocale(locale)
         // For English, use 12-hour format with AM/PM; for other locales, use long time format with seconds
-        const formatPattern = locale === "en" ? "h:mm:ss a" : "pp"
-        return format(d, formatPattern, { locale: LOCALES[locale] })
+        const formatPattern = effectiveLocale === "en" ? "h:mm:ss a" : "pp"
+        return format(d, formatPattern, { locale: LOCALES[effectiveLocale] })
     } catch (err) {
         return ""
     }
@@ -169,12 +185,12 @@ export function fromInternalTime(internalTime: string, locale: string): string {
  * Convert Date object to internal format (yyyy-MM-dd'T'HH:mm:ss)
  * 
  * @param localDateTime Date object from UI5 DateTimePicker
- * @param locale the locale identifier
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns internal datetime format (yyyy-MM-dd'T'HH:mm:ss) or undefined if invalid
  */
 export function toInternalDateTime(
     localDateTime: string | Date,
-    locale: string,
+    locale?: string,
 ): string | undefined {
     if (localDateTime instanceof Date) {
         return isValidDate(localDateTime) 
@@ -183,12 +199,12 @@ export function toInternalDateTime(
     }
     return undefined
 }
-export function fromInternalDateTime(internalDateTime: string, locale: string): string {
+export function fromInternalDateTime(internalDateTime: string, locale?: string): string {
     if (!internalDateTime) {
         return ""
     }
 
-    locale = checkLocale(locale)
+    const effectiveLocale = getEffectiveLocale(locale)
     
     try {
         const d = parse(internalDateTime.substring(0, 19), INTERNAL_DATE_TIME_FORMAT, new Date())
@@ -196,11 +212,11 @@ export function fromInternalDateTime(internalDateTime: string, locale: string): 
             return ""
         }
         // For English, use 12-hour format with AM/PM
-        if (locale === "en") {
-            return format(d, "MMM d, yyyy, h:mm:ss a", { locale: LOCALES[locale] })
+        if (effectiveLocale === "en") {
+            return format(d, "MMM d, yyyy, h:mm:ss a", { locale: LOCALES[effectiveLocale] })
         }
         // For all other locales, use locale-specific formatting which automatically adjusts
-        return format(d, "P pp", { locale: LOCALES[locale] })
+        return format(d, "P pp", { locale: LOCALES[effectiveLocale] })
     } catch (err) {
         return ""
     }
@@ -222,18 +238,19 @@ export interface InternalDateRange {
 export function toInternalDateRange(
     startDate: string | Date | undefined,
     endDate: string | Date | undefined,
-    locale: string,
+    locale?: string,
 ): InternalDateRange | undefined {
     if (!startDate || !endDate) {
         return undefined
     }
 
+    const effectiveLocale = getEffectiveLocale(locale)
     const startDateStr = startDate instanceof Date 
         ? format(startDate, INTERNAL_DATE_FORMAT) 
-        : toInternalDate(startDate, locale)
+        : toInternalDate(startDate, effectiveLocale)
     const endDateStr = endDate instanceof Date 
         ? format(endDate, INTERNAL_DATE_FORMAT) 
-        : toInternalDate(endDate, locale)
+        : toInternalDate(endDate, effectiveLocale)
 
     if (!startDateStr || !endDateStr) {
         return undefined
@@ -245,16 +262,17 @@ export function toInternalDateRange(
 /**
  * Format an internal date range for display
  * @param dateRange internal date range object
- * @param locale the locale identifier
+ * @param locale optional - uses session locale with browser fallback if not provided
  * @returns formatted date range string
  */
-export function fromInternalDateRange(dateRange: InternalDateRange | undefined, locale: string): string {
+export function fromInternalDateRange(dateRange: InternalDateRange | undefined, locale?: string): string {
     if (!dateRange) {
         return ""
     }
     
-    const fd = formatDate(dateRange.f, locale)
-    const td = formatDate(dateRange.t, locale)
+    const effectiveLocale = getEffectiveLocale(locale)
+    const fd = formatDate(dateRange.f, effectiveLocale)
+    const td = formatDate(dateRange.t, effectiveLocale)
     return fd + " - " + td
 }
 
@@ -264,12 +282,13 @@ export function fromInternalDateRange(dateRange: InternalDateRange | undefined, 
  * @param locale 
  * @returns 
  */
-export function parseNumber(def: Definition, value: string, locale: string): number | undefined {
+export function parseNumber(def: Definition, value: string, locale?: string): number | undefined {
     if (!value || value.length === 0) {
         return undefined
     }
 
-    const ds = def.dataType === DataType.Decimal ? getDecimalSeparator(locale) : ""
+    const effectiveLocale = getEffectiveLocale(locale)
+    const ds = def.dataType === DataType.Decimal ? getDecimalSeparator(effectiveLocale) : ""
     let newValue = ""
     for (let i = 0; i < value.length; i++) {
         const ch = value.charAt(i)
