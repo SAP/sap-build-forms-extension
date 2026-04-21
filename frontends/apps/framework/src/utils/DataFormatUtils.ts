@@ -1,6 +1,8 @@
 import { IntlShape } from "react-intl"
 import { format, Locale, parse } from "date-fns"
-import { enGB, de } from "date-fns/locale"
+import {
+    enGB, de, nl, fr, es, it, pt, bg, cs, da, fi, el, hr, hu, sk, ro, uk, sr, et, lt, lv
+} from "date-fns/locale"
 
 import { DataType, Definition } from "../../src/features/sessions/definitions"
 import { ElementDataType } from "../../src/features/sessions/forms"
@@ -8,11 +10,29 @@ import { ElementDataType } from "../../src/features/sessions/forms"
 export const DEFAULT_LOCALE = "en"
 const INTERNAL_DATE_FORMAT = "yyyy-MM-dd"
 const INTERNAL_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ss"
+const INTERNAL_TIME_FORMAT = "HH:mm:ss"
 
 // mapping between locale strings and date-fns locales
 const LOCALES: Record<string, Locale> = {
-    de: de,
-    en: enGB,
+    en: enGB,   // english
+    de: de,     // german
+    nl: nl,     // dutch
+    fr: fr,     // french
+    es: es,     // spanish
+    it: it,     // italian
+    pt: pt,     // portuguese
+    bg: bg,     // bulgarian
+    cs: cs,     // czech
+    da: da,     // danish
+    fi: fi,     // finnish
+    el: el,     // greek
+    hr: hr,     // croatian
+    hu: hu,     // hungarian
+    sk: sk,     // slovak
+    ro: ro,     // romanian
+    et: et,     // estonian
+    lt: lt,     // lithuanian
+    lv: lv,     // latvian
 }
 
 /**
@@ -36,62 +56,107 @@ export function formatDataAsString(
 }
 
 /**
- * Checks the given locale and if not one of the support locales it returns "en",
- * as the default locale
- *
- * @param locale
- * @returns
+ * Checks if a Date object is valid
+ * @param d Date to validate
+ * @returns true if date is valid, false otherwise
  */
-function checkLocale(locale: string): string {
-    switch (locale) {
-        case "de":
-            return locale
-        default:
-            return DEFAULT_LOCALE
+function isValidDate(d: Date): boolean {
+    if (!(d instanceof Date)) {
+        return false
     }
+    const time = d.getTime()
+    return typeof time === "number" && !isNaN(time) && isFinite(time)
 }
 
 /**
+ * Checks the given locale if it is supported
  *
+ * @param locale
+ * @returns normalized locale string or "en" as fallback
+ */
+function checkLocale(locale: string): string {
+    // Extract language part before hyphen (e.g., "de-DE" -> "de")
+    const language = locale.split("-")[0]
+    if (language in LOCALES) {
+        return language
+    }
+    return DEFAULT_LOCALE
+}
+
+/**
+ * Format a Date object into a locale-specific date string
  * @param d
  * @param locale
  * @returns
  */
-export function formatDate(d: Date, locale: string): string {
+export function formatDate(d: string, locale: string): string {
     locale = checkLocale(locale)
-    return format(d, "P", { locale: LOCALES[locale] })
+    const dateObj = new Date(d)
+    return format(dateObj, "P", { locale: LOCALES[locale] })
 }
 
 /**
- *
- * @param localeDate
- * @param locale
- * @returns
+ * Convert Date object to internal format (yyyy-MM-dd)
+ * 
+ * @param localeDate Date object from UI5 DatePicker
+ * @param locale the locale identifier
+ * @returns internal date format (yyyy-MM-dd) or undefined if invalid
  */
 export function toInternalDate(
     localeDate: string | Date | Date[],
     locale: string,
 ): string | undefined {
-    let d: Date | undefined = undefined
+    if (localeDate instanceof Date) {
+        return isValidDate(localeDate) 
+            ? format(localeDate, INTERNAL_DATE_FORMAT) 
+            : undefined
+    }
+    return undefined
+}
 
-    if (typeof localeDate === "string") {
-        if (localeDate.length == 0) {
-            return undefined
-        }
-        locale = checkLocale(locale)
-        // parse the given locale date
-        d = parse(localeDate, "P", new Date(), { locale: LOCALES[locale] })
-    } else if (localeDate instanceof Date) {
-        if (typeof localeDate === "undefined" || isNaN(localeDate.getTime())) {
-            return undefined
-        }
-        d = localeDate
-    } else {
-        // not supported
+
+/**
+ * Convert Time to internal format (HH:mm:ss)
+ * 
+ * @param localeTime Date object from UI5 TimePicker
+ * @param locale the locale identifier
+ * @returns internal time format (HH:mm:ss) or undefined if invalid
+ */
+export function toInternalTime(localeTime: string | Date | undefined, locale: string): string | undefined {
+    if (localeTime instanceof Date) {
+        return isValidDate(localeTime) 
+            ? format(localeTime, INTERNAL_TIME_FORMAT) 
+            : undefined
+    }
+    return undefined
+}
+
+/**
+ * Convert internal time format (HH:mm:ss) to locale-specific time string
+ * 
+ * @param internalTime 
+ * @param locale 
+ * @returns 
+ */
+export function fromInternalTime(internalTime: string, locale: string): string {
+    if (!internalTime) {
         return ""
     }
 
-    return format(d, INTERNAL_DATE_FORMAT)
+    try {
+        const d = parse(internalTime, INTERNAL_TIME_FORMAT, new Date())
+        
+        if (!isValidDate(d)) {
+            return ""
+        }
+        
+        locale = checkLocale(locale)
+        // For English, use 12-hour format with AM/PM; for other locales, use long time format with seconds
+        const formatPattern = locale === "en" ? "h:mm:ss a" : "pp"
+        return format(d, formatPattern, { locale: LOCALES[locale] })
+    } catch (err) {
+        return ""
+    }
 }
 
 /**
@@ -100,75 +165,97 @@ export function toInternalDate(
  * @param locale 
  * @returns 
  */
+/**
+ * Convert Date object to internal format (yyyy-MM-dd'T'HH:mm:ss)
+ * 
+ * @param localDateTime Date object from UI5 DateTimePicker
+ * @param locale the locale identifier
+ * @returns internal datetime format (yyyy-MM-dd'T'HH:mm:ss) or undefined if invalid
+ */
 export function toInternalDateTime(
     localDateTime: string | Date,
     locale: string,
 ): string | undefined {
-    let d: Date | undefined = undefined
-
-    if (typeof localDateTime === "string") {
-        if (localDateTime.length == 0) {
-            return undefined
-        }
-        locale = checkLocale(locale)
-        const parts = localDateTime.split(",")
-        // parse the given locale date
-        d = parse(parts[0].trim(), "P", new Date(), { locale: LOCALES[locale] })
-        // parse the given locale time
-        const t = parse(parts[1].trim(), "pp", new Date(), { locale: LOCALES[locale] })
-        // set Hours/Minutes/Secods to returned date
-        d.setHours(t.getHours())
-        d.setMinutes(t.getMinutes())
-        d.setSeconds(t.getSeconds())
-    } else if (localDateTime instanceof Date) {
-        if (typeof localDateTime === "undefined" || isNaN(localDateTime.getTime())) {
-            return undefined
-        }
-        d = localDateTime
-    } else {
-        // not supported
-        return ""
+    if (localDateTime instanceof Date) {
+        return isValidDate(localDateTime) 
+            ? format(localDateTime, INTERNAL_DATE_TIME_FORMAT) 
+            : undefined
     }
-
-    return format(d, INTERNAL_DATE_TIME_FORMAT)
+    return undefined
 }
-
-/**
- *
- * @param internalDate
- * @param locale
- * @returns
- */
-export function fromInternalDate(internalDate: string, locale: string): Date {
-    locale = checkLocale(locale)
-    // parse internal date
-    const d = parse(internalDate.substring(0, 10), INTERNAL_DATE_FORMAT, new Date())
-    // now format it as a local date
-    // return format(d, "P", { locale: LOCALES[locale] })
-    return d
-}
-
-/**
- *
- * @param internalDate
- * @param locale
- * @returns
- */
 export function fromInternalDateTime(internalDateTime: string, locale: string): string {
     if (!internalDateTime) {
         return ""
     }
 
     locale = checkLocale(locale)
-    // parse internal date
-    const d = parse(internalDateTime.substring(0, 19), INTERNAL_DATE_TIME_FORMAT, new Date())
-    const result =
-        format(d, "P", { locale: LOCALES[locale] }) +
-        ", " +
-        format(d, "pp", { locale: LOCALES[locale] })
-    // now format it as a local date
-    // return format(d, "P", { locale: LOCALES[locale] })
-    return result
+    
+    try {
+        const d = parse(internalDateTime.substring(0, 19), INTERNAL_DATE_TIME_FORMAT, new Date())
+        if (!isValidDate(d)) {
+            return ""
+        }
+        // For English, use 12-hour format with AM/PM
+        if (locale === "en") {
+            return format(d, "MMM d, yyyy, h:mm:ss a", { locale: LOCALES[locale] })
+        }
+        // For all other locales, use locale-specific formatting which automatically adjusts
+        return format(d, "P pp", { locale: LOCALES[locale] })
+    } catch (err) {
+        return ""
+    }
+}
+
+/**
+ * Convert locale-specific date range string to internal format
+ * 
+ * @param startDate start date string (from DateRangePicker)
+ * @param endDate end date string (from DateRangePicker)
+ * @param locale the locale identifier
+ * @returns object with f and t properties in internal format, or undefined if parsing fails
+ */
+export interface InternalDateRange {
+    f: string
+    t: string
+}
+
+export function toInternalDateRange(
+    startDate: string | Date | undefined,
+    endDate: string | Date | undefined,
+    locale: string,
+): InternalDateRange | undefined {
+    if (!startDate || !endDate) {
+        return undefined
+    }
+
+    const startDateStr = startDate instanceof Date 
+        ? format(startDate, INTERNAL_DATE_FORMAT) 
+        : toInternalDate(startDate, locale)
+    const endDateStr = endDate instanceof Date 
+        ? format(endDate, INTERNAL_DATE_FORMAT) 
+        : toInternalDate(endDate, locale)
+
+    if (!startDateStr || !endDateStr) {
+        return undefined
+    }
+
+    return { f: startDateStr, t: endDateStr }
+}
+
+/**
+ * Format an internal date range for display
+ * @param dateRange internal date range object
+ * @param locale the locale identifier
+ * @returns formatted date range string
+ */
+export function fromInternalDateRange(dateRange: InternalDateRange | undefined, locale: string): string {
+    if (!dateRange) {
+        return ""
+    }
+    
+    const fd = formatDate(dateRange.f, locale)
+    const td = formatDate(dateRange.t, locale)
+    return fd + " - " + td
 }
 
 /**
