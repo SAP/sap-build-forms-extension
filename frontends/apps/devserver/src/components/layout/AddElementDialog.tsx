@@ -95,7 +95,7 @@ export default function AddElementDialog(props: Props) {
                                         defaultValue: "",
                                         col: "",
                                         css: "",
-                                        showLabel: false,
+                                        showLabel: true,
                                         showHelp: false,
                                         columnOptions: {
                                             minColumnWidth: "",
@@ -140,7 +140,7 @@ export default function AddElementDialog(props: Props) {
                                                 id: generateUniqueId(),
                                                 sort: 0,
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -179,7 +179,7 @@ export default function AddElementDialog(props: Props) {
                                                 editable: "",
                                                 required: "",
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -197,7 +197,7 @@ export default function AddElementDialog(props: Props) {
                                                 defaultValue: "",
                                                 col: "",
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -221,7 +221,7 @@ export default function AddElementDialog(props: Props) {
                                                 editable: "",
                                                 required: "",
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -244,7 +244,7 @@ export default function AddElementDialog(props: Props) {
                                                 editable: "",
                                                 required: "",
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -274,7 +274,7 @@ export default function AddElementDialog(props: Props) {
                                                 editable: "",
                                                 required: "",
                                                 css: "",
-                                                showLabel: false,
+                                                showLabel: true,
                                                 showHelp: false,
                                                 columnOptions: {
                                                     minColumnWidth: "",
@@ -438,7 +438,7 @@ export default function AddElementDialog(props: Props) {
                                             defaultValue: "",
                                             col: "",
                                             css: "",
-                                            showLabel: false,
+                                            showLabel: true,
                                             showHelp: false,
                                             columnOptions: {
                                                 minColumnWidth: "",
@@ -484,7 +484,7 @@ export default function AddElementDialog(props: Props) {
                                         defaultValue: "",
                                         col: "",
                                         css: "",
-                                        showLabel: false,
+                                        showLabel: true,
                                         showHelp: false,
                                         columnOptions: {
                                             minColumnWidth: "",
@@ -530,7 +530,7 @@ export default function AddElementDialog(props: Props) {
                                         defaultValue: "",
                                         col: "",
                                         css: "",
-                                        showLabel: false,
+                                        showLabel: true,
                                         showHelp: false,
                                         columnOptions: {
                                             minColumnWidth: "",

@@ -1,4 +1,5 @@
 import { useIntl } from "react-intl"
+import { useRef, useEffect } from "react"
 
 import { DatePicker, DateTimePicker, Input, TimePicker } from "@ui5/webcomponents-react"
 
@@ -8,9 +9,11 @@ import { DataType } from "../../features/sessions/definitions"
 import { Element, FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import {
-    fromInternalDateTime,
     toInternalDate,
     toInternalDateTime,
+    toInternalTime,
+    fromInternalDateTime,
+    fromInternalTime
 } from "../../utils/DataFormatUtils"
 
 import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
@@ -29,6 +32,11 @@ export default function (props: ControlProps) {
     const intl = useIntl()
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
+
+    // Refs to access Date values directly from UI5 components
+    const datePickerRef = useRef<any>(null)
+    const dateTimePickerRef = useRef<any>(null)
+    const timePickerRef = useRef<any>(null)
 
     // if (element?.er && typeof element?.er === "object") {
     //     console.log(`InputControl for ${def.id} with info ${(element?.er as ElementInfo).severity}`)
@@ -49,17 +57,23 @@ export default function (props: ControlProps) {
         case DataType.Date:
             control = (
                 <DatePicker
+                    ref={datePickerRef}
                     id={def.key}
                     value={(element?.va as string) ?? ""}
-                    onChange={(e) =>
-                        handleChange(
-                            dispatch,
-                            def,
-                            rowId,
-                            messages,
-                            toInternalDate(e.target.value ?? "", getLanguage()!),
-                        )
-                    }
+                    displayFormat="short"
+                    value-format='yyyy-MM-dd'
+                    onChange={(e) => {
+                        const dateValue = (datePickerRef.current as any)?.dateValue
+                        if (dateValue) {
+                            handleChange(
+                                dispatch,
+                                def,
+                                rowId,
+                                messages,
+                                toInternalDate(dateValue, getLanguage()!),
+                            )
+                        }
+                    }}
                     onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                     onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
                     readonly={!element?.ed || !globalEd}
@@ -75,17 +89,24 @@ export default function (props: ControlProps) {
             // console.log(`date-time`)
             control = (
                 <DateTimePicker
+                    ref={dateTimePickerRef}
                     id={def.key}
-                    value={fromInternalDateTime((element?.va as string) ?? "", getLanguage()!)}
-                    onChange={(e) =>
-                        handleChange(
-                            dispatch,
-                            def,
-                            rowId,
-                            messages,
-                            toInternalDateTime(e.target.value ?? "", getLanguage()!),
-                        )
-                    }
+                    value={element?.va ? fromInternalDateTime((element.va as string), getLanguage()!) : ""}
+                    displayFormat="short"
+                    valueFormat='yyyy-MM-ddTHH:mm:ss'
+                    onChange={(e) => {
+                        console.log(`DateTimePicker onChange triggered with value: ${e.target.value}`)
+                        const dateValue = (dateTimePickerRef.current as any)?.dateValue
+                        if (dateValue) {
+                            handleChange(
+                                dispatch,
+                                def,
+                                rowId,
+                                messages,
+                                toInternalDateTime(dateValue, getLanguage()!),
+                            )
+                        }
+                    }}
                     onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                     onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
                     readonly={!element?.ed || !globalEd}
@@ -101,21 +122,29 @@ export default function (props: ControlProps) {
         case DataType.Time:
             control = (
                 <TimePicker
+                    ref={timePickerRef}
                     id={def.key}
-                    value={(element?.va as string) ?? ""}
+                    value={element?.va ? fromInternalTime((element.va as string), getLanguage()!) : ""}
+                    displayFormat="medium"
+                    valueFormat="HH:mm:ss"
                     onChange={(e) => {
-                        handleChange(
-                            dispatch,
-                            def,
-                            rowId,
-                            messages,
-                            e.target.value.length == 0 ? undefined : e.target.value,
-                        )
+                        const timeValue = (timePickerRef.current as any)?.dateValue
+                        if (timeValue) {
+                            handleChange(
+                                dispatch,
+                                def,
+                                rowId,
+                                messages,
+                                toInternalTime(timeValue, getLanguage()!),
+                            )
+                        } else if (e.target.value.length === 0) {
+                            handleChange(dispatch, def, rowId, messages, undefined)
+                        }
                     }}
                     onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                     onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
                     readonly={!element?.ed || !globalEd}
-                    // required={element?.rq}
+                    required={element?.rq}
                     valueState={elementInfo2ValueState(element?.msg)}
                     valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
                     onInput={function ka() {}}
