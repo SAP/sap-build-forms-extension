@@ -44,6 +44,7 @@ import { downloadAttachment } from "../../features/sessions/sessionSlice"
 import { Definition } from "../../features/sessions/definitions"
 import { ValueName, ValuehelpsService } from "../../features/valuehelps/logic"
 import { deleteAttachment, uploadAttachment } from "../../features/sessions/attachmentActions"
+import { elementInfo2ValueState } from "./utils"
 
 /**
  * Convert selection mode from string to UI5 component format
@@ -641,6 +642,7 @@ function FileUploaderControl(props: ControlProps) {
     // Holds the FileList that should trigger an upload once the dialog has mounted
     const [pendingUploadFiles, setPendingUploadFiles] = useState<FileList | null>(null)
     const [setRejectedFU, rejectedStripFU] = useRejectedFilesMessage()
+    const hasAttachmentError = elementInfo2ValueState(element?.msg) === "Negative"
 
     // Start the upload once the progress dialog is open and refs are wired up
     useEffect(() => {
@@ -716,6 +718,9 @@ function FileUploaderControl(props: ControlProps) {
                 }
                 style={{
                     marginTop: "3px",
+                    border: hasAttachmentError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasAttachmentError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasAttachmentError ? "0.25rem" : undefined,
                 }}
             >
 
@@ -837,6 +842,8 @@ function UploadCollectionControl(props: ControlProps) {
     const dragCounterRef = useRef(0)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [setRejectedUC, rejectedStripUC] = useRejectedFilesMessage()
+    const hasAttachmentError = elementInfo2ValueState(element?.msg) === "Negative"
+
 
     // TODO: Get existing attachments from backend
     const existingAttachments = (element?.va as Attachment[]) || []
@@ -1026,6 +1033,11 @@ function UploadCollectionControl(props: ControlProps) {
 
                 <UploadCollection
                     hideDragOverlay
+                    style={{
+                    border: hasAttachmentError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasAttachmentError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasAttachmentError ? "0.25rem" : undefined,
+                }}
                     noDataText={intl.formatMessage({ id: "attachment_drag_drop_hint" })}
                     noDataDescription={intl.formatMessage({ id: "attachment_or_click_add" })}
                     selectionMode={existingAttachments.length > 0 || pendingFiles.length > 0 ? getselect(def.select) : "None"}

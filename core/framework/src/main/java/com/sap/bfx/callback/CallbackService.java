@@ -303,12 +303,16 @@ public class CallbackService {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);
                     }
                 } else if (dt == Table.class) {
-                    final var rows = ((Table) api.getValue(rowId, ed.getKey())).getRows();
-                    if (rows.isEmpty()) {
+                    // For required tables we only validate that at least one row exists.
+                    if (api.getRows(rowId, () -> ed.getKey()).isEmpty()) {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);
                     }
-                } else if (dt == Attachment.class) {
-                    // TODO(ML) Write Attachement infos
+                } else if (dt == Attachments.class) {
+                    // For required attachments we only validate that at least one attachment exists.
+                    final var optVal = api.getOptVal(rowId, ed.getKey());
+                    if (optVal.isEmpty() || ((Attachments) optVal.get()).isEmpty()) {
+                        optMessage = Optional.of(Message.REQUIRED_ERROR);
+                    }
                 } else {
                     if (api.getOptVal(rowId, ed.getKey()).isEmpty()) {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);

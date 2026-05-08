@@ -43,6 +43,7 @@ import { deleteRow, triggerEvent } from "../../features/sessions/sessionActions"
 import { ControlProps, getLabel, handleBrowseTable, handleChangeTablePageSize } from "./Control"
 import Control from "./Control"
 import ControlGridContainer from "./ControlGridContainer"
+import { elementInfo2ValueState } from "./utils"
 
 // Constants for different page sizes
 const PAGE_SIZES = [5, 10, 15, 20, 25]
@@ -542,6 +543,7 @@ export default function (props: ControlProps) {
     const lastPage = Math.max(Math.ceil(table.s / table.ps), 1)
     const currPage = Math.floor(table.p / table.ps) + 1
     const tableRenderKey = `${rowId ?? "_"}-${def.key}-${table.p}-${table.ps}-${table.s}-${(table.r ?? []).join("|")}`
+    const hasTableError = elementInfo2ValueState(element?.msg) === "Negative"
 
     const handleToolbarActionCompleted = async () => {
         setLoading(true)
@@ -588,7 +590,12 @@ export default function (props: ControlProps) {
             <Table
                 key={tableRenderKey}
                 headerRow={<TableHeaderRow sticky>{columns}</TableHeaderRow>}
-                style={{ width: "100%" }}
+                style={{
+                    width: "100%",
+                    border: hasTableError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasTableError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasTableError ? "0.25rem" : undefined,
+                }}
                 noDataText={intl.formatMessage({ id: "common_no_data" })}
                 overflowMode="Scroll"
                 rowActionCount={calculateActionCount()}
