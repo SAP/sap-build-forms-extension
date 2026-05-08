@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -70,10 +71,9 @@ public class ValueHelpValuesController {
     }
 
     @GetMapping(value = "/{id}/{locale}/latest", produces = MediaType.APPLICATION_JSON_VALUE)
-    @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public ValueHelp getLatestVersionByIdLocale(@PathVariable String id, @PathVariable String locale,
-                                                AbstractAuthenticationToken token) {
+    public ResponseEntity<ValueHelp> getLatestVersionByIdLocale(@PathVariable String id, @PathVariable String locale,
+                                                                AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
@@ -84,10 +84,11 @@ public class ValueHelpValuesController {
                 ValueHelpRoles.ValueHelpEdit);
         var resultOpt = service.findValueLatestVersionByIdLocale(id, locale);
         if (resultOpt.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "cannot find value-help-values with id '" + id + "' and locale '" + locale + "'.");
+            log.info("Cannot find value-help-value with id '{}' and locale '{}'", id, locale);
+            return ResponseEntity.notFound().build();
+
         }
-        return resultOpt.get();
+        return ResponseEntity.ok(resultOpt.get());
     }
 
     @PostMapping(value = "/{id}/{locale}", produces = MediaType.APPLICATION_JSON_VALUE)

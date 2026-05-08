@@ -7,6 +7,7 @@ import com.sap.bfx.valuehelp.model.ValueHelpDef;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -99,7 +100,7 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
     public void addDef(ValueHelpDef vhd) {
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO forms_vh_defs (id, ttl, adapter, config, description, languages) VALUES (?,?,?,?,?,?)");
+                    "INSERT INTO forms_vh_defs (id, ttl, adapter, config, description, languages, key_key, value_keys, format_template) VALUES (?,?,?,?,?,?,?,?,?)");
             ps.setString(1, vhd.getId());
             ps.setLong(2, vhd.getTtl());
             ps.setString(3, vhd.getAdapter());
@@ -110,6 +111,13 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
             } else {
                 ps.setString(6, "");
             }
+            ps.setString(7, vhd.getKeyKey());
+            if (vhd.getValueKeys().size() > 0) {
+                ps.setString(8, String.join(", ", vhd.getValueKeys()));
+            } else {
+                ps.setString(8, "");
+            }
+            ps.setString(9, vhd.getFormatTemplate());
 
             return ps;
         });
@@ -120,7 +128,7 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
     public void updateDef(ValueHelpDef vhd) {
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(
-                    "UPDATE forms_vh_defs SET ttl=?, adapter=?, config=?, description=?, languages=? where id=?");
+                    "UPDATE forms_vh_defs SET ttl=?, adapter=?, config=?, description=?, languages=?, key_key=?, value_keys=?, format_template=? where id=?");
             ps.setLong(1, vhd.getTtl());
             ps.setString(2, vhd.getAdapter());
             ps.setString(3, vhd.getConfig());
@@ -130,7 +138,14 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
             } else {
                 ps.setString(5, "");
             }
-            ps.setString(6, vhd.getId());
+            ps.setString(6, vhd.getKeyKey());
+            if (vhd.getValueKeys().size() > 0) {
+                ps.setString(7, String.join(", ", vhd.getValueKeys()));
+            } else {
+                ps.setString(7, "");
+            }
+            ps.setString(8, vhd.getFormatTemplate());
+            ps.setString(9, vhd.getId());
 
             return ps;
         });
@@ -293,12 +308,19 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
             vhd.setAdapter(rs.getString("adapter"));
             vhd.setConfig(rs.getString("config"));
             vhd.setDescription(rs.getString("description"));
-            if (rs.getString("languages") == null || rs.getString("languages").trim().length() == 0) {
+            if (StringUtils.isBlank(rs.getString("languages"))) {
                 vhd.setLanguages(new ArrayList<>());
-
             } else {
                 vhd.setLanguages(new ArrayList<>(Arrays.asList(rs.getString("languages").split(", "))));
             }
+            vhd.setKeyKey(rs.getString("key_key"));
+            if (StringUtils.isBlank(rs.getString("value_keys"))) {
+                vhd.setValueKeys(new ArrayList<>());
+            } else {
+                vhd.setValueKeys(new ArrayList<>(Arrays.asList(rs.getString("value_keys").split(", "))));
+            }
+            vhd.setFormatTemplate(rs.getString("format_template"));
+
             return vhd;
         }
     }

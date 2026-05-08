@@ -26,6 +26,5 @@ export interface ValueHelpValue {
     id: string
     version: number
     locale: string
-    validUntil: string
-    values: any
+    values: Record<string, string>[]
 }

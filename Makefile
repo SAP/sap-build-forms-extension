@@ -26,7 +26,7 @@ copy_frontends:
 
 	rm -rf valuehelp/framework/src/main/resources/frontend/assets
 	mkdir -p valuehelp/framework/src/main/resources/frontend/assets
-	cp -r frontends/apps/valuehelp/dist/assets/ valuehelp/framework/src/main/resources/frontendgit s
+	cp -r frontends/apps/valuehelp/dist/assets/ valuehelp/framework/src/main/resources/frontend
 
 build_install_framework:
 	mvn clean install

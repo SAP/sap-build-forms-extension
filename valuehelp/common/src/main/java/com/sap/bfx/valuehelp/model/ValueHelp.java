@@ -1,5 +1,6 @@
 package com.sap.bfx.valuehelp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -24,6 +25,7 @@ public class ValueHelp {
     @NotNull(message = "Locale cannot be null")
     private Locale locale;
 
+    @JsonIgnore
     private java.sql.Timestamp validUntil;
 
     @NotNull(message = "Values cannot be null")

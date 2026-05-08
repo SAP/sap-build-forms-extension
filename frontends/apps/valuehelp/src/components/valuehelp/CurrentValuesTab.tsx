@@ -19,27 +19,32 @@ import {
 import InputType from "@ui5/webcomponents/dist/types/InputType"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 
-import {ValueHelpDef, ValueHelpValue} from "../../features/model"
+import { ValueHelpDef, ValueHelpValue } from "../../features/model"
+import { RefObject } from "react"
 
 /**
  *  The properties for the DialogAddValueHelpValue component.
  */
 interface DialogAddValueHelpValueProps {
     edit: boolean
-    currentValueHelpDef: ValueHelpDef | undefined
+    refValueHelpDef: RefObject<ValueHelpDef | undefined>
     valueHelpValue: ValueHelpValue | undefined
     language: string | undefined
 
-    setCurrentValueHelpDef(v: ValueHelpDef): void
-
     changeValueHelpValue(v: ValueHelpValue): void
-
     changeLanguage(language: string, def: ValueHelpDef): void
-
     setDialogAddValueOpen(v: boolean): void
 }
 
-export default function (props: DialogAddValueHelpValueProps) {
+export default function ({
+    edit,
+    refValueHelpDef,
+    valueHelpValue,
+    language,
+    changeValueHelpValue,
+    changeLanguage,
+    setDialogAddValueOpen,
+}: DialogAddValueHelpValueProps) {
     return (
         <Tab icon="folder" text="Current Values">
             <Form
@@ -52,27 +57,27 @@ export default function (props: DialogAddValueHelpValueProps) {
                 <FormItem labelContent={<Label>Language</Label>}>
                     <Select
                         onChange={(e) =>
-                            props.changeLanguage(
+                            changeLanguage(
                                 e.detail.selectedOption.innerText,
-                                props.currentValueHelpDef!,
+                                refValueHelpDef.current!,
                             )
                         }
                         valueState="None"
                     >
-                        {props.currentValueHelpDef?.languages.map((item: string) => {
+                        {refValueHelpDef.current?.languages.map((item: string) => {
                             return (
-                                <Option key={item} selected={props.language == item}>
+                                <Option key={item} selected={language == item}>
                                     {item}
                                 </Option>
                             )
                         })}
                     </Select>
                 </FormItem>
-                <FormItem labelContent={<Label>Valid until</Label>}>
-                    {props.valueHelpValue != undefined && (
-                        <Label style={{marginBlock: 10}}>{props.valueHelpValue.validUntil}</Label>
+                {/* <FormItem labelContent={<Label>Valid until</Label>}>
+                    {valueHelpValue != undefined && (
+                        <Label style={{ marginBlock: 10 }}>{valueHelpValue.validUntil}</Label>
                     )}
-                </FormItem>
+                </FormItem> */}
                 <FormItem labelContent={<Label>Values</Label>}>
                     <Table
                         headerRow={
@@ -83,31 +88,25 @@ export default function (props: DialogAddValueHelpValueProps) {
                             </TableHeaderRow>
                         }
                     >
-                        {props.valueHelpValue != undefined && (
+                        {valueHelpValue != undefined && (
                             <>
-                                {Object.keys(props.valueHelpValue.values)
+                                {Object.keys(valueHelpValue.values)
                                     .sort()
-                                    .map(function (key) {
+                                    .map((key) => {
                                         return (
                                             <TableRow key={key}>
                                                 <TableCell>
                                                     <Label>{key}</Label>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {props.edit &&
-                                                        props.currentValueHelpDef?.adapter ==
-                                                        "local" && (
+                                                    {edit &&
+                                                        refValueHelpDef.current?.adapter ==
+                                                            "local" && (
                                                             <Input
                                                                 type={InputType.Text}
-                                                                value={
-                                                                    props.valueHelpValue?.values[
-                                                                        key
-                                                                        ]
-                                                                }
+                                                                value={valueHelpValue?.values[key]}
                                                                 placeholder={
-                                                                    props.valueHelpValue?.values[
-                                                                        key
-                                                                        ]
+                                                                    valueHelpValue?.values[key]
                                                                 }
                                                                 onChange={(
                                                                     e: Ui5CustomEvent<
@@ -115,41 +114,37 @@ export default function (props: DialogAddValueHelpValueProps) {
                                                                         never
                                                                     >,
                                                                 ) => {
-                                                                    var v =
-                                                                        props.valueHelpValue?.values
+                                                                    var v = valueHelpValue?.values
                                                                     v[key] =
                                                                         e.target.attributes.getNamedItem(
                                                                             "value",
                                                                         )!.nodeValue!
-                                                                    props.changeValueHelpValue({
-                                                                        ...props.valueHelpValue!,
+                                                                    changeValueHelpValue({
+                                                                        ...valueHelpValue!,
                                                                         values: v,
                                                                     })
                                                                 }}
-                                                                style={{width: "100%"}}
+                                                                style={{ width: "100%" }}
                                                             />
                                                         )}
-                                                    {(!props.edit ||
-                                                        props.currentValueHelpDef?.adapter !=
-                                                        "local") && (
-                                                        <Text>
-                                                            {props.valueHelpValue?.values[key]}
-                                                        </Text>
+                                                    {(!edit ||
+                                                        refValueHelpDef.current?.adapter !=
+                                                            "local") && (
+                                                        <Text>{valueHelpValue?.values[key]}</Text>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {props.edit &&
-                                                        props.currentValueHelpDef?.adapter ==
-                                                        "local" && (
+                                                    {edit &&
+                                                        refValueHelpDef.current?.adapter ==
+                                                            "local" && (
                                                             <Button
                                                                 icon="decline"
                                                                 design={ButtonDesign.Transparent}
                                                                 onClick={() => {
-                                                                    var v =
-                                                                        props.valueHelpValue?.values
+                                                                    var v = valueHelpValue?.values
                                                                     delete v[key]
-                                                                    props.changeValueHelpValue({
-                                                                        ...props.valueHelpValue!,
+                                                                    changeValueHelpValue({
+                                                                        ...valueHelpValue!,
                                                                         values: v,
                                                                     })
                                                                 }}
@@ -161,24 +156,22 @@ export default function (props: DialogAddValueHelpValueProps) {
                                     })}
                             </>
                         )}
-                        {props.edit &&
-                            props.language &&
-                            props.currentValueHelpDef?.adapter == "local" && (
-                                <TableRow>
-                                    <TableCell>
-                                        <Button
-                                            icon="add"
-                                            onClick={() => {
-                                                props.setDialogAddValueOpen(true)
-                                            }}
-                                        >
-                                            Add value
-                                        </Button>
-                                    </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            )}
+                        {edit && language && refValueHelpDef.current?.adapter == "local" && (
+                            <TableRow>
+                                <TableCell>
+                                    <Button
+                                        icon="add"
+                                        onClick={() => {
+                                            setDialogAddValueOpen(true)
+                                        }}
+                                    >
+                                        Add value
+                                    </Button>
+                                </TableCell>
+                                <TableCell></TableCell>
+                                <TableCell></TableCell>
+                            </TableRow>
+                        )}
                     </Table>
                 </FormItem>
             </Form>
