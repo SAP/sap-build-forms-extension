@@ -66,6 +66,16 @@ export class Limitations {
     match?: string
 }
 
+export interface CategoryOption {
+    label: string
+    hvOpt: {
+        name: string
+        validate: boolean
+        emptySelection: boolean
+        displayFormat: string
+    }
+}
+
 /**
  *  ValueName is used to represent a value and its display name in select options.
  *  It is used in select controls and value helps.
@@ -117,6 +127,7 @@ export interface Definition {
     linkHRef?: string
     fileTypes?: string
     selectionMode?: "none" | "single" | "multiple"
+    categories?: CategoryOption[]
 }
 
 /**

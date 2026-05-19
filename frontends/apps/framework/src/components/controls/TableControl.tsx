@@ -11,6 +11,7 @@ import {
     Dialog,
     Icon,
     Input,
+    Label,
     SegmentedButton,
     SegmentedButtonDomRef,
     SegmentedButtonItem,
@@ -226,7 +227,7 @@ function formatSelected(element?: Element) {
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, texts, rowId } = props
+    const { def, texts, rowId, asTableCell } = props
     const dispatch = useAppDispatch()
     const intl = useIntl()
     const messages = useMessages()
@@ -579,6 +580,16 @@ export default function (props: ControlProps) {
 
     return (
         <div>
+            {!asTableCell && (
+                <Label
+                    id={"l" + def.key}
+                    for={def.key}
+                    required={element?.rq}
+                    style={def.showLabel === false ? { visibility: "hidden" } : undefined}
+                >
+                    {def.showLabel !== false ? getLabel(texts, def) : ""}
+                </Label>
+            )}
             {def.toolbar && (
                 <Control
                     {...props}
