@@ -123,6 +123,14 @@ export function handleChange(
         update({
             def,
             rowId,
+            prop: ElementProp.Message,
+            value: undefined,
+        }),
+    )
+    dispatch(
+        update({
+            def,
+            rowId,
             prop: ElementProp.Value,
             value,
         }),
