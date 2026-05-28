@@ -1237,7 +1237,7 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.type == "image" ||
-                                props.el?.type == "searchHelp" ||
+                                props.el?.type == "searchhelp" ||
                                 props.el?.type == "dialog") && (
                                     <FormItem labelContent={<Label>Size</Label>}>
                                         <Form

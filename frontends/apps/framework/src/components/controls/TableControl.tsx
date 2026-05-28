@@ -453,8 +453,8 @@ export default function (props: ControlProps) {
             columns.push(
                 <TableHeaderCell
                     key={d.key}
-                    minWidth="10rem"
-                    style={{ display: "flex", alignContent: "center", justifyContent: "center" }}
+                    minWidth={d.minColumnWidth ?? "10rem"}
+                    style={{ display: "flex", alignContent: "center", justifyContent: "center", maxWidth: d.maxColumnWidth }}
                 >
                     <Text style={{ marginRight: ".5rem" }}>{getLabel(texts, d)}</Text>
                     {d.key === table.sf && (

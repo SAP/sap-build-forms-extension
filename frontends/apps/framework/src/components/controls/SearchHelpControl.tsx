@@ -84,7 +84,8 @@ function SearchDialog(props: DetailDialogProps) {
                         />
                     }
                     onClose={() => setVisible(false)}
-                    stretch
+                    stretch={!def.size?.height && !def.size?.width}
+                    style={def.size?.height || def.size?.width ? { height: def.size?.height, width: def.size?.width } : undefined}
                 >
                     <ControlGridContainer {...props} asTableCell={false} />
                 </Dialog>,

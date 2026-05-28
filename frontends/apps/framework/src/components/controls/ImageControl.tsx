@@ -11,9 +11,10 @@ export default function (props: ControlProps) {
 
     const imageSrc = (element?.va as string) || ""
     
-    const height = (def as any).size?.height || undefined
-    const width = (def as any).size?.width || undefined
+    const height = def.size?.height || undefined
+    const width = def.size?.width || undefined
 
+    // priority: coloumn width (maxWidth) - height and width - 100% - no stretching
     const imageElement = (
         <img
             src={imageSrc}

@@ -96,7 +96,6 @@ export interface Definition {
     key: string
     uiElement: UIElement
     // xs sm md lg xl
-    width?: string
     col?: string
     design?: string
     dataType?: DataType
@@ -128,6 +127,9 @@ export interface Definition {
     fileTypes?: string
     selectionMode?: "none" | "single" | "multiple"
     categories?: CategoryOption[]
+    minColumnWidth?: string
+    maxColumnWidth?: string
+    size?: { height: string; width: string }
 }
 
 /**

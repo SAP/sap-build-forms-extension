@@ -28,6 +28,8 @@ export default function (props: ControlProps) {
         headerText = getLabel(texts, def)
     }
 
+    const hasSize = def.size?.height || def.size?.width
+
     return (
         <>
             {element?.vi &&
@@ -35,7 +37,8 @@ export default function (props: ControlProps) {
                     <Dialog
                         headerText={headerText}
                         open={true}
-                        stretch
+                        stretch={!hasSize}
+                        style={hasSize ? { height: def.size?.height, width: def.size?.width } : undefined}
                         footer={<ToolbarControl {...props} def={def.footer!} />}
                         onClose={() =>
                             dispatch(
