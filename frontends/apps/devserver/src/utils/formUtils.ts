@@ -329,6 +329,8 @@ export function changeElAtTypeChangeTable(oldEl: ElemForTable, newType: string) 
         delete newEl.design
         delete newEl.icon
         delete newEl.tooltip
+    } else if (oldEl.type == "icon" && newType != "icon") {
+        delete newEl.tooltip
     } else if (oldEl.type == "alert" && newType != "alert") {
         delete newEl.design
         delete newEl.icon
@@ -381,6 +383,11 @@ export function changeElAtTypeChangeTable(oldEl: ElemForTable, newType: string) 
             icon: "",
             tooltip: "",
             design: DesignValue.Default,
+        }
+    } else if (newType == "icon" && oldEl.type != "icon") {
+        newEl = {
+            ...newEl,
+            tooltip: "",
         }
     } else if (newType == "alert" && oldEl.type != "alert") {
         newEl = {
@@ -457,6 +464,8 @@ export function changeElAtTypeChange(oldEl: Elem, newType: string) {
         delete newEl.design
         delete newEl.icon
         delete newEl.tooltip
+    } else if (oldEl.type == "icon" && newType != "icon") {
+        delete newEl.tooltip
     } else if (oldEl.type == "alert" && newType != "alert") {
         delete newEl.design
         delete newEl.icon
@@ -504,6 +513,11 @@ export function changeElAtTypeChange(oldEl: Elem, newType: string) {
             icon: "",
             tooltip: "",
             design: DesignValue.Default,
+        }
+    } else if (newType == "icon" && oldEl.type != "icon") {
+        newEl = {
+            ...newEl,
+            tooltip: "",
         }
     } else if (newType == "alert" && oldEl.type != "alert") {
         newEl = {

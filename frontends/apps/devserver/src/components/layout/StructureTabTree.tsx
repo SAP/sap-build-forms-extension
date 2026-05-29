@@ -892,7 +892,7 @@ React.useEffect(() => {
                                 </FormItem>
                             )}
 
-                            {props.el?.type == "button" && (
+                            {(props.el?.type == "button" || props.el?.type == "icon") && (
                                 <FormItem labelContent={<Label>Tooltip</Label>}>
                                     <Input
                                         value={props.el?.tooltip}

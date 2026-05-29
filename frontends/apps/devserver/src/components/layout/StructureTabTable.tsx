@@ -1994,7 +1994,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {getElemByIndex(instance.row.original.index)?.type! == "button" && (
+                            {["button", "icon"].includes(getElemByIndex(instance.row.original.index)?.type!) && (
                                 <Input
                                     value={getElemByIndex(instance.row.original.index)?.tooltip}
                                     placeholder={instance.row.original.tooltip}

@@ -51,6 +51,7 @@ export default function (props: ControlProps) {
             design={mapDesign(def.design)}
             disabled={!element?.ed || !globalEd}
             icon={def.icon}
+            tooltip={def.tooltip}
             onClick={async (e: any) => {
 
                 if (def.linkHRef && def.linkHRef.trim() !== "") {

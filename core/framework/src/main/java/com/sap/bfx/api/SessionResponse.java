@@ -305,10 +305,16 @@ import static com.sap.bfx.definition.DefinitionNames.*;
                     if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getLinkHRef())) {
                         gen.writeStringField("linkHRef", ((ButtonElementDefinition) element).getLinkHRef());
                     }
+                    if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getTooltip())) {
+                        gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) element).getTooltip());
+                    }
                     break;
                 case Icon:
                     if (StringUtils.isNotBlank(((IconElementDefinition) element).getIcon())) {
                         gen.writeStringField(NM_ICON, ((IconElementDefinition) element).getIcon());
+                    }
+                    if (StringUtils.isNotBlank(((IconElementDefinition) element).getTooltip())) {
+                        gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) element).getTooltip());
                     }
                     break;
                 case Dialog:
