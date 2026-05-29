@@ -1800,69 +1800,73 @@ React.useEffect(() => {
                                 </FormItem>
                             )}
 
-                            <FormItem labelContent={<Label>Column options</Label>}>
-                                <Form
-                                    layout="S1 M1 L2 XL1"
-                                    labelSpan="S2 M2 L1 XL1"
-                                    style={{ width: "90%" }}
-                                >
-                                    <FormItem labelContent={<Label>Min column width</Label>}>
-                                        <Input style={{ width: "100%" }}
-                                            value={props.el?.columnOptions?.minColumnWidth || ""}
-                                            placeholder={
-                                                props.el?.columnOptions?.minColumnWidth || ""
-                                            }
-                                            className={classes.largeInput}
-                                            onInput={(e) => {
-                                                props.setNewEl({
-                                                    ...props.el,
-                                                    columnOptions: {
-                                                        ...props.el?.columnOptions,
-                                                        minColumnWidth:
-                                                            e.target.attributes.getNamedItem(
-                                                                "value",
-                                                            )!.nodeValue!,
-                                                    },
-                                                })
-                                            }}
-                                        />
+                            {props.parents.find((e) => e.elem.type == "table") && (
+                                <>
+                                    <FormItem labelContent={<Label>Column options</Label>}>
+                                        <Form
+                                            layout="S1 M1 L2 XL1"
+                                            labelSpan="S2 M2 L1 XL1"
+                                            style={{ width: "90%" }}
+                                        >
+                                            <FormItem labelContent={<Label>Min column width</Label>}>
+                                                <Input style={{ width: "100%" }}
+                                                    value={props.el?.columnOptions?.minColumnWidth || ""}
+                                                    placeholder={
+                                                        props.el?.columnOptions?.minColumnWidth || ""
+                                                    }
+                                                    className={classes.largeInput}
+                                                    onInput={(e) => {
+                                                        props.setNewEl({
+                                                            ...props.el,
+                                                            columnOptions: {
+                                                                ...props.el?.columnOptions,
+                                                                minColumnWidth:
+                                                                    e.target.attributes.getNamedItem(
+                                                                        "value",
+                                                                    )!.nodeValue!,
+                                                            },
+                                                        })
+                                                    }}
+                                                />
+                                            </FormItem>
+                                            <FormItem labelContent={<Label>Max column width</Label>}>
+                                                <Input style={{ width: "100%" }}
+                                                    value={props.el?.columnOptions?.maxColumnWidth || ""}
+                                                    placeholder={
+                                                        props.el?.columnOptions?.maxColumnWidth || ""
+                                                    }
+                                                    className={classes.largeInput}
+                                                    onInput={(e) => {
+                                                        props.setNewEl({
+                                                            ...props.el,
+                                                            columnOptions: {
+                                                                ...props.el?.columnOptions,
+                                                                maxColumnWidth:
+                                                                    e.target.attributes.getNamedItem(
+                                                                        "value",
+                                                                    )!.nodeValue!,
+                                                            },
+                                                        })
+                                                    }}
+                                                />
+                                            </FormItem>
+                                        </Form>{" "}
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Max column width</Label>}>
-                                        <Input style={{ width: "100%" }}
-                                            value={props.el?.columnOptions?.maxColumnWidth || ""}
-                                            placeholder={
-                                                props.el?.columnOptions?.maxColumnWidth || ""
-                                            }
-                                            className={classes.largeInput}
-                                            onInput={(e) => {
-                                                props.setNewEl({
-                                                    ...props.el,
-                                                    columnOptions: {
-                                                        ...props.el?.columnOptions,
-                                                        maxColumnWidth:
-                                                            e.target.attributes.getNamedItem(
-                                                                "value",
-                                                            )!.nodeValue!,
-                                                    },
-                                                })
-                                            }}
-                                        />
-                                    </FormItem>
-                                </Form>{" "}
-                            </FormItem>
 
-                            {props.el?.showAsColumn != undefined && (
-                                <FormItem labelContent={<Label>Show as Column</Label>}>
-                                    <CheckBox
-                                        checked={props.el.showAsColumn}
-                                        onChange={(e) => {
-                                            props.setNewEl({
-                                                ...props.el,
-                                                showAsColumn: e.target.checked!,
-                                            })
-                                        }}
-                                    />
-                                </FormItem>
+                                    {props.el?.showAsColumn != undefined && (
+                                        <FormItem labelContent={<Label>Show as Column</Label>}>
+                                            <CheckBox
+                                                checked={props.el.showAsColumn}
+                                                onChange={(e) => {
+                                                    props.setNewEl({
+                                                        ...props.el,
+                                                        showAsColumn: e.target.checked!,
+                                                    })
+                                                }}
+                                            />
+                                        </FormItem>
+                                    )}
+                                </>
                             )}
 
                             {props.el &&

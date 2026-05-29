@@ -450,11 +450,14 @@ export default function (props: ControlProps) {
             if (!d.showAsColumn) {
                 continue
             }
+            const colMaxWidth = d.columnOptions?.maxColumnWidth || def.columnOptions?.maxColumnWidth || undefined
+            const colMinWidth = d.columnOptions?.minColumnWidth || def.columnOptions?.minColumnWidth || "10rem"
             columns.push(
                 <TableHeaderCell
                     key={d.key}
-                    minWidth={d.minColumnWidth ?? "10rem"}
-                    style={{ display: "flex", alignContent: "center", justifyContent: "center", maxWidth: d.maxColumnWidth }}
+                    minWidth={colMinWidth}
+                    width={colMaxWidth}
+                    style={{ display: "flex", alignContent: "center", justifyContent: "center" }}
                 >
                     <Text style={{ marginRight: ".5rem" }}>{getLabel(texts, d)}</Text>
                     {d.key === table.sf && (

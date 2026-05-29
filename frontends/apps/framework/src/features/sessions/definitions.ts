@@ -127,8 +127,7 @@ export interface Definition {
     fileTypes?: string
     selectionMode?: "none" | "single" | "multiple"
     categories?: CategoryOption[]
-    minColumnWidth?: string
-    maxColumnWidth?: string
+    columnOptions?: { minColumnWidth?: string; maxColumnWidth?: string }
     size?: { height: string; width: string }
 }
 

@@ -213,7 +213,7 @@ import static com.sap.bfx.definition.DefinitionNames.*;
 
             }
 
-            if (isChildOfTable && element.getColumnOptions() != null) {
+            if ((isChildOfTable || element.getType() == UIElementType.Table) && element.getColumnOptions() != null) {
                 gen.writeObjectFieldStart(NM_COLUMN_OPTIONS);
                 gen.writeStringField(NM_MIN_COLUMN_WIDTH, element.getColumnOptions().getMinColumnWidth());
                 gen.writeStringField(NM_MAX_COLUMN_WIDTH, element.getColumnOptions().getMaxColumnWidth());
