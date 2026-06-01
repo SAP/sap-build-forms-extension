@@ -7,4 +7,6 @@ export default {
     msg_valuehelpdef_deleted: "ValueHelp definition {id} has been deleted successfully",
     msg_valuehelpdefs_deleted: "ValueHelp definitions have been deleted successfully",
     msg_valuehelpdefs_exported: "ValueHelp definitions have been exported successfully",
+
+    common_err_required: "'{field}' is required",
 }

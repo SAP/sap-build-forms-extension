@@ -19,7 +19,6 @@ import {
  * Dialog for uploading a value help definition file
  */
 interface DialogUploadFileProps {
-    dialogUploadFileOpen: boolean
     loading: boolean
     setDialogUploadFileOpen(o: boolean): void
     upload(file: File, override: boolean, useTechnicalName: boolean): void
@@ -98,7 +97,7 @@ export default function (props: DialogUploadFileProps) {
                 </Bar>
             }
             headerText="Upload value help definition file"
-            open={props.dialogUploadFileOpen}
+            open={true}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
                 <FormItem labelContent={<Label>Select file</Label>}>

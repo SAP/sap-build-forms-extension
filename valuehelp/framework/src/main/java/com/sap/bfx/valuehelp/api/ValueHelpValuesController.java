@@ -72,8 +72,8 @@ public class ValueHelpValuesController {
 
     @GetMapping(value = "/{id}/{locale}/latest", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    public ResponseEntity<ValueHelp> getLatestVersionByIdLocale(@PathVariable String id, @PathVariable String locale,
-                                                                AbstractAuthenticationToken token) {
+    public ResponseEntity<ValueHelp> getLatestVersionByIdAndLocale(@PathVariable String id, @PathVariable String locale,
+                                                                   AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
