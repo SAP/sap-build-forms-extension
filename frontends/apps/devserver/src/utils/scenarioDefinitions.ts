@@ -162,6 +162,7 @@ export enum InputValue {
     Password = "password",
     Numeric = "numeric",
     Email = "email",
+    Telephone = "telephone",
 }
 
 export const tabs: Tab[] = [

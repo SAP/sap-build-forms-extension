@@ -176,7 +176,15 @@ export default function (props: ControlProps) {
                     type={
                         def.dataType === DataType.Int || def.dataType === DataType.Decimal
                             ? "Number"
-                            : "Text"
+                            : def.inputType === "password"
+                              ? "Password"
+                              : def.inputType === "email"
+                                ? "Email"
+                                : def.inputType === "number"
+                                  ? "Number"
+                                  : def.inputType === "telephone"
+                                    ? "Tel"
+                                    : "Text"
                     }
                 />
             )

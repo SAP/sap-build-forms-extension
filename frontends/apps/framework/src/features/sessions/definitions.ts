@@ -129,6 +129,7 @@ export interface Definition {
     categories?: CategoryOption[]
     columnOptions?: { minColumnWidth?: string; maxColumnWidth?: string }
     size?: { height: string; width: string }
+    inputType?: string
 }
 
 /**
