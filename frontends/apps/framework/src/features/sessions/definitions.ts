@@ -120,6 +120,7 @@ export interface Definition {
     hasDescription?: boolean
     el?: boolean
     showLabel?: boolean
+    showHelp?: boolean
     lineBreak?: boolean
     pageSize: number
     linkText?: string
