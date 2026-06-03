@@ -72,7 +72,8 @@ public class MixinService extends AbstractProcessor {
             this.printMessages(Severity.Info);
         }
         if (errors == 0 && warnings == 0) {
-            log.info(ansi().fgBrightGreen().bold().a("No errors/warnings occured during checking/processing").reset().toString());
+            log.info(ansi().fgBrightGreen().bold().a("No errors/warnings occured during checking/processing").reset()
+                           .toString());
         }
     }
 
@@ -104,8 +105,8 @@ public class MixinService extends AbstractProcessor {
                         handled = this.resolveMixin(processingInfo, it, elements) || handled;
                     } catch (Exception e) {
                         log.error(e);
-                        addError(processingInfo.getScenarioDefinition(), it, "Error handling mixin: "
-                                + e.getMessage(), ElementPart.None);
+                        addError(processingInfo.getScenarioDefinition(), it, "Error handling mixin: " + e.getMessage(),
+                                ElementPart.None);
                     }
                 }
             }
@@ -152,7 +153,8 @@ public class MixinService extends AbstractProcessor {
 
             // compute through all elements and execute checks and computing, e.g. calculating the key
             final var processingInfo = new CheckAndProcessService.ProcessingInfo(params.getProject(), mixinDef);
-            mixinDef.getElements().forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
+            mixinDef.getElements()
+                    .forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
             mixinDef.getElements().addAll(processingInfo.getEd2Add());
 
             // create enums
@@ -161,10 +163,8 @@ public class MixinService extends AbstractProcessor {
         }
     }
 
-    private boolean resolveMixin(final ProcessingInfo processingInfo,
-                                 final ElementDefinition mixin,
-                                 final List<ElementDefinition> parentElements)
-            throws Exception {
+    private boolean resolveMixin(final ProcessingInfo processingInfo, final ElementDefinition mixin,
+                                 final List<ElementDefinition> parentElements) throws Exception {
         if (mixin.getType() != UIElementType.Mixin) {
             return false;
         }
@@ -174,24 +174,23 @@ public class MixinService extends AbstractProcessor {
         final var mixinDef = MixinLoader.create(processingInfo, (MetaFileElementDefinition) mixin, log).load();
         // if no elements are returned, we through an error
         if (mixinDef == null) {
-            throw new Exception("no elements for mixing '" + mixin.getName() + "' found!");
+            return false;
+//            throw new Exception("no elements for mixing '" + mixin.getName() + "' found!");
         }
 
         // Sort the elements to follow the correct order
         mixinDef.getElements().sort(Comparator.comparingInt(ElementDefinition::getSort));
 
         // Modify it with the modifiers specified in adapt*, rename Ids and calculate keys
-        final var visibleExp = ElementDefinition.isExpression(mixin.getVisible())
-                ? new SpelEvaluator<>(mixin.getVisible(), String.class)
-                : null;
-        final var editableExp = ElementDefinition.isExpression(mixin.getEditable())
-                ? new SpelEvaluator<>(mixin.getEditable(), String.class)
-                : null;
-        final var requiredExp = ElementDefinition.isExpression(mixin.getRequired())
-                ? new SpelEvaluator<>(mixin.getRequired(), String.class)
-                : null;
-        log.debug("Mixin: visibleExp is " + (visibleExp == null ? "null" : "contains expression")
-                + " because mixin: '" + mixin.getVisible() + "'.");
+        final var visibleExp = ElementDefinition.isExpression(mixin.getVisible()) ?
+                new SpelEvaluator<>(mixin.getVisible(), String.class) : null;
+        final var editableExp = ElementDefinition.isExpression(mixin.getEditable()) ?
+                new SpelEvaluator<>(mixin.getEditable(), String.class) : null;
+        final var requiredExp = ElementDefinition.isExpression(mixin.getRequired()) ?
+                new SpelEvaluator<>(mixin.getRequired(), String.class) : null;
+        log.debug(
+                "Mixin: visibleExp is " + (visibleExp == null ? "null" : "contains expression") + " because mixin: '" +
+                        mixin.getVisible() + "'.");
 
         final var queue = new ConcurrentLinkedQueue<List<ElementDefinition>>();
         queue.add(mixinDef.getElements());
@@ -211,16 +210,16 @@ public class MixinService extends AbstractProcessor {
 
                     // Evaluate SpEL expressions if available. Currently, this works for visible, editable and required
                     if (visibleExp != null) {
-                        it.setVisible(visibleExp.eval(new EvaluationContext(
-                                processingInfo.getScenarioDefinition(), mixin, it)));
+                        it.setVisible(visibleExp.eval(
+                                new EvaluationContext(processingInfo.getScenarioDefinition(), mixin, it)));
                     }
                     if (editableExp != null) {
-                        it.setEditable(editableExp.eval(new EvaluationContext(
-                                processingInfo.getScenarioDefinition(), mixin, it)));
+                        it.setEditable(editableExp.eval(
+                                new EvaluationContext(processingInfo.getScenarioDefinition(), mixin, it)));
                     }
                     if (requiredExp != null) {
-                        it.setRequired(requiredExp.eval(new EvaluationContext(
-                                processingInfo.getScenarioDefinition(), mixin, it)));
+                        it.setRequired(requiredExp.eval(
+                                new EvaluationContext(processingInfo.getScenarioDefinition(), mixin, it)));
                     }
                 }
             }
@@ -230,9 +229,8 @@ public class MixinService extends AbstractProcessor {
         // Save the mixin element to a dedicated map that contains all mixins for a given type
         normalizeNameKey(mixin);
         var clsName = metadataService.findAccessClassForElement(processingInfo.getScenarioDefinition().getElements(),
-                processingInfo.getScenarioDefinition().getAccessObjectName()
-                        + processingInfo.getScenarioDefinition().getVersion(),
-                mixin);
+                processingInfo.getScenarioDefinition().getAccessObjectName() +
+                        processingInfo.getScenarioDefinition().getVersion(), mixin);
         var l = processingInfo.getScenarioDefinition().getMixins().computeIfAbsent(clsName, k -> new ArrayList<>());
         l.add(new MixinInfo(mixin, mixinDef.getElements()));
 //        log.debug("Mixin::resolveMixin: Adding mixin '" + mixin.getName() + "' to Class '" + clsName + "'.");
@@ -256,7 +254,8 @@ public class MixinService extends AbstractProcessor {
     }
 
     public enum MixinServiceType {
-        StandaloneMixins, ScenarioDefinition
+        StandaloneMixins,
+        ScenarioDefinition
     }
 
     @Data
