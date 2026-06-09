@@ -8,6 +8,7 @@ import {
     TableHeaderRow,
     TableRow,
 } from "@ui5/webcomponents-react"
+import { useIntl } from "react-intl"
 import { Elem } from "../../utils/scenarioDefinitions"
 
 interface Props {
@@ -16,24 +17,25 @@ interface Props {
 }
 
 export default function CategoriesTable(props: Props) {
+    const intl = useIntl()
     return (
             <Table
                 headerRow={
                     <TableHeaderRow>
                         <TableHeaderCell min-width="120px" >
-                            <span>Label</span>
+                            <span>{intl.formatMessage({ id: "categories_col_label" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell min-width="120px" >
-                            <span>HelpValue Name</span>
+                            <span>{intl.formatMessage({ id: "categories_col_helpvalue_name" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell min-width="80px" >
-                            <span>HelpValue Validate</span>
+                            <span>{intl.formatMessage({ id: "categories_col_helpvalue_validate" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell min-width="80px" >
-                            <span>HelpValue emptySelection</span>
+                            <span>{intl.formatMessage({ id: "categories_col_helpvalue_empty_selection" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell min-width="120px" >
-                            <span>HelpValue displayFormat</span>
+                            <span>{intl.formatMessage({ id: "categories_col_helpvalue_display_format" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell width="55px" >
                             <Button

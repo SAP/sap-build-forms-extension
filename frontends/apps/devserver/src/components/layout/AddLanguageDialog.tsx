@@ -10,6 +10,7 @@ import {
     Ui5CustomEvent,
 } from "@ui5/webcomponents-react"
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import { createUseStyles } from "react-jss"
 import { Scenario } from "../../utils/scenarioDefinitions"
 import useElementsStore from "../../state/elements"
@@ -49,6 +50,7 @@ export default function (props: DialogAddLanguageProps) {
     })
 
     const classes = useStyles()
+    const intl = useIntl()
     const editTexts = useElementsStore((state) => state.editTexts)
     const [newLanguageName, setNewLanguageName] = useState<string>("")
     const [isLocale, setIsLocale] = useState(true)
@@ -68,7 +70,7 @@ export default function (props: DialogAddLanguageProps) {
                                 setIsLocale(true)
                             }}
                         >
-                            Close
+                            {intl.formatMessage({ id: "add_language_dialog_button_close" })}
                         </Button>
                     }
                 >
@@ -126,18 +128,18 @@ export default function (props: DialogAddLanguageProps) {
                             }
                         }}
                     >
-                        Add
+                        {intl.formatMessage({ id: "add_language_dialog_button_add" })}
                     </Button>
                 </Bar>
             }
-            headerText="Add language"
+            headerText={intl.formatMessage({ id: "add_language_dialog_title" })}
             open={props.dialogAddLanguageOpen}
             onClose={() => {
                 props.setDialogAddLanguageOpen(false)
             }}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
-                <FormItem labelContent={<Label required>Language name</Label>}>
+                <FormItem labelContent={<Label required>{intl.formatMessage({ id: "add_language_dialog_label_name" })}</Label>}>
                     <Input
                         value={newLanguageName}
                         required
@@ -148,9 +150,9 @@ export default function (props: DialogAddLanguageProps) {
                         }
                         valueStateMessage={
                             !isLocale ? (
-                                <span>Language is not a valid locale!</span>
+                                <span>{intl.formatMessage({ id: "add_language_dialog_invalid_locale" })}</span>
                             ) : (
-                                <span>Language is already existent!</span>
+                                <span>{intl.formatMessage({ id: "add_language_dialog_already_exists" })}</span>
                             )
                         }
                         onInput={(e: Ui5CustomEvent<InputDomRef, never>) => {

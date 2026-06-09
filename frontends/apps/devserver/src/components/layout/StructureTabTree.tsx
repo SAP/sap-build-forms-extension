@@ -1,4 +1,5 @@
 import React from "react"
+import { useIntl } from "react-intl"
 import {
     Breadcrumbs,
     BreadcrumbsItem,
@@ -104,6 +105,7 @@ const useStyles = createUseStyles({
 
 export default function StructureTabTree(props: Props) {
     const classes = useStyles()
+    const intl = useIntl()
     const editBaseData = useElementsStore((state) => state.editBaseData)
     const editDetailData = useElementsStore((state) => state.editDetailData)
     const editTexts = useElementsStore((state) => state.editTexts)
@@ -521,7 +523,7 @@ React.useEffect(() => {
                             headerText={props.el?.name}
                         >
                             {(props.el?.name || props.el?.name == "") && (
-                                <FormItem labelContent={<Label>Name</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_name" })}</Label>}>
                                     <Input
                                         value={nameDraft}
                                         placeholder={nameDraft}
@@ -553,7 +555,7 @@ React.useEffect(() => {
                                                     (a: any) => a.elementPart == ElementPart.Name,
                                                 ).length > 1 ? (
                                                     <span>
-                                                        Errors:
+                                                        {intl.formatMessage({ id: "element_errors_prefix" })}
                                                         <ul>
                                                             {messages
                                                                 .filter(
@@ -615,7 +617,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.sort != undefined && (
-                                <FormItem labelContent={<Label>Sort</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_sort" })}</Label>}>
                                     <FlexBox
                                         style={{
                                             height: 30,
@@ -628,13 +630,13 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.name || props.el?.name == "") && (
-                                <FormItem labelContent={<Label>Texts</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts" })}</Label>}>
                                     <Form
                                         layout="S1 M1 L2 XL1"
                                         labelSpan="S2 M2 L1 XL1"
                                         style={{ width: "90%" }}
                                     >
-                                        <FormItem labelContent={<Label>short</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_short" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.short}
                                                 texts={props.treeItemsShown?.texts!}
@@ -645,7 +647,7 @@ React.useEffect(() => {
                                                 setUpdate={props.setUpdate}
                                             />
                                         </FormItem>
-                                        <FormItem labelContent={<Label>long</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_long" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.long}
                                                 texts={props.treeItemsShown?.texts!}
@@ -656,7 +658,7 @@ React.useEffect(() => {
                                                 setUpdate={props.setUpdate}
                                             />
                                         </FormItem>
-                                        <FormItem labelContent={<Label>title</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_title" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.title}
                                                 texts={props.treeItemsShown?.texts!}
@@ -667,7 +669,7 @@ React.useEffect(() => {
                                                 setUpdate={props.setUpdate}
                                             />
                                         </FormItem>
-                                        <FormItem labelContent={<Label>doc</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_doc" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.doc}
                                                 texts={props.treeItemsShown?.texts!}
@@ -683,7 +685,7 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.type || props.el?.type == "") && (
-                                <FormItem labelContent={<Label>Type</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_type" })}</Label>}>
                                     <ElementTypeSelect
                                         parentType={
                                             props.parents.length > 1
@@ -710,7 +712,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "button" && (
-                                <FormItem labelContent={<Label>Design</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_design" })}</Label>}>
                                     <Select
                                         className={classes.largeInput}
                                         onChange={function Ta(e) {
@@ -787,7 +789,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "alert" && (
-                                <FormItem labelContent={<Label>Design</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_design" })}</Label>}>
                                     <Select
                                         className={classes.largeInput}
                                         onChange={function Ta(e) {
@@ -840,7 +842,7 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.type == "button" || props.el?.type == "alert" || props.el?.type == "icon") && (
-                                <FormItem labelContent={<Label>Icon</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_icon" })}</Label>}>
                                     <div
                                         style={{
                                             display: "flex",
@@ -873,7 +875,7 @@ React.useEffect(() => {
                                                     width: "60px",
                                                 }}
                                             >
-                                                Preview:{" "}
+                                                {intl.formatMessage({ id: "element_label_icon_preview" })}{" "}
                                             </Text>
                                             <Icon name={props.el.icon} />
                                         </div>
@@ -893,7 +895,7 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.type == "button" || props.el?.type == "icon") && (
-                                <FormItem labelContent={<Label>Tooltip</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_tooltip" })}</Label>}>
                                     <Input
                                         value={props.el?.tooltip}
                                         placeholder={props.el?.tooltip}
@@ -911,7 +913,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "mixin" && (
-                                <FormItem labelContent={<Label>Path</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_path" })}</Label>}>
                                     <Input
                                         value={props.el?.path}
                                         placeholder={props.el?.path}
@@ -928,7 +930,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "mixin" && (
-                                <FormItem labelContent={<Label>Mixin Name</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_mixin_name" })}</Label>}>
                                     <Input
                                         value={props.el?.mixinName}
                                         placeholder={props.el?.mixinName}
@@ -946,7 +948,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "mixin" && (
-                                <FormItem labelContent={<Label>Version</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_version" })}</Label>}>
                                     <Input
                                         value={props.el?.version?.toString()}
                                         placeholder={props.el?.version?.toString()}
@@ -966,7 +968,7 @@ React.useEffect(() => {
 
                             {props.el?.type == "attachment" && (
                                 <>
-                                    <FormItem labelContent={<Label>File types</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_file_types" })}</Label>}>
                                         <Input
                                             value={props.el?.fileTypes || ""}
                                             placeholder={props.el?.fileTypes || ""}
@@ -981,7 +983,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Cardinality</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_cardinality" })}</Label>}>
                                         <Select
                                             className={classes.largeInput}
                                             onChange={function Ta(e) {
@@ -1013,7 +1015,7 @@ React.useEffect(() => {
                                             )}
                                         </Select>
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Design</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_design" })}</Label>}>
                                         <Select
                                             className={classes.largeInput}
                                             onChange={function Ta(e) {
@@ -1044,7 +1046,7 @@ React.useEffect(() => {
                                             })}
                                         </Select>
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Adapter</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_adapter" })}</Label>}>
                                         <Input
                                             value={props.el?.adapter || "database"}
                                             placeholder={props.el?.adapter || "database"}
@@ -1059,7 +1061,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Has Description</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_has_description" })}</Label>}>
                                         <CheckBox
                                             checked={props.el.hasDescription}
                                             onChange={(e) => {
@@ -1070,7 +1072,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Categories</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_categories" })}</Label>}>
                                         <div style={{ width: "90%" }}>
                                             <CategoriesTable el={props.el} setNewEl={props.setNewEl} />
                                         </div>
@@ -1081,7 +1083,7 @@ React.useEffect(() => {
                             {(props.el?.type == "input" ||
                                 props.el?.type == "edit" ||
                                 props.el?.type == "autocomplete") && (
-                                    <FormItem labelContent={<Label>Data Type</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_data_type" })}</Label>}>
                                         <Select
                                             className={classes.largeInput}
                                             valueState={
@@ -1154,7 +1156,7 @@ React.useEffect(() => {
 
                             {(props.el?.type == "table" || props.el?.type == "attachment") && (
                                 <>
-                                    <FormItem labelContent={<Label>Select</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_select" })}</Label>}>
                                         <Select
                                             className={classes.largeInput}
                                             onChange={function Ta(e) {
@@ -1190,7 +1192,7 @@ React.useEffect(() => {
 
                             {props.el?.type == "table" && (
                                 <>
-                                    <FormItem labelContent={<Label>Style</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_style" })}</Label>}>
                                         <Select
                                             className={classes.largeInput}
                                             onChange={function Ta(e) {
@@ -1221,7 +1223,7 @@ React.useEffect(() => {
                                             )}
                                         </Select>
                                     </FormItem>
-                                    <FormItem labelContent={<Label>Pagesize</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_pagesize" })}</Label>}>
                                         <Input
                                             className={classes.largeInput}
                                             value={(props.el?.pageSize ?? 10).toString()}
@@ -1239,13 +1241,13 @@ React.useEffect(() => {
                             {(props.el?.type == "image" ||
                                 props.el?.type == "searchhelp" ||
                                 props.el?.type == "dialog") && (
-                                    <FormItem labelContent={<Label>Size</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_size" })}</Label>}>
                                         <Form
                                             layout="S1 M1 L2 XL1"
                                             labelSpan="S2 M2 L1 XL1"
                                             style={{ width: "90%" }}
                                         >
-                                            <FormItem labelContent={<Label>Height</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_size_height" })}</Label>}>
                                                 <Input
                                                     value={props.el?.size?.height || ""}
                                                     placeholder={props.el?.size?.height || ""}
@@ -1262,7 +1264,7 @@ React.useEffect(() => {
                                                     }}
                                                 />
                                             </FormItem>
-                                            <FormItem labelContent={<Label>Width</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_size_width" })}</Label>}>
                                                 <Input
                                                     value={props.el?.size?.width || ""}
                                                     placeholder={props.el?.size?.width || ""}
@@ -1290,7 +1292,7 @@ React.useEffect(() => {
                                 props.el?.type == "select" ||
                                 props.el?.type == "checkbox" ||
                                 props.el?.type == "radio") && (
-                                    <FormItem labelContent={<Label>Default Value</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_default_value" })}</Label>}>
                                         <Input
                                             value={props.el?.defaultValue}
                                             placeholder={props.el?.defaultValue}
@@ -1309,10 +1311,10 @@ React.useEffect(() => {
 
                             {(props.el?.type == "button" || props.el?.type == "link") && (
                                 <>
-                                    <FormItem labelContent={<Label>Link URL</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_link_url" })}</Label>}>
                                         <Input
                                             value={props.el?.linkHRef}
-                                            placeholder="https://example.com"
+                                            placeholder={intl.formatMessage({ id: "element_label_link_url_placeholder" })}
                                             className={classes.largeInput}
                                             onInput={(e) => {
                                                 props.setNewEl({
@@ -1325,7 +1327,7 @@ React.useEffect(() => {
                                         />
                                     </FormItem>
                                     {props.el?.type == "link" && (
-                                        <FormItem labelContent={<Label>Link Text</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_link_text" })}</Label>}>
                                             <Input
                                                 value={props.el?.linkText}
                                                 className={classes.largeInput}
@@ -1344,7 +1346,7 @@ React.useEffect(() => {
                             )}
 
                             {props.el?.type == "image" && (
-                                <FormItem labelContent={<Label>Image URL / URI</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_image_url" })}</Label>}>
                                     <div
                                         style={{
                                             display: "flex",
@@ -1363,7 +1365,7 @@ React.useEffect(() => {
                                         >
                                             <Input
                                                 value={props.el?.defaultValue}
-                                                placeholder="https://example.com/image.jpg or data:image/png;base64,..."
+                                                placeholder={intl.formatMessage({ id: "element_label_image_url_placeholder" })}
                                                 className={classes.largeInput}
                                                 style={{ flex: 1 }}
                                                 onInput={(e) => {
@@ -1399,7 +1401,7 @@ React.useEffect(() => {
                                                     input.click()
                                                 }}
                                             >
-                                                Choose File
+                                                {intl.formatMessage({ id: "editor_button_choose_file" })}
                                             </Button>
                                         </div>
                                         {props.el?.defaultValue && (
@@ -1422,7 +1424,7 @@ React.useEffect(() => {
                             {(props.el?.type == "input" ||
                                 props.el?.type == "edit" ||
                                 props.el?.type == "autocomplete") && (
-                                <FormItem labelContent={<Label>Input Type</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_input_type" })}</Label>}>
                                     <Select
                                         className={classes.largeInput}
                                         onChange={function Ta(e) {
@@ -1453,8 +1455,8 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.col || props.el?.col == "") && (
-                                <FormItem labelContent={<Label>Col</Label>}>
-                                    <FormItem labelContent={<Label>sm</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_col" })}</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_col_sm" })}</Label>}>
                                         <Input
                                             value={
                                                 /sm:\d+/
@@ -1476,7 +1478,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>md</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_col_md" })}</Label>}>
                                         <Input
                                             value={
                                                 /md:\d+/
@@ -1498,7 +1500,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>lg</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_col_lg" })}</Label>}>
                                         <Input
                                             value={
                                                 /lg:\d+/
@@ -1520,7 +1522,7 @@ React.useEffect(() => {
                                             }}
                                         />
                                     </FormItem>
-                                    <FormItem labelContent={<Label>xl</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_col_xl" })}</Label>}>
                                         <Input
                                             value={
                                                 /xl:\d+/
@@ -1549,13 +1551,13 @@ React.useEffect(() => {
                                 props.el?.type == "multiselect" ||
                                 props.el?.type == "radio" ||
                                 props.el?.type == "select") && (
-                                    <FormItem labelContent={<Label>Value Help</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_value_help" })}</Label>}>
                                         <Form
                                             layout="S1 M1 L2 XL1"
                                             labelSpan="S2 M2 L1 XL1"
                                             style={{ width: "90%" }}
                                         >
-                                            <FormItem labelContent={<Label>Name</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_value_help_name" })}</Label>}>
                                                 <Input
                                                     value={props.el?.valueHelp?.name}
                                                     placeholder={props.el?.valueHelp?.name}
@@ -1573,7 +1575,7 @@ React.useEffect(() => {
                                                     }}
                                                 />
                                             </FormItem>
-                                            <FormItem labelContent={<Label>Validate</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_value_help_validate" })}</Label>}>
                                                 <CheckBox
                                                     checked={props.el.valueHelp?.validate}
                                                     onChange={(e) => {
@@ -1587,7 +1589,7 @@ React.useEffect(() => {
                                                     }}
                                                 />
                                             </FormItem>
-                                            <FormItem labelContent={<Label>Empty Selection</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_value_help_empty_selection" })}</Label>}>
                                                 <CheckBox
                                                     checked={props.el.valueHelp?.emptySelection}
                                                     onChange={(e) => {
@@ -1601,7 +1603,7 @@ React.useEffect(() => {
                                                     }}
                                                 />
                                             </FormItem>
-                                            <FormItem labelContent={<Label>Display Format</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_value_help_display_format" })}</Label>}>
                                                 <Input
                                                     value={props.el?.valueHelp?.displayFormat}
                                                     placeholder={props.el?.valueHelp?.displayFormat}
@@ -1625,7 +1627,7 @@ React.useEffect(() => {
                                 )}
 
                             {props.el?.type == "searchhelp" && (
-                                <FormItem labelContent={<Label>Dialog Key</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_dialog_key" })}</Label>}>
                                     <Input
                                         value={props.el?.dialogKey}
                                         placeholder={props.el?.dialogKey}
@@ -1643,7 +1645,7 @@ React.useEffect(() => {
                             )}
 
                             {(props.el?.visible || props.el?.visible == "") && (
-                                <FormItem labelContent={<Label>Visible</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_visible" })}</Label>}>
                                     <Input
                                         value={props.el?.visible}
                                         placeholder={props.el?.visible}
@@ -1660,7 +1662,7 @@ React.useEffect(() => {
                                 </FormItem>
                             )}
                             {(props.el?.editable || props.el?.editable == "") && (
-                                <FormItem labelContent={<Label>Editable</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_editable" })}</Label>}>
                                     <Input
                                         value={props.el?.editable}
                                         placeholder={props.el?.editable}
@@ -1677,7 +1679,7 @@ React.useEffect(() => {
                                 </FormItem>
                             )}
                             {(props.el?.required || props.el?.required == "") && (
-                                <FormItem labelContent={<Label>Required</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_required" })}</Label>}>
                                     <Input
                                         value={props.el?.required}
                                         placeholder={props.el?.required}
@@ -1693,7 +1695,7 @@ React.useEffect(() => {
                                     />
                                 </FormItem>
                             )}
-                            <FormItem labelContent={<Label>CSS</Label>}>
+                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_css" })}</Label>}>
                                 <Input
                                     value={props.el?.css || ""}
                                     placeholder={props.el?.css || ""}
@@ -1707,7 +1709,7 @@ React.useEffect(() => {
                                     }}
                                 />
                             </FormItem>
-                            <FormItem labelContent={<Label>Show label</Label>}>
+                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_show_label" })}</Label>}>
                                 <CheckBox
                                     checked={props.el.showLabel}
                                     onChange={(e) => {
@@ -1718,7 +1720,7 @@ React.useEffect(() => {
                                     }}
                                 />
                             </FormItem>
-                            <FormItem labelContent={<Label>Show help</Label>}>
+                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_show_help" })}</Label>}>
                                 <CheckBox
                                     checked={props.el.showHelp}
                                     onChange={(e) => {
@@ -1747,7 +1749,7 @@ React.useEffect(() => {
                                 props.el?.type === "table" ||
                                 props.el?.type === "text"
                             ) && (
-                                <FormItem labelContent={<Label>Line break</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_line_break" })}</Label>}>
                                     <CheckBox
                                         checked={props.el.lineBreak}
                                         onChange={(e) => {
@@ -1760,13 +1762,13 @@ React.useEffect(() => {
                                 </FormItem>
                             )}
                             {props.parents.find((e) => e.elem.type == "wizard") && (
-                                <FormItem labelContent={<Label>Wizard format options</Label>}>
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_wizard_options" })}</Label>}>
                                     <Form
                                         layout="S1 M1 L2 XL1"
                                         labelSpan="S2 M1 L1 XL1"
                                         style={{ width: "90%" }}
                                     >
-                                        <FormItem labelContent={<Label>Skip in summary</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_wizard_skip_summary" })}</Label>}>
                                             <CheckBox
                                                 checked={
                                                     props.el.wizardFormatOptions?.skipInSummary
@@ -1782,7 +1784,7 @@ React.useEffect(() => {
                                                 }}
                                             />
                                         </FormItem>
-                                        <FormItem labelContent={<Label>Skip in form</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_wizard_skip_form" })}</Label>}>
                                             <CheckBox
                                                 checked={props.el.wizardFormatOptions?.skipInForm}
                                                 onChange={(e) => {
@@ -1802,13 +1804,13 @@ React.useEffect(() => {
 
                             {props.parents.find((e) => e.elem.type == "table") && (
                                 <>
-                                    <FormItem labelContent={<Label>Column options</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_column_options" })}</Label>}>
                                         <Form
                                             layout="S1 M1 L2 XL1"
                                             labelSpan="S2 M2 L1 XL1"
                                             style={{ width: "90%" }}
                                         >
-                                            <FormItem labelContent={<Label>Min column width</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_column_min_width" })}</Label>}>
                                                 <Input style={{ width: "100%" }}
                                                     value={props.el?.columnOptions?.minColumnWidth || ""}
                                                     placeholder={
@@ -1829,7 +1831,7 @@ React.useEffect(() => {
                                                     }}
                                                 />
                                             </FormItem>
-                                            <FormItem labelContent={<Label>Max column width</Label>}>
+                                            <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_column_max_width" })}</Label>}>
                                                 <Input style={{ width: "100%" }}
                                                     value={props.el?.columnOptions?.maxColumnWidth || ""}
                                                     placeholder={
@@ -1854,7 +1856,7 @@ React.useEffect(() => {
                                     </FormItem>
 
                                     {props.el?.showAsColumn != undefined && (
-                                        <FormItem labelContent={<Label>Show as Column</Label>}>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_show_as_column" })}</Label>}>
                                             <CheckBox
                                                 checked={props.el.showAsColumn}
                                                 onChange={(e) => {
@@ -1874,7 +1876,7 @@ React.useEffect(() => {
                                     props.el.type == "edit" ||
                                     props.el.type == "attachment" ||
                                     props.el.type == "table") && (
-                                    <FormItem labelContent={<Label>Validation</Label>}>
+                                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_validation" })}</Label>}>
                                         <div style={{ width: "90%" }}>
                                             <ValidationTable el={props.el} setNewEl={props.setNewEl}></ValidationTable>
                                         </div>

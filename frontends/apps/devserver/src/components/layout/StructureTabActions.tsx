@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import { Elem, leafNodes, Parent, Scenario } from "../../utils/scenarioDefinitions"
 import { ActionSheet, Button } from "@ui5/webcomponents-react"
 import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
@@ -45,6 +46,7 @@ const useStyles = createUseStyles({
 
 export default function StructureTabActions(props: Props) {
     const classes = useStyles()
+    const intl = useIntl()
     const addElement = useElementsStore((state) => state.addElement)
     const removeElement = useElementsStore((state) => state.removeElement)
     const editDetailData = useElementsStore((state) => state.editDetailData)
@@ -411,6 +413,7 @@ export default function StructureTabActions(props: Props) {
             >
                 <Button
                     icon="slim-arrow-up"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_up" })}
                     disabled={!canMoveUp()}
                     onClick={() => {
                         if (isInLeftOrRightElements()) {
@@ -472,10 +475,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Up
+                    {intl.formatMessage({ id: "action_button_move_up" })}
                 </Button>
                 <Button
                     icon="slim-arrow-down"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_down" })}
                     disabled={!canMoveDown()}
                     onClick={() => {
                         if (isInLeftOrRightElements()) {
@@ -537,10 +541,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Down
+                    {intl.formatMessage({ id: "action_button_move_down" })}
                 </Button>
                 <Button
                     icon="slim-arrow-left"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_left" })}
                     disabled={props.parents.length < 2 || !props.element}
                     onClick={() => {
                         // Check if element is in leftElements or rightElements
@@ -618,10 +623,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Left
+                    {intl.formatMessage({ id: "action_button_move_left" })}
                 </Button>
                 <Button
                     icon="slim-arrow-right"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_right" })}
                     disabled={
                         props.parents[props.parents.length - 2] == undefined ||
                         props.parents[props.parents.length - 2].elem.elements.filter(
@@ -702,7 +708,7 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Right
+                    {intl.formatMessage({ id: "action_button_move_right" })}
                 </Button>
                 <Button
                     icon="slim-arrow-left"
@@ -760,7 +766,7 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Left Elements
+                    {intl.formatMessage({ id: "action_button_move_left_elements" })}
                 </Button>
                 <Button
                     icon="slim-arrow-right"
@@ -818,7 +824,7 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Right Elements
+                    {intl.formatMessage({ id: "action_button_move_right_elements" })}
                 </Button>
                 <Button
                     icon="slim-arrow-up"
@@ -878,13 +884,13 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Header
+                    {intl.formatMessage({ id: "action_button_move_header" })}
                 </Button>
             </ActionSheet>
             <Button
                 icon="copy"
                 disabled={props.mode == ListSelectionMode.Delete || !props.el}
-                tooltip="Copy"
+                tooltip={intl.formatMessage({ id: "action_tooltip_copy" })}
                 className={classes.buttonTree}
                 onClick={() => {
                     props.setCopiedEl(props.el)
@@ -903,7 +909,7 @@ export default function StructureTabActions(props: Props) {
                         props.element!.split("x").filter((item) => item).at(-1)
                     )
                 }
-                tooltip="Paste"
+                tooltip={intl.formatMessage({ id: "action_tooltip_paste" })}
                 className={classes.buttonTree}
                 onClick={() => {
                     props.setCopyDialogOpen(true)

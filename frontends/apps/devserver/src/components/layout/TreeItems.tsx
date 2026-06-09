@@ -1,4 +1,5 @@
 import React from "react"
+import { useIntl } from "react-intl"
 import { FlexBox, Icon, Tag, TreeItem, TreeItemCustom } from "@ui5/webcomponents-react"
 import { Elem, Message } from "../../utils/scenarioDefinitions"
 import { compare, containsChildSearchString } from "../../utils/sortUtils"
@@ -27,6 +28,7 @@ export default function TreeItems(props: Props) {
     var subkey = -1
     const map1 = new Map()
     const currentLevel = props.level || 1
+    const intl = useIntl()
     
     const shouldExpand = React.useMemo(() => {
         if (props.searchString.length > 0) {
@@ -390,7 +392,7 @@ export default function TreeItems(props: Props) {
                                                 <TreeItemCustom
                                                     key={`${i}fxlx`}
                                                     id={`${i}fxlx`}
-                                                    content={ <div> Left elements </div> }
+                                                    content={ <div> {intl.formatMessage({ id: "structure_left_elements" })} </div> }
                                                 >
                                                     <TreeItems
                                                         items={item.footer.leftElements}
@@ -424,7 +426,7 @@ export default function TreeItems(props: Props) {
                                                 <TreeItemCustom
                                                     key={`${i}fxrx`}
                                                     id={`${i}fxrx`}
-                                                    content={ <div style={{ fontSize: "0.875rem" }}> Right elements </div> }
+                                                    content={ <div style={{ fontSize: "0.875rem" }}> {intl.formatMessage({ id: "structure_right_elements" })} </div> }
                                                 >
                                                     <TreeItems
                                                         items={item.footer.rightElements}
@@ -556,7 +558,7 @@ export default function TreeItems(props: Props) {
                                             />
                                             {item.footer.leftElements && (
                                                 <TreeItem
-                                                    text={`Left elements`}
+                                                    text={intl.formatMessage({ id: "structure_left_elements" })}
                                                     key={`${i}fxlx`}
                                                     id={`${i}fxlx`}
                                                     style={{ fontSize: "0.875rem" }}
@@ -591,7 +593,7 @@ export default function TreeItems(props: Props) {
                                             )}
                                             {item.footer.rightElements && (
                                                 <TreeItem
-                                                    text={`Right elements`}
+                                                    text={intl.formatMessage({ id: "structure_right_elements" })}
                                                     key={`${i}fxrx`}
                                                     id={`${i}fxrx`}
                                                     style={{ fontSize: "0.875rem" }}
@@ -726,7 +728,7 @@ export default function TreeItems(props: Props) {
                                             />
                                             {item.toolbar.leftElements && (
                                                 <TreeItem
-                                                    text={`Left elements`}
+                                                    text={intl.formatMessage({ id: "structure_left_elements" })}
                                                     key={`${i}txlx`}
                                                     id={`${i}txlx`}
                                                 >
@@ -760,7 +762,7 @@ export default function TreeItems(props: Props) {
                                             )}
                                             {item.toolbar.rightElements && (
                                                 <TreeItem
-                                                    text={`Right elements`}
+                                                    text={intl.formatMessage({ id: "structure_right_elements" })}
                                                     key={`${i}txrx`}
                                                     id={`${i}txrx`}
                                                 >
@@ -800,7 +802,7 @@ export default function TreeItems(props: Props) {
                         {item.type == "toolbar" && (
                             <>
                                 {item.leftElements && (
-                                    <TreeItem text={"Left elements"} key={`${i}lx`} id={`${i}lx`} style={{ fontSize: "0.875rem" }}>
+                                    <TreeItem text={intl.formatMessage({ id: "structure_left_elements" })} key={`${i}lx`} id={`${i}lx`} style={{ fontSize: "0.875rem" }}>
                                         <TreeItems
                                             items={item.leftElements}
                                             id={`${i}lx`}
@@ -820,7 +822,7 @@ export default function TreeItems(props: Props) {
                                     </TreeItem>
                                 )}
                                 {item.rightElements && (
-                                    <TreeItem text={"Right elements"} key={`${i}rx`} id={`${i}rx`} style={{ fontSize: "0.875rem" }}>
+                                    <TreeItem text={intl.formatMessage({ id: "structure_right_elements" })} key={`${i}rx`} id={`${i}rx`} style={{ fontSize: "0.875rem" }}>
                                         <TreeItems
                                             items={item.rightElements}
                                             id={`${i}rx`}
