@@ -9,11 +9,9 @@ import { ValueHelpValue } from "../../features/model"
  * Dialog to Add a Value Help Value
  */
 interface DialogAddValueHelpValueProps {
-    // dialogAddValueOpen: boolean
-    // valueHelpValue: ValueHelpValue
-
+    dialogAddValueOpen: boolean
+    valueHelpValue: ValueHelpValue
     setDialogAddValueOpen(o: boolean): void
-
     changeValueHelpValue(changedValueHelpValue: ValueHelpValue): void
 }
 
@@ -84,7 +82,7 @@ export default function (props: DialogAddValueHelpValueProps) {
                 </Bar>
             }
             headerText="Add Value Help Value"
-            open={true}
+            open={props.dialogAddValueOpen}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
                 <FormItem labelContent={<Label required>Key</Label>}>

@@ -20,31 +20,22 @@ import InputType from "@ui5/webcomponents/dist/types/InputType"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 
 import { ValueHelpDef, ValueHelpValue } from "../../features/model"
-import { RefObject } from "react"
 
 /**
  *  The properties for the DialogAddValueHelpValue component.
  */
 interface DialogAddValueHelpValueProps {
     edit: boolean
-    refValueHelpDef: RefObject<ValueHelpDef | undefined>
+    currentValueHelpDef: ValueHelpDef | undefined
     valueHelpValue: ValueHelpValue | undefined
     language: string | undefined
-
+    setCurrentValueHelpDef(v: ValueHelpDef): void
     changeValueHelpValue(v: ValueHelpValue): void
     changeLanguage(language: string, def: ValueHelpDef): void
     setDialogAddValueOpen(v: boolean): void
 }
 
-export default function ({
-    edit,
-    refValueHelpDef,
-    valueHelpValue,
-    language,
-    changeValueHelpValue,
-    changeLanguage,
-    setDialogAddValueOpen,
-}: DialogAddValueHelpValueProps) {
+export default function (props: DialogAddValueHelpValueProps) {
     return (
         <Tab icon="folder" text="Current Values">
             <Form
@@ -57,27 +48,27 @@ export default function ({
                 <FormItem labelContent={<Label>Language</Label>}>
                     <Select
                         onChange={(e) =>
-                            changeLanguage(
+                            props.changeLanguage(
                                 e.detail.selectedOption.innerText,
-                                refValueHelpDef.current!,
+                                props.currentValueHelpDef!,
                             )
                         }
                         valueState="None"
                     >
-                        {refValueHelpDef.current?.languages.map((item: string) => {
+                        {props.currentValueHelpDef?.languages.map((item: string) => {
                             return (
-                                <Option key={item} selected={language == item}>
+                                <Option key={item} selected={props.language == item}>
                                     {item}
                                 </Option>
                             )
                         })}
                     </Select>
                 </FormItem>
-                {/* <FormItem labelContent={<Label>Valid until</Label>}>
-                    {valueHelpValue != undefined && (
-                        <Label style={{ marginBlock: 10 }}>{valueHelpValue.validUntil}</Label>
+                <FormItem labelContent={<Label>Valid until</Label>}>
+                    {props.valueHelpValue != undefined && (
+                        <Label style={{ marginBlock: 10 }}>{props.valueHelpValue.validUntil}</Label>
                     )}
-                </FormItem> */}
+                </FormItem>
                 <FormItem labelContent={<Label>Values</Label>}>
                     <Table
                         headerRow={
@@ -88,25 +79,31 @@ export default function ({
                             </TableHeaderRow>
                         }
                     >
-                        {valueHelpValue != undefined && (
+                        {props.valueHelpValue != undefined && (
                             <>
-                                {Object.keys(valueHelpValue.values)
+                                {Object.keys(props.valueHelpValue.values)
                                     .sort()
-                                    .map((key) => {
+                                    .map(function (key) {
                                         return (
                                             <TableRow key={key}>
                                                 <TableCell>
                                                     <Label>{key}</Label>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {edit &&
-                                                        refValueHelpDef.current?.adapter ==
+                                                    {props.edit &&
+                                                        props.currentValueHelpDef?.adapter ==
                                                             "local" && (
                                                             <Input
                                                                 type={InputType.Text}
-                                                                value={valueHelpValue?.values[key]}
+                                                                value={
+                                                                    props.valueHelpValue?.values[
+                                                                        key
+                                                                    ]
+                                                                }
                                                                 placeholder={
-                                                                    valueHelpValue?.values[key]
+                                                                    props.valueHelpValue?.values[
+                                                                        key
+                                                                    ]
                                                                 }
                                                                 onChange={(
                                                                     e: Ui5CustomEvent<
@@ -114,37 +111,41 @@ export default function ({
                                                                         never
                                                                     >,
                                                                 ) => {
-                                                                    var v = valueHelpValue?.values
+                                                                    var v =
+                                                                        props.valueHelpValue?.values
                                                                     v[key] =
                                                                         e.target.attributes.getNamedItem(
                                                                             "value",
                                                                         )!.nodeValue!
-                                                                    changeValueHelpValue({
-                                                                        ...valueHelpValue!,
+                                                                    props.changeValueHelpValue({
+                                                                        ...props.valueHelpValue!,
                                                                         values: v,
                                                                     })
                                                                 }}
                                                                 style={{ width: "100%" }}
                                                             />
                                                         )}
-                                                    {(!edit ||
-                                                        refValueHelpDef.current?.adapter !=
+                                                    {(!props.edit ||
+                                                        props.currentValueHelpDef?.adapter !=
                                                             "local") && (
-                                                        <Text>{valueHelpValue?.values[key]}</Text>
+                                                        <Text>
+                                                            {props.valueHelpValue?.values[key]}
+                                                        </Text>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {edit &&
-                                                        refValueHelpDef.current?.adapter ==
+                                                    {props.edit &&
+                                                        props.currentValueHelpDef?.adapter ==
                                                             "local" && (
                                                             <Button
                                                                 icon="decline"
                                                                 design={ButtonDesign.Transparent}
                                                                 onClick={() => {
-                                                                    var v = valueHelpValue?.values
+                                                                    var v =
+                                                                        props.valueHelpValue?.values
                                                                     delete v[key]
-                                                                    changeValueHelpValue({
-                                                                        ...valueHelpValue!,
+                                                                    props.changeValueHelpValue({
+                                                                        ...props.valueHelpValue!,
                                                                         values: v,
                                                                     })
                                                                 }}
@@ -156,22 +157,24 @@ export default function ({
                                     })}
                             </>
                         )}
-                        {edit && language && refValueHelpDef.current?.adapter == "local" && (
-                            <TableRow>
-                                <TableCell>
-                                    <Button
-                                        icon="add"
-                                        onClick={() => {
-                                            setDialogAddValueOpen(true)
-                                        }}
-                                    >
-                                        Add value
-                                    </Button>
-                                </TableCell>
-                                <TableCell></TableCell>
-                                <TableCell></TableCell>
-                            </TableRow>
-                        )}
+                        {props.edit &&
+                            props.language &&
+                            props.currentValueHelpDef?.adapter == "local" && (
+                                <TableRow>
+                                    <TableCell>
+                                        <Button
+                                            icon="add"
+                                            onClick={() => {
+                                                props.setDialogAddValueOpen(true)
+                                            }}
+                                        >
+                                            Add value
+                                        </Button>
+                                    </TableCell>
+                                    <TableCell></TableCell>
+                                    <TableCell></TableCell>
+                                </TableRow>
+                            )}
                     </Table>
                 </FormItem>
             </Form>
