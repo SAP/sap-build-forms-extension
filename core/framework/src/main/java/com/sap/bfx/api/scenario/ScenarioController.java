@@ -61,6 +61,7 @@ public class ScenarioController {
         sourceClassToTargetClass.put(Integer.class, Integer.class);
         sourceClassToTargetClass.put(BigDecimal.class, BigDecimal.class);
         sourceClassToTargetClass.put(Object.class, Object.class);
+        sourceClassToTargetClass.put(MoneyAmount.class, String.class);
     }
 
     private final FormsService formsService;
@@ -87,6 +88,7 @@ public class ScenarioController {
         module.addSerializer(LocalDate.class, new LocalDateSerializer());
         module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
         module.addSerializer(LocalTime.class, new LocalTimeSerializer());
+        module.addSerializer(MoneyAmount.class, new MoneyAmountSerializer());
         om.registerModule(module);
     }
 
@@ -174,7 +176,7 @@ public class ScenarioController {
             if (clazz == String.class && objValue instanceof String) {
                 return (T) objValue;
             } else if (objValue instanceof LocalDate || objValue instanceof LocalTime ||
-                    objValue instanceof LocalDateTime) {
+                    objValue instanceof LocalDateTime || objValue instanceof MoneyAmount) {
                 return (T) om.writeValueAsString(objValue);
             } else if (objValue instanceof DateRange tempDateRange) {
                 return om.readValue(om.writeValueAsBytes(tempDateRange), clazz);
