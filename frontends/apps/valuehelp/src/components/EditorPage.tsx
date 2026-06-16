@@ -1,52 +1,21 @@
-import { JSX, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useIntl } from "react-intl"
 
-import {
-    Bar,
-    Button,
-    CheckBox,
-    DynamicPage,
-    DynamicPageHeader,
-    DynamicPageTitle,
-    FilterBar,
-    FilterGroupItem,
-    FlexBox,
-    FlexibleColumnLayout,
-    Input,
-    InputDomRef,
-    Label,
-    List,
-    ListDomRef,
-    MessageBox,
-    MessageBoxType,
-    MultiComboBox,
-    MultiComboBoxItem,
-    TabContainer,
-    Text,
-    Title,
-    Ui5CustomEvent,
-    Switch,
-    ListItemStandard,
-    Toolbar,
-    ToolbarButton,
-    MessageBoxAction,
-} from "@ui5/webcomponents-react"
+import { Bar, FlexibleColumnLayout, Title } from "@ui5/webcomponents-react"
 import { ThemingParameters } from "@ui5/webcomponents-react-base"
-import { ListItemClickEventDetail } from "@ui5/webcomponents/dist/List"
 import FCLLayout from "@ui5/webcomponents-fiori/dist/types/FCLLayout"
 import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
-import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 
-import { apiOk, Margin, MessageOption, Severity, useMessages } from "commons"
+import { apiOk, MessageOption, Severity, useMessages } from "commons"
 
 import { ValueHelpDef, ValueHelpValue } from "../features/model"
-import DialogAddValueHelpValue from "./valuehelp/DialogAddValueHelpValue"
-import DialogAddValueHelpDefinition from "./valuehelp/DialogAddValueHelpDefinition"
-import ConfigTab from "./valuehelp/TabConfig"
-import CurrentValuesTab from "./valuehelp/TabCurrentValues"
-import DialogUploadFile from "./valuehelp/DialogUploadFile"
 import { useValueHelpState } from "../features/valuehelpstate"
+import ValueHelpListColumn from "./valuehelp/ValueHelpListColumn"
+import ValueHelpDetailColumn from "./valuehelp/ValueHelpDetailColumn"
+import DialogAddValueHelpDefinition from "./valuehelp/DialogAddValueHelpDefinition"
+import DialogAddValueHelpValue from "./valuehelp/DialogAddValueHelpValue"
+import DialogUploadFile from "./valuehelp/DialogUploadFile"
 
 export default function () {
     const intl = useIntl()
@@ -69,46 +38,23 @@ export default function () {
     const [fullscreen, setFullscreen] = useState<boolean>(false)
     const [edit, setEdit] = useState<boolean>(false)
 
-    const [messageBoxOpen, setMessageBoxOpen] = useState(false)
-    const [messageBoxId, setMessageBoxId] = useState("")
-    const [messageBoxType, setMessageBoxType] = useState<MessageBoxType>()
-    const [messageBoxText, setMessageBoxText] = useState<JSX.Element>(<></>)
-
     const [dialogAddDefOpen, setDialogAddDefOpen] = useState(false)
     const [isDefIdExistent, setIsDefIdExistent] = useState(false)
     const [dialogAddValueOpen, setDialogAddValueOpen] = useState(false)
 
     const [dialogUploadFileOpen, setDialogUploadFileOpen] = useState(false)
-    const [uploadLoading, setUploadLoading] = useState(false)
+    const [uploadLoading] = useState(false)
 
     /**
      * Initial data loading and event listener setup.
      */
     useEffect(() => {
-        // const l = document.getElementById("valueHelpList")
-
-        // const handleSelectionChange = (event: any) => {
-        //     setSelectedValueHelpDefs(
-        //         event.detail.selectedItems.map((item: any) => item.textContent),
-        //     )
-        // }
-
-        // if (l != null) {
-        //     l.addEventListener("selection-change", handleSelectionChange)
-        // }
-
         // load definitions
         refresh()
-        // async load adpaters
+        // async load adapters
         state.findAdapters(messages)
         // async load languages
         state.findLanguages(messages)
-
-        // return () => {
-        //     if (l != null) {
-        //         l.removeEventListener("selection-change", handleSelectionChange)
-        //     }
-        // }
     }, [])
 
     /**
@@ -139,24 +85,20 @@ export default function () {
      * @param sAdapter
      */
     function filterVH(s: string | undefined, sAdapter: string[] | undefined) {
-        if (s == undefined) {
-            s = searchId
-        }
-        if (sAdapter == undefined) {
-            sAdapter = searchAdapter
-        }
-        if ((s != "" && s != undefined) || sAdapter.length > 0) {
-            if (s != "" && s != undefined && sAdapter.length > 0) {
-                refresh({ search: s, adapter: sAdapter })
-            } else if (s != "" && s != undefined) {
-                refresh({ search: s })
+        const effectiveS = s ?? searchId
+        const effectiveAdapter = sAdapter ?? searchAdapter
+        if (effectiveS || effectiveAdapter.length > 0) {
+            if (effectiveS && effectiveAdapter.length > 0) {
+                refresh({ search: effectiveS, adapter: effectiveAdapter })
+            } else if (effectiveS) {
+                refresh({ search: effectiveS })
             } else {
-                refresh({ adapter: sAdapter.join(",") })
+                refresh({ adapter: effectiveAdapter.join(",") })
             }
         } else {
             refresh(undefined)
         }
-        if (listMode == ListSelectionMode.Multiple) {
+        if (listMode === ListSelectionMode.Multiple) {
             setSelectedValueHelpDefs(
                 selectedValueHelpDefs.filter((id) =>
                     state.defs.some((v: ValueHelpDef) => v.id === id),
@@ -171,15 +113,15 @@ export default function () {
      * @param v
      */
     function changeLanguages(v: ValueHelpDef) {
-        if (v.languages.length == 0) {
-            if (language != "_" || valueHelpValue?.locale != "_" || valueHelpValue.id != v.id) {
+        if (v.languages.length === 0) {
+            if (language !== "_" || valueHelpValue?.locale !== "_" || valueHelpValue.id !== v.id) {
                 changeLanguage("_", v)
             }
         } else {
             if (
-                language != v.languages[0] ||
-                valueHelpValue?.locale != v.languages[0] ||
-                valueHelpValue.id != v.id
+                language !== v.languages[0] ||
+                valueHelpValue?.locale !== v.languages[0] ||
+                valueHelpValue.id !== v.id
             ) {
                 changeLanguage(v.languages[0], v)
             }
@@ -189,44 +131,39 @@ export default function () {
     /**
      *  Handles changing the current language and fetching corresponding ValueHelp values.
      *
-     * @param language
+     * @param lang
      * @param def
      */
-    function changeLanguage(language: string, def: ValueHelpDef) {
-        console.log(language)
-        setLanguage(language)
+    function changeLanguage(lang: string, def: ValueHelpDef) {
+        setLanguage(lang)
 
-        // we only show value of local valuehelps
-        if (def.adapter != "local") {
+        // we only show values of local valuehelps
+        if (def.adapter !== "local") {
             setValueHelpValue(undefined)
             return
         }
 
-        var existingValueHelpValue = updatedValueHelpValues.find(
-            (valueHelp: ValueHelpValue) =>
-                valueHelp.id === valueHelpValue!.id && valueHelp.locale === language,
+        const existingValueHelpValue = updatedValueHelpValues.find(
+            (vh: ValueHelpValue) => vh.id === def.id && vh.locale === lang,
         )
         if (existingValueHelpValue) {
             setValueHelpValue(existingValueHelpValue)
         } else {
             state
-                .findLatestValues(messages, def.id, language)
+                .findLatestValues(messages, def.id, lang)
                 .then((action: any) => {
                     if (apiOk(action.status)) {
                         setValueHelpValue(action.data)
-                    } else if (action.status == 404) {
+                    } else if (action.status === 404) {
                         setValueHelpValue({
                             id: def.id,
-                            validUntil: "",
                             version: -1,
-                            locale: language,
-                            values: {},
+                            locale: lang,
+                            values: [],
                         })
                     }
                 })
-                .catch(() => {
-                    setValueHelpValue
-                })
+                .catch(() => {})
         }
     }
 
@@ -246,20 +183,18 @@ export default function () {
      * Adds a new ValueHelp definition.
      *
      * @param def - The ValueHelp definition to add.
-     * @returns A promise that resolves when the definition is added.
-     * @param def
      */
     function addValueHelpDef(def: ValueHelpDef) {
         state.addDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(`ValueHelp definition ${def?.id} has been created successfully`)
-                if (listMode == ListSelectionMode.Multiple) {
+                if (listMode === ListSelectionMode.Multiple) {
                     setSelectedValueHelpDefs([...selectedValueHelpDefs, def.id])
                 }
                 openValueHelpDef(action.data)
                 filter()
-                messages.toast(Severity.Success, "valuehelpdef_created", { id: def.id })
-            } else if (action.status == 409) {
+                messages.toast(Severity.Success, "msg_valuehelpdef_created", { id: def.id })
+            } else if (action.status === 409) {
                 console.log("Definition ID is already existent.")
                 messages.dialog(Severity.Error, "err_valuehelpdef_id_existent", { id: def.id }, [
                     MessageOption.Ok,
@@ -269,9 +204,19 @@ export default function () {
     }
 
     /**
-     * Deletes a ValueHelp definition.
+     * Deletes a ValueHelp definition after confirmation.
+     *
+     * @param def
      */
-    function deleteValueHelpDef(def: ValueHelpDef) {
+    async function deleteValueHelpDef(def: ValueHelpDef) {
+        const result = await messages.dialog(
+            Severity.Warning,
+            "confirm_delete_vh",
+            { id: def.id },
+            [MessageOption.Ok, MessageOption.Cancel],
+        )
+        if (result !== MessageOption.Ok) return
+
         state.deleteDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
@@ -285,18 +230,24 @@ export default function () {
     }
 
     /**
-     * Deletes the selected ValueHelp definitions.
-     *
+     * Deletes the selected ValueHelp definitions after confirmation.
      */
-    function deleteSelectedValueHelps() {
+    async function deleteSelectedValueHelps() {
+        const result = await messages.dialog(
+            Severity.Warning,
+            "confirm_delete_selected_vh",
+            { count: selectedValueHelpDefs.length },
+            [MessageOption.Ok, MessageOption.Cancel],
+        )
+        if (result !== MessageOption.Ok) return
+
         state.deleteDefs(messages, selectedValueHelpDefs).then((action: any) => {
-            if (action.status == 204) {
+            if (action.status === 204) {
                 console.log(`Selected value help definitions have been deleted successfully`)
                 if (selectedValueHelpDefs.includes(currentValueHelpDef?.id!)) {
                     toListView()
                 }
                 filter()
-                // getAdapter()
                 messages.toast(Severity.Success, "msg_valuehelpdefs_deleted")
                 setSelectedValueHelpDefs([])
             }
@@ -312,7 +263,7 @@ export default function () {
                 console.log(
                     `ValueHelp definition ${currentValueHelpDef?.id} has been updated successfully`,
                 )
-                if (listMode == ListSelectionMode.Multiple) {
+                if (listMode === ListSelectionMode.Multiple) {
                     setSelectedValueHelpDefs([...selectedValueHelpDefs, currentValueHelpDef!.id])
                 }
                 openValueHelpDef(action.data)
@@ -320,7 +271,7 @@ export default function () {
                 messages.toast(Severity.Success, "msg_valuehelpdef_updated", {
                     id: currentValueHelpDef!.id,
                 })
-            } else if (action.status == 409) {
+            } else if (action.status === 409) {
                 console.log("Definition ID is already existent.")
                 messages.dialog(
                     Severity.Error,
@@ -430,21 +381,17 @@ export default function () {
      */
     function changeValueHelpValue(changedValueHelpValue: ValueHelpValue) {
         setValueHelpValue(changedValueHelpValue)
-        var existing = updatedValueHelpValues.find((obj) => {
-            return obj.id == changedValueHelpValue.id && obj.locale == changedValueHelpValue.locale
-        })
+        const existing = updatedValueHelpValues.find(
+            (obj) =>
+                obj.id === changedValueHelpValue.id && obj.locale === changedValueHelpValue.locale,
+        )
         if (existing) {
             setUpdatedValueHelpValues(
-                updatedValueHelpValues!.map((c) => {
-                    if (
-                        c.id == changedValueHelpValue.id &&
-                        c.locale == changedValueHelpValue.locale
-                    ) {
-                        return changedValueHelpValue
-                    } else {
-                        return c
-                    }
-                }),
+                updatedValueHelpValues.map((c) =>
+                    c.id === changedValueHelpValue.id && c.locale === changedValueHelpValue.locale
+                        ? changedValueHelpValue
+                        : c,
+                ),
             )
         } else {
             setUpdatedValueHelpValues([...updatedValueHelpValues, changedValueHelpValue])
@@ -456,7 +403,7 @@ export default function () {
      */
     function download(): void {
         let requestParams = {}
-        if (listMode == ListSelectionMode.Multiple) {
+        if (listMode === ListSelectionMode.Multiple) {
             if (
                 state.defs.every(
                     (objekt: ValueHelpDef) =>
@@ -464,10 +411,10 @@ export default function () {
                         selectedValueHelpDefs.length < 1,
                 )
             ) {
-                //download all displayed
+                // download all displayed
                 requestParams = { search: searchId, adapter: searchAdapter }
             } else {
-                //download selected
+                // download selected
                 requestParams = { ids: selectedValueHelpDefs }
             }
         } else {
@@ -489,7 +436,7 @@ export default function () {
         })
     }
 
-    /**
+        /**
      *  Uploads a ValueHelp definitions XML file.
      *
      * @param file
@@ -548,20 +495,6 @@ export default function () {
     }
 
     /**
-     * Opens a message box with the given parameters.
-     *
-     * @param mBoxType
-     * @param mBoxText
-     * @param mBoxId
-     */
-    function openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string) {
-        setMessageBoxType(mBoxType)
-        setMessageBoxId(mBoxId)
-        setMessageBoxText(mBoxText)
-        setMessageBoxOpen(true)
-    }
-
-    /**
      *  Switches the layout to the list view.
      */
     function toListView() {
@@ -570,6 +503,36 @@ export default function () {
         setValueHelpValue(undefined)
         setLanguage(undefined)
         setFullscreen(false)
+    }
+
+    function handleToggleListMode() {
+        if (listMode === ListSelectionMode.Single) {
+            setListMode(ListSelectionMode.Multiple)
+            if (currentValueHelpDef) {
+                setSelectedValueHelpDefs([currentValueHelpDef.id])
+            } else {
+                setSelectedValueHelpDefs([])
+            }
+        } else {
+            setListMode(ListSelectionMode.Single)
+            setSelectedValueHelpDefs([])
+        }
+    }
+
+    function handleSelectAll() {
+        if (state.defs.every((def: ValueHelpDef) => selectedValueHelpDefs.includes(def.id))) {
+            setSelectedValueHelpDefs([])
+        } else {
+            setSelectedValueHelpDefs(state.defs.map((v: ValueHelpDef) => v.id))
+        }
+    }
+
+    function handleToggleSelectedDef(id: string) {
+        if (selectedValueHelpDefs.includes(id)) {
+            setSelectedValueHelpDefs(selectedValueHelpDefs.filter((a) => a !== id))
+        } else {
+            setSelectedValueHelpDefs([...selectedValueHelpDefs, id])
+        }
     }
 
     return (
@@ -583,421 +546,62 @@ export default function () {
                 layout={layout}
                 style={{ paddingTop: "1em", height: "calc(100% - 44px - 1em)" }}
                 startColumn={
-                    <>
-                        <FilterBar
-                            onClear={() => {
-                                setSearchId("")
-                                setSearchAdapter([])
-                            }}
-                            onGo={() => {
-                                filter()
-                            }}
-                            search={
-                                <Input
-                                    value={searchId}
-                                    onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                                        setSearchId(
-                                            e.target.attributes.getNamedItem("value")!.nodeValue!,
-                                        )
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") {
-                                            setSearchId(
-                                                // @ts-expect-error
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
-                                            )
-                                            filterVH(
-                                                // @ts-expect-error
-                                                e.target.attributes.getNamedItem("value")!
-                                                    .nodeValue!,
-                                                undefined,
-                                            )
-                                        }
-                                    }}
-                                />
-                            }
-                            showResetButton
-                            hideFilterConfiguration
-                            showClearOnFB
-                            showGoOnFB
-                        >
-                            <FilterGroupItem label="Adapter" filterKey="1">
-                                <MultiComboBox
-                                    onSelectionChange={(e) => {
-                                        setSearchAdapter(e.detail.items.map((a) => a.id))
-                                    }}
-                                >
-                                    {state.adapters.map((item: string) => (
-                                        <MultiComboBoxItem
-                                            text={item}
-                                            key={item}
-                                            id={item}
-                                            selected={searchAdapter.includes(item)}
-                                        />
-                                    ))}
-                                </MultiComboBox>
-                            </FilterGroupItem>
-                        </FilterBar>
-
-                        <FlexBox direction="Row" justifyContent="SpaceBetween">
-                            <FlexBox alignItems="Center">
-                                {listMode == ListSelectionMode.Multiple && (
-                                    <CheckBox
-                                        text={"Select all"}
-                                        onChange={function () {
-                                            if (
-                                                state.defs.every((def: ValueHelpDef) =>
-                                                    selectedValueHelpDefs.includes(def.id),
-                                                )
-                                            ) {
-                                                setSelectedValueHelpDefs([])
-                                            } else {
-                                                state.defs.map((e: ValueHelpDef) => {
-                                                    if (!selectedValueHelpDefs.includes(e.id)) {
-                                                        setSelectedValueHelpDefs(
-                                                            state.defs.map(
-                                                                (v: ValueHelpDef) => v.id,
-                                                            ),
-                                                        )
-                                                    }
-                                                })
-                                            }
-                                        }}
-                                        checked={state.defs.every((objekt: ValueHelpDef) =>
-                                            selectedValueHelpDefs.includes(objekt.id),
-                                        )}
-                                    />
-                                )}
-                                <Switch
-                                    onChange={function () {
-                                        if (listMode == ListSelectionMode.Single) {
-                                            setListMode(ListSelectionMode.Multiple)
-                                            if (currentValueHelpDef) {
-                                                setSelectedValueHelpDefs([currentValueHelpDef.id])
-                                            } else {
-                                                setSelectedValueHelpDefs([])
-                                            }
-                                        } else {
-                                            setListMode(ListSelectionMode.Single)
-                                            setSelectedValueHelpDefs([])
-                                        }
-                                    }}
-                                    checked={listMode == ListSelectionMode.Multiple}
-                                    style={{ marginLeft: Margin.SMALL }}
-                                />
-                                <Text style={{ marginLeft: Margin.SMALL }}>Multiselect</Text>
-                            </FlexBox>
-
-                            <FlexBox alignItems="Center" wrap="Wrap">
-                                <Button
-                                    design="Transparent"
-                                    icon="upload"
-                                    onClick={() => {
-                                        setDialogUploadFileOpen(true)
-                                    }}
-                                >
-                                    Upload File
-                                </Button>
-                                <Button
-                                    design="Transparent"
-                                    icon="download"
-                                    style={{ marginLeft: Margin.SMALL }}
-                                    disabled={
-                                        listMode == ListSelectionMode.Multiple &&
-                                        selectedValueHelpDefs.length < 1
-                                    }
-                                    onClick={download}
-                                >
-                                    {listMode == ListSelectionMode.Single
-                                        ? "Download"
-                                        : "Download selected"}
-                                </Button>
-                                <Button
-                                    design="Transparent"
-                                    icon="add"
-                                    onClick={() => {
-                                        setDialogAddDefOpen(true)
-                                    }}
-                                >
-                                    New Value Help
-                                </Button>
-                                {listMode == ListSelectionMode.Multiple && (
-                                    <Button
-                                        design="Transparent"
-                                        icon="delete"
-                                        style={{ marginLeft: Margin.SMALL }}
-                                        disabled={selectedValueHelpDefs.length < 1}
-                                        onClick={() => {
-                                            openMessageBox(
-                                                MessageBoxType.Confirm,
-                                                selectedValueHelpDefs.length > 5 ? (
-                                                    <p>
-                                                        Delete{" "}
-                                                        <i>
-                                                            <b>{selectedValueHelpDefs.length}</b>
-                                                        </i>{" "}
-                                                        selected ValueHelp definitions?
-                                                    </p>
-                                                ) : (
-                                                    <p>
-                                                        Delete ValueHelp definitions{" "}
-                                                        <i>
-                                                            <b>
-                                                                {selectedValueHelpDefs.join(", ")}
-                                                            </b>
-                                                        </i>{" "}
-                                                        ?
-                                                    </p>
-                                                ),
-                                                "DeleteSelectedValueHelpDefs",
-                                            )
-                                        }}
-                                    >
-                                        Delete selected
-                                    </Button>
-                                )}
-                            </FlexBox>
-                        </FlexBox>
-
-                        <List
-                            headerText="Value Helps"
-                            selectionMode={listMode}
-                            id="valueHelpList"
-                            onItemClick={(
-                                e: Ui5CustomEvent<ListDomRef, ListItemClickEventDetail>,
-                            ) => {
-                                if (listMode == ListSelectionMode.Multiple) {
-                                    if (selectedValueHelpDefs.includes(e.detail.item.id)) {
-                                        //remove
-                                        setSelectedValueHelpDefs(
-                                            selectedValueHelpDefs.filter(
-                                                (a) => a !== e.detail.item.id,
-                                            ),
-                                        )
-                                    } else {
-                                        //add
-                                        setSelectedValueHelpDefs([
-                                            ...selectedValueHelpDefs,
-                                            e.detail.item.id,
-                                        ])
-                                    }
-                                }
-
-                                openValueHelpDef(
-                                    state.defs.find(
-                                        (valueHelp: ValueHelpDef) =>
-                                            valueHelp.id === e.detail.item.id,
-                                    ),
-                                )
-                            }}
-                        >
-                            {state.defs.map((item: ValueHelpDef) => (
-                                <ListItemStandard
-                                    description={
-                                        item.description
-                                            ? item.adapter
-                                                ? item.description + " | " + item.adapter
-                                                : item.description
-                                            : item.adapter
-                                    }
-                                    key={item.id}
-                                    id={item.id}
-                                    icon={"navigation-right-arrow"}
-                                    iconEnd={true}
-                                    navigated={currentValueHelpDef?.id == item.id}
-                                    selected={selectedValueHelpDefs.includes(item.id)}
-                                >
-                                    {item.id}
-                                </ListItemStandard>
-                            ))}
-                        </List>
-                    </>
+                    <ValueHelpListColumn
+                        defs={state.defs}
+                        adapters={state.adapters}
+                        searchId={searchId}
+                        searchAdapter={searchAdapter}
+                        listMode={listMode}
+                        selectedDefs={selectedValueHelpDefs}
+                        currentDefId={currentValueHelpDef?.id}
+                        onSearchIdChange={setSearchId}
+                        onSearchAdapterChange={setSearchAdapter}
+                        onFilter={filter}
+                        onClearFilter={() => {
+                            setSearchId("")
+                            setSearchAdapter([])
+                            filterVH("", [])
+                        }}
+                        onSelectItem={openValueHelpDef}
+                        onToggleListMode={handleToggleListMode}
+                        onToggleSelectedDef={handleToggleSelectedDef}
+                        onSelectAll={handleSelectAll}
+                        onAdd={() => setDialogAddDefOpen(true)}
+                        onDeleteSelected={deleteSelectedValueHelps}
+                        onDownload={download}
+                        onUpload={() => setDialogUploadFileOpen(true)}
+                    />
                 }
                 midColumn={
-                    <DynamicPage
-                        headerArea={
-                            <DynamicPageHeader>
-                                <FlexBox wrap="Wrap">
-                                    <FlexBox direction="Column">
-                                        <>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
-                                                <Label>Description:</Label>
-                                                <Text
-                                                    style={{
-                                                        marginLeft: "2px",
-                                                        wordBreak: "break-all",
-                                                    }}
-                                                >
-                                                    {currentValueHelpDef?.description}
-                                                </Text>
-                                            </FlexBox>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
-                                                <Label>TTL:</Label>
-                                                {currentValueHelpDef?.ttl == -1 && (
-                                                    <Text
-                                                        style={{
-                                                            marginLeft: "2px",
-                                                            wordBreak: "break-all",
-                                                        }}
-                                                    >
-                                                        static
-                                                    </Text>
-                                                )}
-                                                {currentValueHelpDef?.ttl == 0 && (
-                                                    <Text
-                                                        style={{
-                                                            marginLeft: "2px",
-                                                            wordBreak: "break-all",
-                                                        }}
-                                                    >
-                                                        refresh
-                                                    </Text>
-                                                )}
-                                                {currentValueHelpDef &&
-                                                    currentValueHelpDef?.ttl > 0 && (
-                                                        <Text
-                                                            style={{
-                                                                marginLeft: "2px",
-                                                                wordBreak: "break-all",
-                                                            }}
-                                                        >
-                                                            {currentValueHelpDef?.ttl} min
-                                                        </Text>
-                                                    )}
-                                            </FlexBox>
-                                            <FlexBox style={{ paddingBlock: 2 }}>
-                                                <Label>Adapter:</Label>
-                                                <Text
-                                                    style={{
-                                                        marginLeft: "2px",
-                                                        wordBreak: "break-all",
-                                                    }}
-                                                >
-                                                    {currentValueHelpDef?.adapter}
-                                                </Text>
-                                            </FlexBox>
-                                        </>
-                                    </FlexBox>
-                                </FlexBox>
-                            </DynamicPageHeader>
+                    <ValueHelpDetailColumn
+                        currentValueHelpDef={currentValueHelpDef}
+                        valueHelpValue={valueHelpValue}
+                        language={language}
+                        availableLanguages={state.languages}
+                        edit={edit}
+                        fullscreen={fullscreen}
+                        onEdit={() => setEdit(!edit)}
+                        onSave={updateCurrentValueHelp}
+                        onDelete={() =>
+                            currentValueHelpDef && deleteValueHelpDef(currentValueHelpDef)
                         }
-                        titleArea={
-                            <DynamicPageTitle
-                                actionsBar={
-                                    <Toolbar design="Transparent">
-                                        <ToolbarButton
-                                            design="Transparent"
-                                            onClick={() => {
-                                                setEdit(!edit)
-                                            }}
-                                            text={intl.formatMessage({
-                                                id: edit ? "common_show" : "common_edit",
-                                            })}
-                                        />
-                                        <ToolbarButton
-                                            design="Transparent"
-                                            onClick={() => {
-                                                openMessageBox(
-                                                    MessageBoxType.Confirm,
-                                                    <div>
-                                                        Delete value help definition{" "}
-                                                        <b>
-                                                            <i>{currentValueHelpDef?.id}</i>
-                                                        </b>
-                                                        ?
-                                                    </div>,
-                                                    "DeleteValueHelpDef",
-                                                )
-                                            }}
-                                            text={intl.formatMessage({ id: "common_delete" })}
-                                        />
-                                        <ToolbarButton
-                                            icon="save"
-                                            onClick={updateCurrentValueHelp}
-                                            design="Emphasized"
-                                            text={intl.formatMessage({ id: "common_save" })}
-                                        />
-                                    </Toolbar>
-                                }
-                                heading={<Title>{currentValueHelpDef?.id}</Title>}
-                                snappedHeading={<Title>{currentValueHelpDef?.id}</Title>}
-                                navigationBar={
-                                    <Toolbar design="Transparent">
-                                        <ToolbarButton
-                                            icon={fullscreen ? "exit-full-screen" : "full-screen"}
-                                            design={ButtonDesign.Transparent}
-                                            onClick={() => {
-                                                setLayout(
-                                                    fullscreen
-                                                        ? FCLLayout.TwoColumnsMidExpanded
-                                                        : FCLLayout.MidColumnFullScreen,
-                                                )
-                                                setFullscreen(!fullscreen)
-                                            }}
-                                        />
-                                        <ToolbarButton
-                                            icon="decline"
-                                            design={ButtonDesign.Transparent}
-                                            onClick={() => {
-                                                toListView()
-                                            }}
-                                        />
-                                    </Toolbar>
-                                }
-                            />
-                        }
-                    >
-                        <TabContainer
-                            contentBackgroundDesign="Solid"
-                            headerBackgroundDesign="Solid"
-                            style={{ width: "100%" }}
-                            tabLayout="Standard"
-                        >
-                            <ConfigTab
-                                currentValueHelpDef={currentValueHelpDef}
-                                setCurrentValueHelpDef={setCurrentValueHelpDef}
-                                openMessageBox={openMessageBox}
-                                edit={edit}
-                                changeLanguages={changeLanguages}
-                                availableLanguages={state.languages}
-                            />
-                            {currentValueHelpDef?.adapter === "local" && (
-                                <CurrentValuesTab
-                                    edit={edit}
-                                    currentValueHelpDef={currentValueHelpDef}
-                                    valueHelpValue={valueHelpValue}
-                                    language={language}
-                                    setCurrentValueHelpDef={setCurrentValueHelpDef}
-                                    changeValueHelpValue={changeValueHelpValue}
-                                    changeLanguage={changeLanguage}
-                                    setDialogAddValueOpen={setDialogAddValueOpen}
-                                />
-                            )}
-                        </TabContainer>
-                    </DynamicPage>
+                        onClose={toListView}
+                        onFullscreen={() => {
+                            setLayout(
+                                fullscreen
+                                    ? FCLLayout.TwoColumnsMidExpanded
+                                    : FCLLayout.MidColumnFullScreen,
+                            )
+                            setFullscreen(!fullscreen)
+                        }}
+                        onChangeLanguage={changeLanguage}
+                        onChangeValueHelpValue={changeValueHelpValue}
+                        onSetDialogAddValueOpen={setDialogAddValueOpen}
+                        onChangeLanguages={changeLanguages}
+                        onSetCurrentValueHelpDef={setCurrentValueHelpDef}
+                    />
                 }
             />
-            <MessageBox
-                onClose={(action, escPressed) => {
-                    if (
-                        messageBoxType === MessageBoxType.Confirm &&
-                        action === MessageBoxAction.OK
-                    ) {
-                        if (messageBoxId == "DeleteValueHelpDef") {
-                            console.log("delete value help " + currentValueHelpDef?.id)
-                            deleteValueHelpDef(currentValueHelpDef!)
-                        } else if (messageBoxId == "DeleteSelectedValueHelpDefs") {
-                            deleteSelectedValueHelps()
-                        }
-                    }
-                    setMessageBoxOpen(false)
-                }}
-                type={messageBoxType}
-                open={messageBoxOpen}
-            >
-                {messageBoxText}
-            </MessageBox>
             <DialogAddValueHelpDefinition
                 dialogAddDefOpen={dialogAddDefOpen}
                 setDialogAddDefOpen={setDialogAddDefOpen}
@@ -1015,7 +619,7 @@ export default function () {
             <DialogUploadFile
                 dialogUploadFileOpen={dialogUploadFileOpen}
                 setDialogUploadFileOpen={setDialogUploadFileOpen}
-                upload={upload}
+                upload={() => {}}
                 loading={uploadLoading}
             />
         </div>
