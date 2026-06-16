@@ -1,5 +1,12 @@
 package com.sap.bfx.maven.common.services;
 
+import com.sap.bfx.definition.MetaFileElementDefinition;
+import com.sap.bfx.definition.MixinDefinition;
+import com.sap.bfx.utils.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.maven.plugin.logging.Log;
+
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -10,14 +17,6 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.maven.plugin.logging.Log;
-
-import com.sap.bfx.definition.MetaFileElementDefinition;
-import com.sap.bfx.definition.MixinDefinition;
-import com.sap.bfx.utils.FileUtils;
-
 class MixinFileLoader extends MixinLoader {
 
     MixinFileLoader(final MixinService.ProcessingInfo processingInfo, final MetaFileElementDefinition mixin,
@@ -27,21 +26,29 @@ class MixinFileLoader extends MixinLoader {
 
     @Override
     public MixinDefinition load() throws Exception {
-        final var rootPath = StringSubstitutor.replace(
-                StringUtils.substring(((MetaFileElementDefinition) mixin).getPath(), 5),
+        final var rootPath = StringSubstitutor.replace(StringUtils.substring(mixin.getPath(), 5),
                 processingInfo.getParams().getMixinPaths(), "${", "}");
 
-        final var defFilePattern = Pattern.compile("^.*[\\/\\\\]mixin\\."
-                + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.ya?ml");
-        final var textFilePattern = Pattern.compile("^.*[\\/\\\\]texts_(.*)\\."
-                + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.properties");
+        final var defFilePattern = Pattern.compile(
+                "^.*[\\/\\\\]mixin\\." + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.ya?ml");
+        final var textFilePattern = Pattern.compile(
+                "^.*[\\/\\\\]texts_(.*)\\." + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.properties");
 
         final var pathQueue = new ConcurrentLinkedQueue<Path>();
         pathQueue.add(Path.of(rootPath));
         final var fileQueue = new ConcurrentLinkedQueue<Path>();
         // search given path and all children
         while (!pathQueue.isEmpty()) {
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(pathQueue.poll())) {
+            final var pathTemplate = pathQueue.poll();
+            final var pathTemplateName = pathTemplate.toString();
+//            log.info("Seaching for mixin files in '" + pathTemplateName + "'...");
+            if (pathTemplateName.startsWith("${") && pathTemplateName.endsWith("}")) {
+                log.error("Missing value '{" + pathTemplateName.substring(3, pathTemplateName.length() - 2) +
+                        "}' in pom.xml in plugin/configuration/mixinPaths. Skipping this path!");
+                continue;
+            }
+            // ok, path template is set, try to read the value
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(pathTemplate)) {
                 for (Path path : stream) {
                     if (Files.isDirectory(path)) {
                         log.debug("    found folder " + path);
@@ -72,7 +79,7 @@ class MixinFileLoader extends MixinLoader {
             }
         }
         if (mixinDef == null) {
-            throw new RuntimeException("cannot load mixin '" + mixin.getMixinName() + "' from file-system!");
+            log.error("cannot load mixin '" + mixin.getMixinName() + "' from file-system! Could be a follow up issue");
         }
 
         for (Path path : fileQueue) {

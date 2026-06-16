@@ -16,6 +16,7 @@ import { ChangableIntlProvider, getLanguage, MessagesProvider } from "commons"
 import store from "./features/store"
 import { getMessages } from "./i18n/utils"
 import App from "./App"
+import "./main.css"
 
 const language = getLanguage()
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement)

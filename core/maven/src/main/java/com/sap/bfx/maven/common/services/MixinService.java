@@ -78,14 +78,8 @@ public class MixinService extends AbstractProcessor {
     }
 
     /**
-     * Handles mixins for a given scenario definition. This includes the following steps:
-     * - First, we compute the mixins for all elements. As we allow recursive mixins, we need to repeat this step
-     * until no mixin is found anymore.
-     * - For each mixin, we load the mixin definition and compute the final list of elements by applying the
-     * modifiers specified in the mixin element (e.g. adaptVisible) and evaluating SpEL expressions if specified.
-     *
-     * @param params ServiceParameters object with context information
-     * @param sd     the ScenarioDefinition to be processes
+     * @param params
+     * @param sd
      */
     private void handleScenario(final ServiceParameters params, final ExtendedScenarioDefinition sd) {
 
@@ -123,6 +117,7 @@ public class MixinService extends AbstractProcessor {
     }
 
     /**
+     * Handles mixins inside library projects
      *
      * @param params
      * @throws Exception
@@ -158,8 +153,7 @@ public class MixinService extends AbstractProcessor {
 
             // compute through all elements and execute checks and computing, e.g. calculating the key
             final var processingInfo = new CheckAndProcessService.ProcessingInfo(params.getProject(), mixinDef);
-            mixinDef.getElements()
-                    .forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
+            mixinDef.getElements().forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
             mixinDef.getElements().addAll(processingInfo.getEd2Add());
 
             // create enums
@@ -187,7 +181,8 @@ public class MixinService extends AbstractProcessor {
         final var mixinDef = MixinLoader.create(processingInfo, (MetaFileElementDefinition) mixin, log).load();
         // if no elements are returned, we through an error
         if (mixinDef == null) {
-            throw new Exception("no elements for mixing '" + mixin.getName() + "' found!");
+            return false;
+//            throw new Exception("no elements for mixing '" + mixin.getName() + "' found!");
         }
 
         // Sort the elements to follow the correct order

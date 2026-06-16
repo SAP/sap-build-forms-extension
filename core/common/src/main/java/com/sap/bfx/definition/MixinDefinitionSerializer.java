@@ -36,8 +36,8 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
         gen.writeEndObject();
     }
 
-    private void serializeElements(List<ElementDefinition> elementDefs, JsonGenerator gen,
-                                   SerializerProvider provider) throws IOException {
+    private void serializeElements(List<ElementDefinition> elementDefs, JsonGenerator gen, SerializerProvider provider)
+            throws IOException {
         gen.writeFieldName(NM_ELEMENTS);
         gen.writeStartArray();
         for (var ed : elementDefs) {
@@ -79,12 +79,14 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
                 gen.writeStringField(NM_NAME, ((CurrencyElementDefinition) ed).getValueHelp().getName());
                 gen.writeBooleanField(NM_VALIDATE, ((CurrencyElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION, ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT, ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
+                gen.writeBooleanField(NM_EMPTY_SELECTION,
+                        ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
+                gen.writeStringField(NM_DISPLAY_FORMAT,
+                        ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
                 gen.writeEndObject();
                 break;
             case Dialog:
-                if(((DialogElementDefinition) ed).getSize() != null) {
+                if (((DialogElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
@@ -94,11 +96,11 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 break;
             case Form:
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
-                this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(),
-                        gen, provider);
+                this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(), gen,
+                        provider);
                 break;
             case Image:
-                if(((DialogElementDefinition) ed).getSize() != null) {
+                if (((DialogElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
@@ -112,23 +114,27 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
                 gen.writeStringField(NM_NAME, ((MultiSelectElementDefinition) ed).getValueHelp().getName());
                 gen.writeBooleanField(NM_VALIDATE, ((MultiSelectElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION, ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT, ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                gen.writeBooleanField(NM_EMPTY_SELECTION,
+                        ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                gen.writeStringField(NM_DISPLAY_FORMAT,
+                        ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
                 gen.writeEndObject();
                 break;
             case Radio:
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
                 gen.writeStringField(NM_NAME, ((RadioElementDefinition) ed).getValueHelp().getName());
                 gen.writeBooleanField(NM_VALIDATE, ((RadioElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION, ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT, ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
+                gen.writeBooleanField(NM_EMPTY_SELECTION,
+                        ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
+                gen.writeStringField(NM_DISPLAY_FORMAT,
+                        ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
                 gen.writeEndObject();
                 break;
             case SearchHelp:
-                if(((DialogElementDefinition) ed).getSize() != null) {
+                if (((SearchHelpElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
-                    gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
-                    gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
+                    gen.writeStringField(NM_HEIGHT, ((SearchHelpElementDefinition) ed).getSize().getHeight());
+                    gen.writeStringField(NM_WIDTH, ((SearchHelpElementDefinition) ed).getSize().getWidth());
                     gen.writeEndObject();
                 }
                 this.serializeElementWithName(NM_FOOTER, ((SearchHelpElementDefinition) ed).getFooter(), gen, provider);
@@ -137,8 +143,10 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
                 gen.writeStringField(NM_NAME, ((SelectElementDefinition) ed).getValueHelp().getName());
                 gen.writeBooleanField(NM_VALIDATE, ((SelectElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION, ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT, ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                gen.writeBooleanField(NM_EMPTY_SELECTION,
+                        ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                gen.writeStringField(NM_DISPLAY_FORMAT,
+                        ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
                 gen.writeEndObject();
                 break;
             case Mixin:
