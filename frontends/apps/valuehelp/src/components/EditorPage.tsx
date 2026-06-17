@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 import { useIntl } from "react-intl"
 
@@ -11,6 +11,7 @@ import { apiOk, MessageOption, Severity, useMessages } from "commons"
 
 import { ValueHelpDef, ValueHelpValue } from "../features/model"
 import { useValueHelpState } from "../features/valuehelpstate"
+import { useValueHelpUIState } from "../features/valuehelpUIState"
 import ValueHelpListColumn from "./valuehelp/ValueHelpListColumn"
 import ValueHelpDetailColumn from "./valuehelp/ValueHelpDetailColumn"
 import DialogAddValueHelpDefinition from "./valuehelp/DialogAddValueHelpDefinition"
@@ -21,32 +22,10 @@ export default function () {
     const intl = useIntl()
     const messages = useMessages()
     const state = useValueHelpState()
-
-    const [listMode, setListMode] = useState<ListSelectionMode>(ListSelectionMode.Single)
-    const [selectedValueHelpDefs, setSelectedValueHelpDefs] = useState<string[]>([])
-
-    const [currentValueHelpDef, setCurrentValueHelpDef] = useState<ValueHelpDef | undefined>()
-    const [valueHelpValue, setValueHelpValue] = useState<ValueHelpValue | undefined>(undefined)
-    const [updatedValueHelpValues, setUpdatedValueHelpValues] = useState<ValueHelpValue[]>([])
-
-    const [searchId, setSearchId] = useState<string>("")
-    const [searchAdapter, setSearchAdapter] = useState<string[]>([])
-
-    const [language, setLanguage] = useState<string>()
-
-    const [layout, setLayout] = useState(FCLLayout.OneColumn)
-    const [fullscreen, setFullscreen] = useState<boolean>(false)
-    const [edit, setEdit] = useState<boolean>(false)
-
-    const [dialogAddDefOpen, setDialogAddDefOpen] = useState(false)
-    const [isDefIdExistent, setIsDefIdExistent] = useState(false)
-    const [dialogAddValueOpen, setDialogAddValueOpen] = useState(false)
-
-    const [dialogUploadFileOpen, setDialogUploadFileOpen] = useState(false)
-    const [uploadLoading] = useState(false)
+    const ui = useValueHelpUIState()
 
     /**
-     * Initial data loading and event listener setup.
+     * Initial data loading.
      */
     useEffect(() => {
         // load definitions
@@ -75,7 +54,7 @@ export default function () {
      * Filters the ValueHelp definitions based on search criteria.
      */
     function filter() {
-        filterVH(searchId, searchAdapter)
+        filterVH(ui.searchId, ui.searchAdapter)
     }
 
     /**
@@ -85,8 +64,8 @@ export default function () {
      * @param sAdapter
      */
     function filterVH(s: string | undefined, sAdapter: string[] | undefined) {
-        const effectiveS = s ?? searchId
-        const effectiveAdapter = sAdapter ?? searchAdapter
+        const effectiveS = s ?? ui.searchId
+        const effectiveAdapter = sAdapter ?? ui.searchAdapter
         if (effectiveS || effectiveAdapter.length > 0) {
             if (effectiveS && effectiveAdapter.length > 0) {
                 refresh({ search: effectiveS, adapter: effectiveAdapter })
@@ -98,11 +77,9 @@ export default function () {
         } else {
             refresh(undefined)
         }
-        if (listMode === ListSelectionMode.Multiple) {
-            setSelectedValueHelpDefs(
-                selectedValueHelpDefs.filter((id) =>
-                    state.defs.some((v: ValueHelpDef) => v.id === id),
-                ),
+        if (ui.listMode === ListSelectionMode.Multiple) {
+            ui.setSelectedDefs(
+                ui.selectedDefs.filter((id) => state.defs.some((v: ValueHelpDef) => v.id === id)),
             )
         }
     }
@@ -114,14 +91,18 @@ export default function () {
      */
     function changeLanguages(v: ValueHelpDef) {
         if (v.languages.length === 0) {
-            if (language !== "_" || valueHelpValue?.locale !== "_" || valueHelpValue.id !== v.id) {
+            if (
+                ui.language !== "_" ||
+                ui.valueHelpValue?.locale !== "_" ||
+                ui.valueHelpValue.id !== v.id
+            ) {
                 changeLanguage("_", v)
             }
         } else {
             if (
-                language !== v.languages[0] ||
-                valueHelpValue?.locale !== v.languages[0] ||
-                valueHelpValue.id !== v.id
+                ui.language !== v.languages[0] ||
+                ui.valueHelpValue?.locale !== v.languages[0] ||
+                ui.valueHelpValue.id !== v.id
             ) {
                 changeLanguage(v.languages[0], v)
             }
@@ -135,27 +116,27 @@ export default function () {
      * @param def
      */
     function changeLanguage(lang: string, def: ValueHelpDef) {
-        setLanguage(lang)
+        ui.setLanguage(lang)
 
         // we only show values of local valuehelps
         if (def.adapter !== "local") {
-            setValueHelpValue(undefined)
+            ui.setValueHelpValue(undefined)
             return
         }
 
-        const existingValueHelpValue = updatedValueHelpValues.find(
+        const existingValueHelpValue = ui.updatedValueHelpValues.find(
             (vh: ValueHelpValue) => vh.id === def.id && vh.locale === lang,
         )
         if (existingValueHelpValue) {
-            setValueHelpValue(existingValueHelpValue)
+            ui.setValueHelpValue(existingValueHelpValue)
         } else {
             state
                 .findLatestValues(messages, def.id, lang)
                 .then((action: any) => {
                     if (apiOk(action.status)) {
-                        setValueHelpValue(action.data)
+                        ui.setValueHelpValue(action.data)
                     } else if (action.status === 404) {
-                        setValueHelpValue({
+                        ui.setValueHelpValue({
                             id: def.id,
                             version: -1,
                             locale: lang,
@@ -167,18 +148,6 @@ export default function () {
         }
     }
 
-    // function getAdapter() {
-    //     const p = backendDispatch(`/v1/valuehelpdefs/adapter`, "GET", undefined, undefined)
-    //     p.then((action: any) => {
-    //         if (action.status == 200) {
-    //             const data: string[] = action.data
-    //             setAdapter(data)
-    //         } else {
-    //             setAdapter([])
-    //         }
-    //     })
-    // }
-
     /**
      * Adds a new ValueHelp definition.
      *
@@ -188,8 +157,8 @@ export default function () {
         state.addDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(`ValueHelp definition ${def?.id} has been created successfully`)
-                if (listMode === ListSelectionMode.Multiple) {
-                    setSelectedValueHelpDefs([...selectedValueHelpDefs, def.id])
+                if (ui.listMode === ListSelectionMode.Multiple) {
+                    ui.setSelectedDefs([...ui.selectedDefs, def.id])
                 }
                 openValueHelpDef(action.data)
                 filter()
@@ -220,10 +189,10 @@ export default function () {
         state.deleteDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
-                    `ValueHelp definition ${currentValueHelpDef?.id} has been deleted successfully`,
+                    `ValueHelp definition ${ui.currentValueHelpDef?.id} has been deleted successfully`,
                 )
                 filter()
-                toListView()
+                ui.resetDetail()
                 messages.toast(Severity.Success, "msg_valuehelpdef_deleted", { id: def.id })
             }
         })
@@ -236,20 +205,20 @@ export default function () {
         const result = await messages.dialog(
             Severity.Warning,
             "confirm_delete_selected_vh",
-            { count: selectedValueHelpDefs.length },
+            { count: ui.selectedDefs.length },
             [MessageOption.Ok, MessageOption.Cancel],
         )
         if (result !== MessageOption.Ok) return
 
-        state.deleteDefs(messages, selectedValueHelpDefs).then((action: any) => {
+        state.deleteDefs(messages, ui.selectedDefs).then((action: any) => {
             if (action.status === 204) {
                 console.log(`Selected value help definitions have been deleted successfully`)
-                if (selectedValueHelpDefs.includes(currentValueHelpDef?.id!)) {
-                    toListView()
+                if (ui.selectedDefs.includes(ui.currentValueHelpDef?.id!)) {
+                    ui.resetDetail()
                 }
                 filter()
                 messages.toast(Severity.Success, "msg_valuehelpdefs_deleted")
-                setSelectedValueHelpDefs([])
+                ui.clearSelectedDefs()
             }
         })
     }
@@ -258,25 +227,25 @@ export default function () {
      * Updates the current ValueHelp definition.
      */
     function updateCurrentValueHelp() {
-        state.updateDef(messages, currentValueHelpDef!).then((action: any) => {
+        state.updateDef(messages, ui.currentValueHelpDef!).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
-                    `ValueHelp definition ${currentValueHelpDef?.id} has been updated successfully`,
+                    `ValueHelp definition ${ui.currentValueHelpDef?.id} has been updated successfully`,
                 )
-                if (listMode === ListSelectionMode.Multiple) {
-                    setSelectedValueHelpDefs([...selectedValueHelpDefs, currentValueHelpDef!.id])
+                if (ui.listMode === ListSelectionMode.Multiple) {
+                    ui.setSelectedDefs([...ui.selectedDefs, ui.currentValueHelpDef!.id])
                 }
                 openValueHelpDef(action.data)
                 filter()
                 messages.toast(Severity.Success, "msg_valuehelpdef_updated", {
-                    id: currentValueHelpDef!.id,
+                    id: ui.currentValueHelpDef!.id,
                 })
             } else if (action.status === 409) {
                 console.log("Definition ID is already existent.")
                 messages.dialog(
                     Severity.Error,
                     "err_valuehelpdef_id_existent",
-                    { id: currentValueHelpDef!.id },
+                    { id: ui.currentValueHelpDef!.id },
                     [MessageOption.Ok],
                 )
             }
@@ -301,14 +270,10 @@ export default function () {
     //             p.then((action: any) => {
     //                 if (action.status == 201) {
     //                     const data = action.data
-    //                     setValueHelpValue(data)
+    //                     ui.setValueHelpValue(data)
     //                 } else {
     //                     console.log(`Error while creating valueHelpValue ${c?.id}`)
-    //                     openMessageBox(
-    //                         MessageBoxType.Error,
-    //                         <p>ValueHelp value could not be created. Please try again.</p>,
-    //                         "",
-    //                     )
+    //                     messages.dialog(Severity.Error, "err_valuehelpvalue_create", undefined, [MessageOption.Ok])
     //                 }
     //             })
     //         } else if (c.version >= 0) {
@@ -327,24 +292,13 @@ export default function () {
     //                 p.then((action: any) => {
     //                     if (action.status == 200) {
     //                         const data = action.data
-    //                         setValueHelpValue(data)
+    //                         ui.setValueHelpValue(data)
     //                     } else if (action.status == 409) {
     //                         console.log(`Error while updating valueHelpValue ${c?.id}`)
-    //                         openMessageBox(
-    //                             MessageBoxType.Error,
-    //                             <p>ValueHelp value could not be updated. Please try again.</p>,
-    //                             "",
-    //                         )
+    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_update", undefined, [MessageOption.Ok])
     //                     } else {
     //                         console.log(`Error while updating valueHelpValue ${c?.id}`)
-    //                         openMessageBox(
-    //                             MessageBoxType.Error,
-    //                             <p>
-    //                                 ValueHelp value could not be updated, becuase it has not got the
-    //                                 most recent version. Please refresh and try again.
-    //                             </p>,
-    //                             "",
-    //                         )
+    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_update_version", undefined, [MessageOption.Ok])
     //                     }
     //                 })
     //             } else {
@@ -358,67 +312,38 @@ export default function () {
     //                 )
     //                 p.then((action: any) => {
     //                     if (action.status == 204) {
-    //                         setValueHelpValue(undefined)
+    //                         ui.setValueHelpValue(undefined)
     //                     } else {
     //                         console.log(`Error while deleting valueHelpValue ${c?.id}`)
-    //                         openMessageBox(
-    //                             MessageBoxType.Error,
-    //                             <p>ValueHelp value could not be deleted. Please try again.</p>,
-    //                             "",
-    //                         )
+    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_delete", undefined, [MessageOption.Ok])
     //                     }
     //                 })
     //             }
     //         }
     //     })
-    //     setUpdatedValueHelpValues([])
+    //     ui.setUpdatedValueHelpValues([])
     // }
-
-    /**
-     *  Handles changes to the ValueHelp values.
-     *
-     * @param changedValueHelpValue
-     */
-    function changeValueHelpValue(changedValueHelpValue: ValueHelpValue) {
-        setValueHelpValue(changedValueHelpValue)
-        const existing = updatedValueHelpValues.find(
-            (obj) =>
-                obj.id === changedValueHelpValue.id && obj.locale === changedValueHelpValue.locale,
-        )
-        if (existing) {
-            setUpdatedValueHelpValues(
-                updatedValueHelpValues.map((c) =>
-                    c.id === changedValueHelpValue.id && c.locale === changedValueHelpValue.locale
-                        ? changedValueHelpValue
-                        : c,
-                ),
-            )
-        } else {
-            setUpdatedValueHelpValues([...updatedValueHelpValues, changedValueHelpValue])
-        }
-    }
 
     /**
      * Downloads the ValueHelp definitions as an XML file.
      */
     function download(): void {
         let requestParams = {}
-        if (listMode === ListSelectionMode.Multiple) {
+        if (ui.listMode === ListSelectionMode.Multiple) {
             if (
                 state.defs.every(
                     (objekt: ValueHelpDef) =>
-                        selectedValueHelpDefs.includes(objekt.id) ||
-                        selectedValueHelpDefs.length < 1,
+                        ui.selectedDefs.includes(objekt.id) || ui.selectedDefs.length < 1,
                 )
             ) {
                 // download all displayed
-                requestParams = { search: searchId, adapter: searchAdapter }
+                requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
             } else {
                 // download selected
-                requestParams = { ids: selectedValueHelpDefs }
+                requestParams = { ids: ui.selectedDefs }
             }
         } else {
-            requestParams = { search: searchId, adapter: searchAdapter }
+            requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
         }
         state.findDefExport(messages, requestParams).then((action: any) => {
             if (apiOk(action.status)) {
@@ -436,14 +361,14 @@ export default function () {
         })
     }
 
-        /**
+    /**
      *  Uploads a ValueHelp definitions XML file.
      *
      * @param file
      * @param override
      * @param useTechnicalName
      */
-    function upload(file: File, override: boolean, useTechnicalName: boolean): void {
+    function upload(_file: File, _override: boolean, _useTechnicalName: boolean): void {
         // setUploadLoading(true)
         // const formData = new FormData()
         // formData.append("file", file)
@@ -452,29 +377,18 @@ export default function () {
         //     useTechnicalName: useTechnicalName,
         // })
         // p.then((action: any) => {
-        //     setUploadLoading(false)
-        //     setDialogUploadFileOpen(false)
+        //     ui.setUploadLoading(false)
+        //     ui.setDialogUploadFileOpen(false)
         //     if (action.status == 200) {
-        //         toListView()
-        //         if (action.data) {
-        //             openMessageBox(
-        //                 MessageBoxType.Warning,
-        //                 <p style={{ whiteSpace: "pre-line" }}>{action.data}</p>,
-        //                 "",
-        //             )
-        //         } else {
-        //             openMessageBox(MessageBoxType.Success, <p>Upload successful!</p>, "")
-        //         }
-        //         setCurrentValueHelpDef(undefined)
-        //         setLanguage(undefined)
-        //         setValueHelpValue(undefined)
+        //         ui.resetDetail()
         //         filter()
+        //         if (action.data) {
+        //             messages.dialog(Severity.Warning, "msg_upload_warnings", undefined, [MessageOption.Ok])
+        //         } else {
+        //             messages.toast(Severity.Success, "msg_upload_success")
+        //         }
         //     } else {
-        //         openMessageBox(
-        //             MessageBoxType.Error,
-        //             <p>Upload failed. Please check file and try again</p>,
-        //             "",
-        //         )
+        //         messages.dialog(Severity.Error, "err_upload_failed", undefined, [MessageOption.Ok])
         //     }
         // })
     }
@@ -486,52 +400,10 @@ export default function () {
      */
     function openValueHelpDef(v: ValueHelpDef | undefined) {
         if (v) {
-            setCurrentValueHelpDef(v)
-            setUpdatedValueHelpValues([])
+            ui.setCurrentValueHelpDef(v)
+            ui.setUpdatedValueHelpValues([])
             changeLanguages(v)
-            setLayout(FCLLayout.TwoColumnsMidExpanded)
-            setFullscreen(false)
-        }
-    }
-
-    /**
-     *  Switches the layout to the list view.
-     */
-    function toListView() {
-        setLayout(FCLLayout.OneColumn)
-        setCurrentValueHelpDef(undefined)
-        setValueHelpValue(undefined)
-        setLanguage(undefined)
-        setFullscreen(false)
-    }
-
-    function handleToggleListMode() {
-        if (listMode === ListSelectionMode.Single) {
-            setListMode(ListSelectionMode.Multiple)
-            if (currentValueHelpDef) {
-                setSelectedValueHelpDefs([currentValueHelpDef.id])
-            } else {
-                setSelectedValueHelpDefs([])
-            }
-        } else {
-            setListMode(ListSelectionMode.Single)
-            setSelectedValueHelpDefs([])
-        }
-    }
-
-    function handleSelectAll() {
-        if (state.defs.every((def: ValueHelpDef) => selectedValueHelpDefs.includes(def.id))) {
-            setSelectedValueHelpDefs([])
-        } else {
-            setSelectedValueHelpDefs(state.defs.map((v: ValueHelpDef) => v.id))
-        }
-    }
-
-    function handleToggleSelectedDef(id: string) {
-        if (selectedValueHelpDefs.includes(id)) {
-            setSelectedValueHelpDefs(selectedValueHelpDefs.filter((a) => a !== id))
-        } else {
-            setSelectedValueHelpDefs([...selectedValueHelpDefs, id])
+            ui.openDetailLayout()
         }
     }
 
@@ -543,84 +415,96 @@ export default function () {
                 </Title>
             </Bar>
             <FlexibleColumnLayout
-                layout={layout}
+                layout={ui.layout}
                 style={{ paddingTop: "1em", height: "calc(100% - 44px - 1em)" }}
                 startColumn={
                     <ValueHelpListColumn
                         defs={state.defs}
                         adapters={state.adapters}
-                        searchId={searchId}
-                        searchAdapter={searchAdapter}
-                        listMode={listMode}
-                        selectedDefs={selectedValueHelpDefs}
-                        currentDefId={currentValueHelpDef?.id}
-                        onSearchIdChange={setSearchId}
-                        onSearchAdapterChange={setSearchAdapter}
+                        searchId={ui.searchId}
+                        searchAdapter={ui.searchAdapter}
+                        listMode={ui.listMode}
+                        selectedDefs={ui.selectedDefs}
+                        currentDefId={ui.currentValueHelpDef?.id}
+                        onSearchIdChange={ui.setSearchId}
+                        onSearchAdapterChange={ui.setSearchAdapter}
                         onFilter={filter}
                         onClearFilter={() => {
-                            setSearchId("")
-                            setSearchAdapter([])
+                            ui.setSearchId("")
+                            ui.setSearchAdapter([])
                             filterVH("", [])
                         }}
                         onSelectItem={openValueHelpDef}
-                        onToggleListMode={handleToggleListMode}
-                        onToggleSelectedDef={handleToggleSelectedDef}
-                        onSelectAll={handleSelectAll}
-                        onAdd={() => setDialogAddDefOpen(true)}
+                        onToggleListMode={() =>
+                            ui.toggleListMode(ui.currentValueHelpDef?.id)
+                        }
+                        onToggleSelectedDef={ui.toggleSelectedDef}
+                        onSelectAll={() => {
+                            if (
+                                state.defs.every((def: ValueHelpDef) =>
+                                    ui.selectedDefs.includes(def.id),
+                                )
+                            ) {
+                                ui.clearSelectedDefs()
+                            } else {
+                                ui.setSelectedDefs(state.defs.map((v: ValueHelpDef) => v.id))
+                            }
+                        }}
+                        onAdd={() => ui.setDialogAddDefOpen(true)}
                         onDeleteSelected={deleteSelectedValueHelps}
                         onDownload={download}
-                        onUpload={() => setDialogUploadFileOpen(true)}
+                        onUpload={() => ui.setDialogUploadFileOpen(true)}
                     />
                 }
                 midColumn={
                     <ValueHelpDetailColumn
-                        currentValueHelpDef={currentValueHelpDef}
-                        valueHelpValue={valueHelpValue}
-                        language={language}
+                        currentValueHelpDef={ui.currentValueHelpDef}
+                        valueHelpValue={ui.valueHelpValue}
+                        language={ui.language}
                         availableLanguages={state.languages}
-                        edit={edit}
-                        fullscreen={fullscreen}
-                        onEdit={() => setEdit(!edit)}
+                        edit={ui.edit}
+                        fullscreen={ui.fullscreen}
+                        onEdit={ui.toggleEdit}
                         onSave={updateCurrentValueHelp}
                         onDelete={() =>
-                            currentValueHelpDef && deleteValueHelpDef(currentValueHelpDef)
+                            ui.currentValueHelpDef && deleteValueHelpDef(ui.currentValueHelpDef)
                         }
-                        onClose={toListView}
+                        onClose={ui.resetDetail}
                         onFullscreen={() => {
-                            setLayout(
-                                fullscreen
+                            ui.setLayout(
+                                ui.fullscreen
                                     ? FCLLayout.TwoColumnsMidExpanded
                                     : FCLLayout.MidColumnFullScreen,
                             )
-                            setFullscreen(!fullscreen)
+                            ui.setFullscreen(!ui.fullscreen)
                         }}
                         onChangeLanguage={changeLanguage}
-                        onChangeValueHelpValue={changeValueHelpValue}
-                        onSetDialogAddValueOpen={setDialogAddValueOpen}
+                        onChangeValueHelpValue={ui.changeValueHelpValue}
+                        onSetDialogAddValueOpen={ui.setDialogAddValueOpen}
                         onChangeLanguages={changeLanguages}
-                        onSetCurrentValueHelpDef={setCurrentValueHelpDef}
+                        onSetCurrentValueHelpDef={ui.setCurrentValueHelpDef}
                     />
                 }
             />
             <DialogAddValueHelpDefinition
-                dialogAddDefOpen={dialogAddDefOpen}
-                setDialogAddDefOpen={setDialogAddDefOpen}
+                dialogAddDefOpen={ui.dialogAddDefOpen}
+                setDialogAddDefOpen={ui.setDialogAddDefOpen}
                 addValueHelpDef={addValueHelpDef}
-                isIdExistent={isDefIdExistent}
-                setIsIdExistent={setIsDefIdExistent}
+                isIdExistent={ui.isDefIdExistent}
+                setIsIdExistent={ui.setIsDefIdExistent}
                 availableLanguages={state.languages}
             />
             <DialogAddValueHelpValue
-                dialogAddValueOpen={dialogAddValueOpen}
-                valueHelpValue={valueHelpValue!}
-                setDialogAddValueOpen={setDialogAddValueOpen}
-                changeValueHelpValue={changeValueHelpValue}
+                dialogAddValueOpen={ui.dialogAddValueOpen}
+                valueHelpValue={ui.valueHelpValue!}
+                setDialogAddValueOpen={ui.setDialogAddValueOpen}
+                changeValueHelpValue={ui.changeValueHelpValue}
             />
             <DialogUploadFile
-                dialogUploadFileOpen={dialogUploadFileOpen}
-                setDialogUploadFileOpen={setDialogUploadFileOpen}
-                upload={() => {}}
-                loading={uploadLoading}
+                dialogUploadFileOpen={ui.dialogUploadFileOpen}
+                setDialogUploadFileOpen={ui.setDialogUploadFileOpen}
+                upload={upload}
+                loading={ui.uploadLoading}
             />
         </div>
     )
