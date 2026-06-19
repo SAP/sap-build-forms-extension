@@ -153,7 +153,8 @@ public class MixinService extends AbstractProcessor {
 
             // compute through all elements and execute checks and computing, e.g. calculating the key
             final var processingInfo = new CheckAndProcessService.ProcessingInfo(params.getProject(), mixinDef);
-            mixinDef.getElements().forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
+            mixinDef.getElements()
+                    .forEach(it -> checkAndProcessService.checkAndProcessElement(processingInfo, it, null));
             mixinDef.getElements().addAll(processingInfo.getEd2Add());
 
             // create enums
@@ -239,7 +240,7 @@ public class MixinService extends AbstractProcessor {
                 processingInfo.getScenarioDefinition().getAccessObjectName() +
                         processingInfo.getScenarioDefinition().getVersion(), mixin);
         var l = processingInfo.getScenarioDefinition().getMixins().computeIfAbsent(clsName, k -> new ArrayList<>());
-        l.add(new MixinInfo(mixin, mixinDef.getElements()));
+        l.add(new MixinInfo(mixin, mixinDef.getElements(), clsName));
 //        log.debug("Mixin::resolveMixin: Adding mixin '" + mixin.getName() + "' to Class '" + clsName + "'.");
 //        log.debug("Mixin::resolveMixin: Keys: " + processingInfo.getScenarioDefinition().getMixins().keySet());
         // Last step is to insert the list of mixinElements as replacement of mixin element
