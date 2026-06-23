@@ -38,7 +38,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
 
         var res = new MutablePair<FormAttributes, InputStream>();
 
-        jdbc.query("SELECT * FROM forms_forms WHERE id=? LIMIT 1",
+        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE id=? LIMIT 1",
                 (PreparedStatementSetter) ps -> {
                     ps.setString(1, id);
                 }, new FormCallbackHandler(res));
@@ -50,7 +50,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
 
         var res = new MutablePair<FormAttributes, InputStream>();
 
-        jdbc.query("SELECT * FROM forms_forms WHERE scenario_nm=? AND ref_id=? LIMIT 1",
+        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE scenario_nm=? AND ref_id=? LIMIT 1",
                 (PreparedStatementSetter) ps -> {
                     ps.setString(1, scenarioName);
                     ps.setString(2, refId);
@@ -68,7 +68,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
     protected void internalSave(final FormAttributes formAttributes, final InputStream data, final boolean isNew) {
         if (isNew) {
             jdbc.update(con -> {
-                final var ps = con.prepareStatement("INSERT INTO forms_forms (id,version,ref_id,scenario_nm," +
+                final var ps = con.prepareStatement("INSERT INTO forms_data.forms_forms (id,version,ref_id,scenario_nm," +
                         "scneario_ver,wf_adapter,user_nm,ts,template_nm,description,finished_at,functional_id," +
                         "started_at,started_by,state,detail_state,data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
                 ps.setString(1, formAttributes.getId());
@@ -95,7 +95,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
             });
         } else {
             jdbc.update(con -> {
-                final var ps = con.prepareStatement("UPDATE forms_forms SET data=?,version=?,ref_id=?,"
+                final var ps = con.prepareStatement("UPDATE forms_data.forms_forms SET data=?,version=?,ref_id=?,"
                         + "scenario_nm=?,scneario_ver=?,wf_adapter=?,user_nm=?,ts=?,template_nm=?,description=?,"
                         + "finished_at=?,functional_id=?,started_at=?,started_by=?,state=?,detail_state=?"
                         + " WHERE id=? AND version=?");
@@ -132,7 +132,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
      */
     protected void internalDelete(String id) {
         jdbc.update(con -> {
-            final var ps = con.prepareStatement("DELETE FROM forms_forms WHERE id=?");
+            final var ps = con.prepareStatement("DELETE FROM forms_data.forms_forms WHERE id=?");
             ps.setString(1, id);
             return ps;
         });

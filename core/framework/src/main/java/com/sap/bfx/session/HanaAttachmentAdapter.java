@@ -47,7 +47,7 @@ public abstract class HanaAttachmentAdapter implements AttachmentAdapter {
         final var ref = UUID.randomUUID().toString();
 
         jdbc.update(con -> {
-            final var ps = con.prepareStatement("INSERT INTO forms_attachments (id, content) VALUES (?,?)");
+            final var ps = con.prepareStatement("INSERT INTO forms_attachment.forms_attachments (id, content) VALUES (?,?)");
             ps.setString(1, ref);
             ps.setBlob(2, is, size);
             return ps;
@@ -63,7 +63,7 @@ public abstract class HanaAttachmentAdapter implements AttachmentAdapter {
     public InputStream load(String ref) {
         final var result = new AtomicReference<InputStream>(null);
 
-        jdbc.query("SELECT content FROM forms_attachments WHERE id=?",
+        jdbc.query("SELECT content FROM forms_attachment.forms_attachments WHERE id=?",
                 (PreparedStatementSetter) ps -> {
                     ps.setString(1, ref);
                 },
@@ -91,7 +91,7 @@ public abstract class HanaAttachmentAdapter implements AttachmentAdapter {
      */
     protected void internalDelete(final String ref) {
         jdbc.update(con -> {
-            final var ps = con.prepareStatement("DELETE FROM forms_attachments WHERE id=?");
+            final var ps = con.prepareStatement("DELETE FROM forms_attachment.forms_attachments WHERE id=?");
             ps.setString(1, ref);
             return ps;
         });
