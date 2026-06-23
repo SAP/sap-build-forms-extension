@@ -23,7 +23,7 @@ public class ApiFactory {
     /**
      * Returns an instance of the requested API class, initialized with the provided form context.
      *
-     * @param apiCls the class of the API to create (e.g., FormsApi.class or WorkflowApi.class)
+     * @param apiCls the class of the API to create (e.g., FormsApi.class, WorkflowApi.class or ValuehelpApi.class)
      * @param form   the form context to be used for API initialization
      * @param <T>    the type of the API
      * @return an instance of the requested API class
@@ -35,6 +35,9 @@ public class ApiFactory {
         }
         if (WorkflowApi.class.equals(apiCls)) {
             return (T) new WorkflowApiImpl(workflowService);
+        }
+        if (ValuehelpApi.class.equals(apiCls)) {
+            return (T) new ValuehelpApiImpl();
         }
 
         throw ExceptionUtils.from("Unsupported API class requested in ApiFactory.getApi(): " + apiCls.getName());
