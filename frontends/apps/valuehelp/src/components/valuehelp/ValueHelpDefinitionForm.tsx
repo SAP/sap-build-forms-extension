@@ -17,6 +17,7 @@ import {
     Token,
 } from "@ui5/webcomponents-react"
 import InputType from "@ui5/webcomponents/dist/types/InputType"
+import { useIntl } from "react-intl"
 
 import { ValueHelpDef } from "../../features/model"
 import { requiredValueState, Severity, useMessages, valueState } from "commons"
@@ -70,6 +71,7 @@ export default function ({
 }: ValueHelpDefinitionFormProps) {
     const classes = useStyles()
     const messages = useMessages()
+    const intl = useIntl()
     const {
         control,
         formState: { errors },
@@ -90,7 +92,7 @@ export default function ({
         >
             {!editMode && (
                 <>
-                    <FormItem labelContent={<Label>Description</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_description" })}</Label>}>
                         <Controller
                             name="description"
                             control={control}
@@ -99,26 +101,26 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>TTL</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_ttl" })}</Label>}>
                         <Controller
                             name="ttl"
                             control={control}
                             render={({ field: { value } }) => (
                                 <div className={classes.formTextBox}>
                                     {value == -1 && (
-                                        <Text className={classes.formText}>static</Text>
+                                        <Text className={classes.formText}>{intl.formatMessage({ id: "lbl_ttl_static" })}</Text>
                                     )}
                                     {value == 0 && (
-                                        <Text className={classes.formText}>always refresh</Text>
+                                        <Text className={classes.formText}>{intl.formatMessage({ id: "lbl_ttl_refresh" })}</Text>
                                     )}
                                     {value > 0 && (
-                                        <Text className={classes.formText}>{value} min</Text>
+                                        <Text className={classes.formText}>{intl.formatMessage({ id: "lbl_ttl_minutes" }, { value })}</Text>
                                     )}
                                 </div>
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Languages</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_languages" })}</Label>}>
                         <Controller
                             name="languages"
                             control={control}
@@ -129,7 +131,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Type</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_type" })}</Label>}>
                         <Controller
                             name="type"
                             control={control}
@@ -140,7 +142,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Key-Key</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_key_key" })}</Label>}>
                         <Controller
                             name="keyKey"
                             control={control}
@@ -151,7 +153,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Value-Keys</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_value_keys" })}</Label>}>
                         <Controller
                             name="valueKeys"
                             control={control}
@@ -162,7 +164,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Format Template</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_format_template" })}</Label>}>
                         <Controller
                             name="formatTemplate"
                             control={control}
@@ -173,7 +175,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Adapter</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_adapter" })}</Label>}>
                         <Controller
                             name="adapter"
                             control={control}
@@ -184,7 +186,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Config</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_config" })}</Label>}>
                         <Controller
                             name="config"
                             control={control}
@@ -200,7 +202,7 @@ export default function ({
             {editMode && (
                 <>
                     {isNew && (
-                        <FormItem labelContent={<Label required>Name</Label>}>
+                        <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_name" })}</Label>}>
                             <Controller
                                 name="id"
                                 control={control}
@@ -216,7 +218,7 @@ export default function ({
                             />
                         </FormItem>
                     )}
-                    <FormItem labelContent={<Label>Description</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_description" })}</Label>}>
                         <Controller
                             name="description"
                             control={control}
@@ -229,14 +231,14 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>TTL</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_ttl" })}</Label>}>
                         <Controller
                             name="ttl"
                             control={control}
                             render={({ field: { value, onChange, onBlur } }) => (
                                 <FlexBox direction={FlexBoxDirection.Column}>
                                     <RadioButton
-                                        text="static"
+                                        text={intl.formatMessage({ id: "lbl_ttl_radio_static" })}
                                         checked={value == -1}
                                         onChange={(evt) => {
                                             onChange(evt)
@@ -245,7 +247,7 @@ export default function ({
                                         onBlur={onBlur}
                                     />
                                     <RadioButton
-                                        text="always refresh"
+                                        text={intl.formatMessage({ id: "lbl_ttl_radio_refresh" })}
                                         checked={value == 0}
                                         onChange={(evt) => {
                                             onChange(evt)
@@ -255,7 +257,7 @@ export default function ({
                                     />
                                     <FlexBox>
                                         <RadioButton
-                                            text="time buffer (>0) (in min)"
+                                            text={intl.formatMessage({ id: "lbl_ttl_radio_buffer" })}
                                             checked={value != -1 && value != 0}
                                             onChange={(evt) => {
                                                 onChange(evt)
@@ -270,7 +272,7 @@ export default function ({
                                                 type={InputType.Number}
                                                 valueState={valueState(errors["ttl"])}
                                                 valueStateMessage={
-                                                    <span>Time buffer must be greater than 0</span>
+                                                    <span>{intl.formatMessage({ id: "lbl_ttl_buffer_error" })}</span>
                                                 }
                                                 onChange={onChange}
                                                 onBlur={onBlur}
@@ -281,7 +283,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label required>Languages</Label>}>
+                    <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_languages" })}</Label>}>
                         <Controller
                             name="languages"
                             control={control}
@@ -309,7 +311,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label required>Type</Label>}>
+                    <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_type" })}</Label>}>
                         <Controller
                             name="type"
                             control={control}
@@ -330,16 +332,16 @@ export default function ({
                                     }}
                                 >
                                     <Option value="freestyle" data-id="freestyle" selected={value === "freestyle"}>
-                                        Freestyle
+                                        {intl.formatMessage({ id: "lbl_type_freestyle" })}
                                     </Option>
                                     <Option value="currency" data-id="currency" selected={value === "currency"}>
-                                        Currency
+                                        {intl.formatMessage({ id: "lbl_type_currency" })}
                                     </Option>
                                 </Select>
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label required>Key-Key</Label>}>
+                    <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_key_key" })}</Label>}>
                         <Controller
                             name="keyKey"
                             control={control}
@@ -354,12 +356,12 @@ export default function ({
                                     className={classes.formInput}
                                     readonly={isCurrency}
                                     valueState={valueState(errors["keyKey"])}
-                                    valueStateMessage={<span>{errors["keyKey"]?.message ?? "Key-Key is required"}</span>}
+                                    valueStateMessage={<span>{errors["keyKey"]?.message ?? intl.formatMessage({ id: "err_key_key_required" })}</span>}
                                 />
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label required>Value-Keys</Label>}>
+                    <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_value_keys" })}</Label>}>
                         <Controller
                             name="valueKeys"
                             control={control}
@@ -393,12 +395,12 @@ export default function ({
                                         setValue("valueKeys", remaining)
                                     }}
                                     valueState={requiredValueState(value)}
-                                    valueStateMessage={<span>Value-Keys must not be empty</span>}
+                                    valueStateMessage={<span>{intl.formatMessage({ id: "err_value_keys_required" })}</span>}
                                 />
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Format Template</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_format_template" })}</Label>}>
                         <Controller
                             name="formatTemplate"
                             control={control}
@@ -411,7 +413,7 @@ export default function ({
                             )}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label required>Adapter</Label>}>
+                    <FormItem labelContent={<Label required>{intl.formatMessage({ id: "lbl_adapter" })}</Label>}>
                         <Controller
                             name="adapter"
                             control={control}
@@ -438,7 +440,7 @@ export default function ({
                             }}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Config</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_config" })}</Label>}>
                         <Controller
                             name="config"
                             control={control}

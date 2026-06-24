@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { createUseStyles } from "react-jss"
+import { useIntl } from "react-intl"
 import {
     Bar,
     BusyIndicator,
@@ -44,6 +45,7 @@ const useStyles = createUseStyles({
 
 export default function (props: DialogUploadFileProps) {
     const classes = useStyles()
+    const intl = useIntl()
     const [file, setFile] = useState<File | null>(null)
     const [override, setOverride] = useState<boolean>(true)
     const [useTechnicalName, setUseTechnicalName] = useState<boolean>(false)
@@ -51,58 +53,59 @@ export default function (props: DialogUploadFileProps) {
     return (
         <Dialog
             className={classes.dialog}
-            style={{minWidth: "50%"}}
+            style={{ minWidth: "50%" }}
             footer={
                 <Bar
                     design="Footer"
                     className={classes.bar}
                     endContent={
-                        <Button
-                            onClick={function _a() {
-                                props.setDialogUploadFileOpen(false)
-                                setFile(null)
-                                setOverride(true)
-                                setUseTechnicalName(false)
-                            }}
-                        >
-                            Close
-                        </Button>
-                    }
-                >
-                    <Button
-                        design="Emphasized"
-                        className={classes.button}
-                        disabled={
-                            !file ||
-                            !(
-                                file.type == "text/xml" ||
-                                file.name.endsWith(".hv") ||
-                                file.name.endsWith(".txt")
-                            )
-                        }
-                        onClick={async function _a() {
-                            if (
-                                file &&
-                                (file.type == "text/xml" ||
-                                    file.name.endsWith(".hv") ||
-                                    file.name.endsWith(".txt"))
-                            ) {
-                                props.upload(file!, override, useTechnicalName)
-                                setFile(null)
-                                setOverride(true)
-                                setUseTechnicalName(false)
-                            }
-                        }}
-                    >
-                        Upload
-                    </Button>
+                        <div>
+                            <Button
+                                onClick={function _a() {
+                                    props.setDialogUploadFileOpen(false)
+                                    setFile(null)
+                                    setOverride(true)
+                                    setUseTechnicalName(false)
+                                }}
+                            >
+                                {intl.formatMessage({ id: "btn_close" })}
+                            </Button>
+                            <Button
+                                design="Emphasized"
+                                className={classes.button}
+                                disabled={
+                                    !file ||
+                                    !(
+                                        file.type == "text/xml" ||
+                                        file.name.endsWith(".hv") ||
+                                        file.name.endsWith(".txt")
+                                    )
+                                }
+                                onClick={async function _a() {
+                                    if (
+                                        file &&
+                                        (file.type == "text/xml" ||
+                                            file.name.endsWith(".hv") ||
+                                            file.name.endsWith(".txt"))
+                                    ) {
+                                        props.upload(file!, override, useTechnicalName)
+                                        setFile(null)
+                                        setOverride(true)
+                                        setUseTechnicalName(false)
+                                    }
+                                }}
+                            >
+                                {intl.formatMessage({ id: "btn_upload" })}
+                            </Button>
+                        </div>
+                    }>
                 </Bar>
             }
-            headerText="Upload value help definition file"
+            headerText={intl.formatMessage({ id: "dlg_upload_title" })}
             open={props.dialogUploadFileOpen}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S4 M3 L2 XL2">
-                <FormItem labelContent={<Label>Select file</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "dlg_upload_select_file" })}</Label>}>
                     <FileUploader
                         onChange={function _a(e) {
                             if (e.detail.files) {
@@ -111,42 +114,38 @@ export default function (props: DialogUploadFileProps) {
                         }}
                         valueState={
                             file &&
-                            !(
-                                file?.type == "text/xml" ||
-                                file.name.endsWith(".hv") ||
-                                file.name.endsWith(".txt")
-                            )
+                                !(
+                                    file?.type == "text/xml" ||
+                                    file.name.endsWith(".hv") ||
+                                    file.name.endsWith(".txt")
+                                )
                                 ? "Negative"
                                 : "None"
                         }
-                        valueStateMessage={<span>Please choose file type xml</span>}
+                        valueStateMessage={<span>{intl.formatMessage({ id: "dlg_upload_file_type_error" })}</span>}
                         accept={"*.xml, *.hv"}
                         multiple={false}
                     >
-                        <Button>Select xml file</Button>
+                        <Button>{intl.formatMessage({ id: "dlg_upload_select_button" })}</Button>
                     </FileUploader>
                 </FormItem>
 
-                <FormItem labelContent={<Label>Handle existing entries</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "dlg_upload_handle_existing" })}</Label>}>
                     <Select
                         onChange={(e) => {
-                            if (e.detail.selectedOption.innerText == "Override") {
-                                setOverride(true)
-                            } else {
-                                setOverride(false)
-                            }
+                            setOverride(e.detail.selectedOption.id === "Override")
                         }}
                     >
                         <Option key={"Override"} id="Override">
-                            Override
+                            {intl.formatMessage({ id: "dlg_upload_override" })}
                         </Option>
                         <Option key={"Skip"} id="Skip">
-                            Skip
+                            {intl.formatMessage({ id: "dlg_upload_skip" })}
                         </Option>
                     </Select>
                 </FormItem>
 
-                <FormItem labelContent={<Label>Use technical Name</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "dlg_upload_use_technical_name" })}</Label>}>
                     <Switch
                         checked={useTechnicalName}
                         onChange={function _a() {

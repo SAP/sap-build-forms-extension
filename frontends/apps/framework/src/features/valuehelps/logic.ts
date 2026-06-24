@@ -12,7 +12,7 @@ interface LoadValueHelpResponse {
     name: string
     locale: string
     version: number
-    values: string
+    values: Record<string, string>
 }
 
 export interface ValueName {
@@ -86,7 +86,7 @@ export class ValuehelpsService {
             name,
             locale,
             version: data.version,
-            values: JSON.parse(data.values),
+            values: data.values,
         })
 
         return name

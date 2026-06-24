@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 
 import { useForm } from "react-hook-form"
+import { useIntl } from "react-intl"
 import { Bar, Button, Dialog } from "@ui5/webcomponents-react"
 
 import { Margin } from "commons"
@@ -29,6 +30,7 @@ interface DialogAddValueHelpDefinitionProps {
  * @returns
  */
 export default function (props: DialogAddValueHelpDefinitionProps) {
+    const intl = useIntl()
     const form = useForm<ValueHelpDef>({
         defaultValues: {
             id: "",
@@ -56,7 +58,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
     // Reflect a 409 conflict back into the id field error
     useEffect(() => {
         if (props.isIdExistent) {
-            setError("id", { type: "manual", message: "ID already exists" })
+            setError("id", { type: "manual", message: intl.formatMessage({ id: "err_id_already_exists" }) })
         }
     }, [props.isIdExistent])
 
@@ -68,7 +70,7 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
 
     function onSubmit(def: ValueHelpDef) {
         if (props.existingIds.includes(def.id)) {
-            setError("id", { type: "manual", message: "ID already exists" })
+            setError("id", { type: "manual", message: intl.formatMessage({ id: "err_id_already_exists" }) })
             return
         }
         props.addValueHelpDef(def)
@@ -84,20 +86,20 @@ export default function (props: DialogAddValueHelpDefinitionProps) {
                     endContent={
                     <div>
                         <Button onClick={handleClose}>
-                            Close
+                            {intl.formatMessage({ id: "btn_close" })}
                         </Button>
                         <Button
                         design="Emphasized"
                         style={{ marginInline: Margin.TINY }}
                         onClick={() => handleSubmit(onSubmit)()}
                         >
-                            Add
+                            {intl.formatMessage({ id: "btn_add" })}
                         </Button>
-                    </div> 
+                    </div>
                     } >
                 </Bar>
             }
-            headerText="Add Value Help Definition"
+            headerText={intl.formatMessage({ id: "dlg_add_def_title" })}
             open={props.dialogAddDefOpen}
         >
             <ValueHelpDefinitionForm

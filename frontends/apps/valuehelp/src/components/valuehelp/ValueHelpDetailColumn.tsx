@@ -99,7 +99,7 @@ export default function ({
                                 )}
                                 {currentValueHelpDef && currentValueHelpDef.ttl > 0 && (
                                     <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
-                                        {currentValueHelpDef.ttl} min
+                                        {intl.formatMessage({ id: "lbl_ttl_minutes" }, { value: currentValueHelpDef.ttl })}
                                     </Text>
                                 )}
                             </FlexBox>
@@ -162,7 +162,7 @@ export default function ({
                 style={{ width: "100%" }}
                 tabLayout="Standard"
             >
-                <Tab icon="settings" selected text="Config">
+                <Tab icon="settings" selected text={intl.formatMessage({ id: "tab_config" })}>
                     <ValueHelpDefinitionForm
                         isNew={false}
                         editMode={edit}

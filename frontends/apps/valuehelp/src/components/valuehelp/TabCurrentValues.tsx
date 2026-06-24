@@ -18,6 +18,7 @@ import {
 } from "@ui5/webcomponents-react"
 import InputType from "@ui5/webcomponents/dist/types/InputType"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
+import { useIntl } from "react-intl"
 
 import { ValueHelpDef, ValueHelpValue } from "../../features/model"
 
@@ -35,6 +36,7 @@ interface TabCurrentValuesProps {
 }
 
 export default function (props: TabCurrentValuesProps) {
+    const intl = useIntl()
     const def = props.currentValueHelpDef
     const isLocal = def?.adapter === "local"
 
@@ -60,13 +62,13 @@ export default function (props: TabCurrentValuesProps) {
     }
 
     return (
-        <Tab icon="folder" text="Current Values">
+        <Tab icon="folder" text={intl.formatMessage({ id: "tab_current_values" })}>
             <Form
                 layout="S1 M1 L1 XL1"
                 labelSpan="S4 M3 L2 XL2"
                 style={{ alignItems: "center" }}
             >
-                <FormItem labelContent={<Label>Language</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_language" })}</Label>}>
                     <Select
                         key={props.language}
                         onChange={(e) =>
@@ -81,7 +83,7 @@ export default function (props: TabCurrentValuesProps) {
                         ))}
                     </Select>
                 </FormItem>
-                <FormItem labelContent={<Label>Values</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "lbl_values" })}</Label>}>
                     <Table
                         headerRow={
                             <TableHeaderRow sticky>
@@ -135,7 +137,7 @@ export default function (props: TabCurrentValuesProps) {
                                         icon="add"
                                         onClick={() => props.setDialogAddValueOpen(true)}
                                     >
-                                        Add value
+                                        {intl.formatMessage({ id: "btn_add_value" })}
                                     </Button>
                                 </TableCell>
                                 {columns.slice(1).map((col) => (

@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { createUseStyles } from "react-jss"
+import { useIntl } from "react-intl"
 import { Bar, Button, Dialog, Form, FormItem, Input, InputDomRef, Label, Ui5CustomEvent } from "@ui5/webcomponents-react"
 
 import { ValueHelpDef, ValueHelpValue } from "../../features/model"
@@ -34,6 +35,7 @@ const useStyles = createUseStyles({
 
 export default function (props: DialogAddValueHelpValueProps) {
     const classes = useStyles()
+    const intl = useIntl()
 
     const def = props.currentValueHelpDef
     const keyKey = def?.keyKey ?? "key"
@@ -91,16 +93,16 @@ export default function (props: DialogAddValueHelpValueProps) {
                     endContent={
                         <div>
                             <Button design="Emphasized" onClick={handleAdd}>
-                                Add
+                                {intl.formatMessage({ id: "btn_add" })}
                             </Button>
                             <Button className={classes.button} onClick={handleClose}>
-                                Close
+                                {intl.formatMessage({ id: "btn_close" })}
                             </Button>
                         </div>
                     } >
                 </Bar>
             }
-            headerText="Add Value Help Value"
+            headerText={intl.formatMessage({ id: "dlg_add_value_title" })}
             open={props.dialogAddValueOpen}
             style={{ minWidth: "50%" }}
         >
@@ -117,9 +119,9 @@ export default function (props: DialogAddValueHelpValueProps) {
                                 valueStateMessage={
                                     isKey ? (
                                         isKeyEmpty ? (
-                                            <span>{col} must not be empty</span>
+                                            <span>{intl.formatMessage({ id: "err_col_must_not_be_empty" }, { col })}</span>
                                         ) : (
-                                            <span>{col} already exists</span>
+                                            <span>{intl.formatMessage({ id: "err_col_already_exists" }, { col })}</span>
                                         )
                                     ) : undefined
                                 }

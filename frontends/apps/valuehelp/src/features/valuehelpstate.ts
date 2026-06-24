@@ -77,6 +77,21 @@ interface ValueHelpState {
     findDefExport(messages: MessageIntf, requestParams: any): Promise<AxiosResponse<any> | Error>
 
     /**
+     * Function to import value help definitions from a file.
+     *
+     * @param messages
+     * @param file
+     * @param override
+     * @param useTechnicalName
+     */
+    importDefs(
+        messages: MessageIntf,
+        file: File,
+        override: boolean,
+        useTechnicalName: boolean,
+    ): Promise<AxiosResponse<any> | Error>
+
+    /**
      * Function to find all available adapters.
      *
      * @param messages
@@ -294,6 +309,33 @@ export const useValueHelpState = create<ValueHelpState>((set) => ({
                 return Promise.resolve(response)
             }
             return handleError(response, "findDefExport", messages)
+        } catch (err) {
+            console.error(`Error: ${err}`)
+            setTimeout(() => messages.fatal("common_error_backend"), 10)
+            return Promise.reject(err)
+        }
+    },
+
+    importDefs: async (
+        messages: MessageIntf,
+        file: File,
+        override: boolean,
+        useTechnicalName: boolean,
+    ): Promise<AxiosResponse<any> | Error> => {
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpdefs/import`,
+                "POST",
+                formData,
+                { params: { override, useTechnicalName } },
+            )
+            if (apiOk(response.status)) {
+                return Promise.resolve(response)
+            }
+            return handleError(response, "importDefs", messages)
         } catch (err) {
             console.error(`Error: ${err}`)
             setTimeout(() => messages.fatal("common_error_backend"), 10)

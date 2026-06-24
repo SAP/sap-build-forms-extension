@@ -312,22 +312,22 @@ export default function () {
      * Downloads the ValueHelp definitions as an XML file.
      */
     function download(): void {
-        let requestParams = {}
+        let requestParams: URLSearchParams | undefined
         if (ui.listMode === ListSelectionMode.Multiple) {
-            if (
-                state.defs.every(
-                    (objekt: ValueHelpDef) =>
-                        ui.selectedDefs.includes(objekt.id) || ui.selectedDefs.length < 1,
-                )
-            ) {
-                // download all displayed
-                requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
-            } else {
-                // download selected
-                requestParams = { ids: ui.selectedDefs }
+            const allSelected = state.defs.every((def: ValueHelpDef) =>
+                ui.selectedDefs.includes(def.id),
+            )
+            if (!allSelected && ui.selectedDefs.length > 0) {
+                // download selected ids
+                requestParams = new URLSearchParams()
+                ui.selectedDefs.forEach((id) => requestParams!.append("ids", id))
             }
-        } else {
-            requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
+        }
+        if (!requestParams) {
+            // download all displayed (apply current search filters)
+            requestParams = new URLSearchParams()
+            if (ui.searchId) requestParams.append("search", ui.searchId)
+            ui.searchAdapter.forEach((a) => requestParams!.append("adapter", a))
         }
         state.findDefExport(messages, requestParams).then((action: any) => {
             if (apiOk(action.status)) {
@@ -339,6 +339,7 @@ export default function () {
                 a.download = "valueHelpDefinitions.xml"
                 document.body.appendChild(a)
                 a.click()
+                document.body.removeChild(a)
                 window.URL.revokeObjectURL(url)
                 messages.toast(Severity.Success, "msg_valuehelpdefs_exported")
             }
@@ -352,29 +353,53 @@ export default function () {
      * @param override
      * @param useTechnicalName
      */
-    function upload(_file: File, _override: boolean, _useTechnicalName: boolean): void {
-        // setUploadLoading(true)
-        // const formData = new FormData()
-        // formData.append("file", file)
-        // const p = backendDispatch("/v1/valuehelpdefs/import", "POST", formData, {
-        //     override: override,
-        //     useTechnicalName: useTechnicalName,
-        // })
-        // p.then((action: any) => {
-        //     ui.setUploadLoading(false)
-        //     ui.setDialogUploadFileOpen(false)
-        //     if (action.status == 200) {
-        //         ui.resetDetail()
-        //         filter()
-        //         if (action.data) {
-        //             messages.dialog(Severity.Warning, "msg_upload_warnings", undefined, [MessageOption.Ok])
-        //         } else {
-        //             messages.toast(Severity.Success, "msg_upload_success")
-        //         }
-        //     } else {
-        //         messages.dialog(Severity.Error, "err_upload_failed", undefined, [MessageOption.Ok])
-        //     }
-        // })
+    function upload(file: File, override: boolean, useTechnicalName: boolean): void {
+        ui.setUploadLoading(true)
+        state.importDefs(messages, file, override, useTechnicalName).then((action: any) => {
+            ui.setUploadLoading(false)
+            ui.setDialogUploadFileOpen(false)
+            if (apiOk(action.status)) {
+                ui.resetDetail()
+                filter()
+                if (action.data) {
+                    messages.dialog(Severity.Warning, "msg_upload_warnings", undefined, [MessageOption.Ok])
+                } else {
+                    messages.toast(Severity.Success, "msg_upload_success")
+                }
+            } else {
+                messages.dialog(Severity.Error, "err_upload_failed", undefined, [MessageOption.Ok])
+            }
+        })
+    }
+
+    /**
+     * Copies the selected definitions (multi-select) or the current definition (single mode).
+     */
+    function copyDef() {
+        if (ui.listMode === ListSelectionMode.Multiple) {
+            ui.setCopiedDefs(state.defs.filter((d: ValueHelpDef) => ui.selectedDefs.includes(d.id)))
+        } else if (ui.currentValueHelpDef) {
+            ui.setCopiedDefs([ui.currentValueHelpDef])
+        }
+    }
+
+    /**
+     * Pastes copied definitions with unique IDs, allocating all new IDs before adding any.
+     */
+    function pasteDef() {
+        if (ui.copiedDefs.length === 0) return
+        const taken = new Set(state.defs.map((d: ValueHelpDef) => d.id))
+        ui.copiedDefs.forEach((source) => {
+            const base = source.id.replace(/ \(\d+\)$/, "")
+            let candidate = base
+            let n = 1
+            while (taken.has(candidate)) {
+                candidate = `${base} (${n})`
+                n++
+            }
+            taken.add(candidate)
+            addValueHelpDef({ ...source, id: candidate })
+        })
     }
 
     /**
@@ -435,6 +460,9 @@ export default function () {
                             }
                         }}
                         onAdd={() => ui.setDialogAddDefOpen(true)}
+                        onCopy={copyDef}
+                        onPaste={pasteDef}
+                        hasCopiedDef={ui.copiedDefs.length > 0}
                         onDeleteSelected={deleteSelectedValueHelps}
                         onDownload={download}
                         onUpload={() => ui.setDialogUploadFileOpen(true)}

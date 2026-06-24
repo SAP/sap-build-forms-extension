@@ -45,6 +45,7 @@ public class XmlValueHelpValue {
     private Date validUntil;
 
     @XmlElement
+    @XmlJavaTypeAdapter(ValuesAdapter.class)
     @NotNull(message = "Values cannot be null")
     private List<Map<String, String>> values;
 }

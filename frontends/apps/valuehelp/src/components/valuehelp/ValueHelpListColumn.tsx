@@ -41,6 +41,9 @@ interface ValueHelpListColumnProps {
     onToggleSelectedDef(id: string): void
     onSelectAll(): void
     onAdd(): void
+    onCopy(): void
+    onPaste(): void
+    hasCopiedDef: boolean
     onDeleteSelected(): void
     onDownload(): void
     onUpload(): void
@@ -64,6 +67,9 @@ export default function ({
     onToggleSelectedDef,
     onSelectAll,
     onAdd,
+    onCopy,
+    onPaste,
+    hasCopiedDef,
     onDeleteSelected,
     onDownload,
     onUpload,
@@ -152,6 +158,24 @@ export default function ({
                     </Button>
                     <Button design="Transparent" icon="add" onClick={onAdd}>
                         {intl.formatMessage({ id: "lbl_new_value_help" })}
+                    </Button>
+                    <Button
+                        design="Transparent"
+                        icon="copy"
+                        style={{ marginLeft: Margin.SMALL }}
+                        disabled={listMode === ListSelectionMode.Multiple ? selectedDefs.length < 1 : !currentDefId}
+                        onClick={onCopy}
+                    >
+                        {intl.formatMessage({ id: "lbl_copy_value_help" })}
+                    </Button>
+                    <Button
+                        design="Transparent"
+                        icon="paste"
+                        style={{ marginLeft: Margin.SMALL }}
+                        disabled={!hasCopiedDef}
+                        onClick={onPaste}
+                    >
+                        {intl.formatMessage({ id: "lbl_paste_value_help" })}
                     </Button>
                     {listMode === ListSelectionMode.Multiple && (
                         <Button

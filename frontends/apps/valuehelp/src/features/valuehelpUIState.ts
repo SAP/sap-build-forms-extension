@@ -65,6 +65,10 @@ interface ValueHelpUIState {
 
     // Upload
     setUploadLoading(u: boolean): void
+
+    // Clipboard
+    copiedDefs: ValueHelpDef[]
+    setCopiedDefs(defs: ValueHelpDef[]): void
 }
 
 export const useValueHelpUIState = create<ValueHelpUIState>((set, get) => ({
@@ -151,5 +155,8 @@ export const useValueHelpUIState = create<ValueHelpUIState>((set, get) => ({
     setSearchId: (s) => set({ searchId: s }),
     setSearchAdapter: (a) => set({ searchAdapter: a }),
 
-    setUploadLoading: (u) => set({ uploadLoading: u })
+    setUploadLoading: (u) => set({ uploadLoading: u }),
+
+    copiedDefs: [],
+    setCopiedDefs: (defs) => set({ copiedDefs: defs }),
 }))
