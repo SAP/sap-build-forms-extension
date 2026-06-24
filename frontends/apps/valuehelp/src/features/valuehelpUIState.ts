@@ -62,6 +62,9 @@ interface ValueHelpUIState {
     // Filter bar
     setSearchId(s: string): void
     setSearchAdapter(a: string[]): void
+
+    // Upload
+    setUploadLoading(u: boolean): void
 }
 
 export const useValueHelpUIState = create<ValueHelpUIState>((set, get) => ({
@@ -103,9 +106,10 @@ export const useValueHelpUIState = create<ValueHelpUIState>((set, get) => ({
             set({
                 listMode: ListSelectionMode.Multiple,
                 selectedDefs: currentDefId ? [currentDefId] : [],
+                layout: FCLLayout.OneColumn,
             })
         } else {
-            set({ listMode: ListSelectionMode.Single, selectedDefs: [] })
+            set({ listMode: ListSelectionMode.Single, selectedDefs: [], layout: FCLLayout.OneColumn })
         }
     },
     setSelectedDefs: (ids) => set({ selectedDefs: ids }),
@@ -146,4 +150,6 @@ export const useValueHelpUIState = create<ValueHelpUIState>((set, get) => ({
 
     setSearchId: (s) => set({ searchId: s }),
     setSearchAdapter: (a) => set({ searchAdapter: a }),
+
+    setUploadLoading: (u) => set({ uploadLoading: u })
 }))

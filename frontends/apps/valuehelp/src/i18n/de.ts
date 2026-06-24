@@ -10,4 +10,21 @@ export default {
 
     confirm_delete_vh: "Wertehilfe-Definition {id} löschen?",
     confirm_delete_selected_vh: "{count} ausgewählte Wertehilfe-Definitionen löschen?",
+
+    err_valuekey_duplicate: "Dieser Werteschlüssel existiert bereits",
+    err_valuekey_overlaps_keykey: "Werteschlüssel darf nicht identisch mit dem Schlüssel-Schlüssel sein",
+
+    lbl_select_all: "Alle auswählen",
+    lbl_multiselect: "Mehrfachauswahl",
+    lbl_upload_file: "Datei hochladen",
+    lbl_download: "Herunterladen",
+    lbl_download_selected: "Auswahl herunterladen",
+    lbl_new_value_help: "Neue Wertehilfe",
+    lbl_delete_selected: "Auswahl löschen",
+    lbl_value_helps: "Wertehilfen",
+    lbl_adapter: "Adapter",
+    lbl_description: "Beschreibung",
+    lbl_ttl: "TTL",
+    lbl_ttl_static: "statisch",
+    lbl_ttl_refresh: "aktualisieren",
 }

@@ -38,7 +38,7 @@ const useStyles = createUseStyles({
     },
     form: {
         padding: 3,
-        width: 400,
+        width: "100%",
     },
 })
 
@@ -51,6 +51,7 @@ export default function (props: DialogUploadFileProps) {
     return (
         <Dialog
             className={classes.dialog}
+            style={{minWidth: "50%"}}
             footer={
                 <Bar
                     design="Footer"
@@ -100,7 +101,7 @@ export default function (props: DialogUploadFileProps) {
             headerText="Upload value help definition file"
             open={props.dialogUploadFileOpen}
         >
-            <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
+            <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S4 M3 L2 XL2">
                 <FormItem labelContent={<Label>Select file</Label>}>
                     <FileUploader
                         onChange={function _a(e) {

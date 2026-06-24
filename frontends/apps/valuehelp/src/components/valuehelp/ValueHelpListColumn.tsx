@@ -17,6 +17,7 @@ import {
 } from "@ui5/webcomponents-react"
 import { ListItemClickEventDetail } from "@ui5/webcomponents/dist/List"
 import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
+import { useIntl } from "react-intl"
 
 import { Margin } from "commons"
 
@@ -67,6 +68,7 @@ export default function ({
     onDownload,
     onUpload,
 }: ValueHelpListColumnProps) {
+    const intl = useIntl()
     return (
         <div slot={slot} style={{ height: "100%", overflowY: "auto" }}>
             <FilterBar
@@ -98,7 +100,7 @@ export default function ({
                 showClearOnFB
                 showGoOnFB
             >
-                <FilterGroupItem label="Adapter" filterKey="1">
+                <FilterGroupItem label={intl.formatMessage({ id: "lbl_adapter" })} filterKey="1">
                     <MultiComboBox
                         onSelectionChange={(e) => {
                             onSearchAdapterChange(e.detail.items.map((a) => a.id))
@@ -120,7 +122,7 @@ export default function ({
                 <FlexBox alignItems="Center">
                     {listMode === ListSelectionMode.Multiple && (
                         <CheckBox
-                            text="Select all"
+                            text={intl.formatMessage({ id: "lbl_select_all" })}
                             onChange={onSelectAll}
                             checked={defs.length > 0 && defs.every((d) => selectedDefs.includes(d.id))}
                         />
@@ -130,12 +132,12 @@ export default function ({
                         checked={listMode === ListSelectionMode.Multiple}
                         style={{ marginLeft: Margin.SMALL }}
                     />
-                    <Text style={{ marginLeft: Margin.SMALL }}>Multiselect</Text>
+                    <Text style={{ marginLeft: Margin.SMALL }}>{intl.formatMessage({ id: "lbl_multiselect" })}</Text>
                 </FlexBox>
 
                 <FlexBox alignItems="Center" wrap="Wrap">
                     <Button design="Transparent" icon="upload" onClick={onUpload}>
-                        Upload File
+                        {intl.formatMessage({ id: "lbl_upload_file" })}
                     </Button>
                     <Button
                         design="Transparent"
@@ -144,10 +146,12 @@ export default function ({
                         disabled={listMode === ListSelectionMode.Multiple && selectedDefs.length < 1}
                         onClick={onDownload}
                     >
-                        {listMode === ListSelectionMode.Single ? "Download" : "Download selected"}
+                        {listMode === ListSelectionMode.Single
+                            ? intl.formatMessage({ id: "lbl_download" })
+                            : intl.formatMessage({ id: "lbl_download_selected" })}
                     </Button>
                     <Button design="Transparent" icon="add" onClick={onAdd}>
-                        New Value Help
+                        {intl.formatMessage({ id: "lbl_new_value_help" })}
                     </Button>
                     {listMode === ListSelectionMode.Multiple && (
                         <Button
@@ -157,20 +161,22 @@ export default function ({
                             disabled={selectedDefs.length < 1}
                             onClick={onDeleteSelected}
                         >
-                            Delete selected
+                            {intl.formatMessage({ id: "lbl_delete_selected" })}
                         </Button>
                     )}
                 </FlexBox>
             </FlexBox>
 
             <List
-                headerText="Value Helps"
+                headerText={intl.formatMessage({ id: "lbl_value_helps" })}
                 selectionMode={listMode}
                 id="valueHelpList"
-                onItemClick={(e: Ui5CustomEvent<ListDomRef, ListItemClickEventDetail>) => {
+                onSelectionChange={(e) => {
                     if (listMode === ListSelectionMode.Multiple) {
-                        onToggleSelectedDef(e.detail.item.id)
+                        onToggleSelectedDef(e.detail.targetItem.id)
                     }
+                }}
+                onItemClick={(e: Ui5CustomEvent<ListDomRef, ListItemClickEventDetail>) => {
                     onSelectItem(defs.find((vh) => vh.id === e.detail.item.id)!)
                 }}
             >

@@ -1,43 +1,85 @@
 import { useState } from "react"
 
 import { createUseStyles } from "react-jss"
-import { Bar, Button, Dialog, Form, FormItem, Input, Label } from "@ui5/webcomponents-react"
+import { Bar, Button, Dialog, Form, FormItem, Input, InputDomRef, Label, Ui5CustomEvent } from "@ui5/webcomponents-react"
 
-import { ValueHelpValue } from "../../features/model"
+import { ValueHelpDef, ValueHelpValue } from "../../features/model"
 
 /**
  * Dialog to Add a Value Help Value
  */
 interface DialogAddValueHelpValueProps {
     dialogAddValueOpen: boolean
-    valueHelpValue: ValueHelpValue
+    currentValueHelpDef: ValueHelpDef | undefined
+    valueHelpValue: ValueHelpValue | undefined
     setDialogAddValueOpen(o: boolean): void
     changeValueHelpValue(changedValueHelpValue: ValueHelpValue): void
 }
 
+const useStyles = createUseStyles({
+    dialog: {
+        paddingTop: 10,
+        paddingInline: 3,
+    },
+    bar: {
+        paddingBlock: 3,
+    },
+    button: {
+        marginInline: 2,
+    },
+    form: {
+        padding: 3,
+    },
+})
+
 export default function (props: DialogAddValueHelpValueProps) {
-    const useStyles = createUseStyles({
-        dialog: {
-            paddingTop: 10,
-            paddingInline: 3,
-        },
-        bar: {
-            paddingBlock: 3,
-        },
-        button: {
-            marginInline: 2,
-        },
-        form: {
-            padding: 3,
-        },
-    })
-
     const classes = useStyles()
-    const [newValueKey, setNewValueKey] = useState("")
-    const [newValueValue, setNewValueValue] = useState("")
 
+    const def = props.currentValueHelpDef
+    const keyKey = def?.keyKey ?? "key"
+    const valueKeys = def?.valueKeys ?? []
+    const columns = [keyKey, ...valueKeys]
+
+    // One input state entry per column
+    const [inputs, setInputs] = useState<Record<string, string>>({})
     const [isKeyEmpty, setIsKeyEmpty] = useState(false)
     const [isKeyExistent, setIsKeyExistent] = useState(false)
+
+    function handleClose() {
+        props.setDialogAddValueOpen(false)
+        setInputs({})
+        setIsKeyEmpty(false)
+        setIsKeyExistent(false)
+    }
+
+    function handleAdd() {
+        const keyVal = (inputs[keyKey] ?? "").trim()
+
+        if (keyVal.length === 0) {
+            setIsKeyEmpty(true)
+            return
+        }
+
+        const alreadyExists = (props.valueHelpValue?.values ?? []).some(
+            (row) => row[keyKey] === keyVal,
+        )
+        if (alreadyExists) {
+            setIsKeyExistent(true)
+            return
+        }
+
+        // Build the new row from all column inputs
+        const newRow: Record<string, string> = {}
+        columns.forEach((col) => {
+            newRow[col] = (inputs[col] ?? "").trim()
+        })
+
+        props.changeValueHelpValue({
+            ...props.valueHelpValue!,
+            values: [...(props.valueHelpValue?.values ?? []), newRow],
+        })
+        handleClose()
+    }
 
     return (
         <Dialog
@@ -47,81 +89,55 @@ export default function (props: DialogAddValueHelpValueProps) {
                     design="Footer"
                     className={classes.bar}
                     endContent={
-                        <Button
-                            className={classes.button}
-                            onClick={function _a() {
-                                props.setDialogAddValueOpen(false)
-                                setNewValueKey("")
-                                setNewValueValue("")
-                            }}
-                        >
-                            Close
-                        </Button>
-                    }
-                >
-                    <Button
-                        design="Emphasized"
-                        style={{ marginInline: 2 }}
-                        onClick={function _a() {
-                            if (Object.hasOwn(props.valueHelpValue.values, newValueKey)) {
-                                setIsKeyExistent(true)
-                            } else if (newValueKey.trim().length > 0) {
-                                var v = props.valueHelpValue.values
-                                v[newValueKey] = newValueValue
-                                props.changeValueHelpValue({ ...props.valueHelpValue, values: v })
-                                setNewValueKey("")
-                                setNewValueValue("")
-                                props.setDialogAddValueOpen(false)
-                            } else {
-                                setIsKeyEmpty(true)
-                            }
-                        }}
-                    >
-                        Add
-                    </Button>
+                        <div>
+                            <Button design="Emphasized" onClick={handleAdd}>
+                                Add
+                            </Button>
+                            <Button className={classes.button} onClick={handleClose}>
+                                Close
+                            </Button>
+                        </div>
+                    } >
                 </Bar>
             }
             headerText="Add Value Help Value"
             open={props.dialogAddValueOpen}
+            style={{ minWidth: "50%" }}
         >
             <Form className={classes.form} layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
-                <FormItem labelContent={<Label required>Key</Label>}>
-                    <Input
-                        value={newValueKey}
-                        required
-                        valueState={isKeyEmpty || isKeyExistent ? "Negative" : "None"}
-                        valueStateMessage={
-                            isKeyEmpty ? (
-                                <span>Key must not be empty!</span>
-                            ) : (
-                                <span>Key is already existent</span>
-                            )
-                        }
-                        onInput={() => {
-                            setIsKeyEmpty(false)
-                            setIsKeyExistent(false)
-                        }}
-                        onChange={(e) => {
-                            setNewValueKey(e.target.attributes.getNamedItem("value")!.nodeValue!)
-                            if (
-                                e.target.attributes.getNamedItem("value")!.nodeValue!.trim()
-                                    .length == 0
-                            ) {
-                                setIsKeyEmpty(true)
-                            } else {
-                                setIsKeyEmpty(false)
-                            }
-                        }}
-                    />
-                </FormItem>
-                <FormItem labelContent={<Label>Value</Label>}>
-                    <Input
-                        value={newValueValue}
-                        onChange={(e) => {
-                            setNewValueValue(e.target.attributes.getNamedItem("value")!.nodeValue!)
-                        }}
-                    />
-                </FormItem>
+                {columns.map((col) => {
+                    const isKey = col === keyKey
+                    return (
+                        <FormItem key={col} labelContent={<Label required={isKey}>{col}</Label>}>
+                            <Input
+                                value={inputs[col] ?? ""}
+                                valueState={
+                                    isKey && (isKeyEmpty || isKeyExistent) ? "Negative" : "None"
+                                }
+                                valueStateMessage={
+                                    isKey ? (
+                                        isKeyEmpty ? (
+                                            <span>{col} must not be empty</span>
+                                        ) : (
+                                            <span>{col} already exists</span>
+                                        )
+                                    ) : undefined
+                                }
+                                onInput={() => {
+                                    if (isKey) {
+                                        setIsKeyEmpty(false)
+                                        setIsKeyExistent(false)
+                                    }
+                                }}
+                                onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
+                                    const val = e.target.attributes.getNamedItem("value")!.nodeValue!
+                                    setInputs((prev) => ({ ...prev, [col]: val }))
+                                    if (isKey) setIsKeyEmpty(val.trim().length === 0)
+                                }}
+                            />
+                        </FormItem>
+                    )
+                })}
             </Form>
         </Dialog>
     )

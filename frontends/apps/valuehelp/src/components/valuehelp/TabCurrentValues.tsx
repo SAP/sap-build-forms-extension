@@ -22,159 +22,128 @@ import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 import { ValueHelpDef, ValueHelpValue } from "../../features/model"
 
 /**
- *  The properties for the DialogAddValueHelpValue component.
+ *  The properties for the TabCurrentValues component.
  */
-interface DialogAddValueHelpValueProps {
+interface TabCurrentValuesProps {
     edit: boolean
     currentValueHelpDef: ValueHelpDef | undefined
     valueHelpValue: ValueHelpValue | undefined
     language: string | undefined
-    setCurrentValueHelpDef(v: ValueHelpDef): void
     changeValueHelpValue(v: ValueHelpValue): void
     changeLanguage(language: string, def: ValueHelpDef): void
     setDialogAddValueOpen(v: boolean): void
 }
 
-export default function (props: DialogAddValueHelpValueProps) {
+export default function (props: TabCurrentValuesProps) {
+    const def = props.currentValueHelpDef
+    const isLocal = def?.adapter === "local"
+
+    // Columns: keyKey first, then all valueKeys
+    const columns = def ? [def.keyKey, ...(def.valueKeys ?? [])] : []
+
+    /**
+     * Update a single cell value in the values array.
+     */
+    function updateCell(rowIndex: number, col: string, newVal: string) {
+        const newValues = (props.valueHelpValue?.values ?? []).map((row, i) =>
+            i === rowIndex ? { ...row, [col]: newVal } : row,
+        )
+        props.changeValueHelpValue({ ...props.valueHelpValue!, values: newValues })
+    }
+
+    /**
+     * Remove a row from the values array.
+     */
+    function deleteRow(rowIndex: number) {
+        const newValues = (props.valueHelpValue?.values ?? []).filter((_, i) => i !== rowIndex)
+        props.changeValueHelpValue({ ...props.valueHelpValue!, values: newValues })
+    }
+
     return (
         <Tab icon="folder" text="Current Values">
             <Form
                 layout="S1 M1 L1 XL1"
                 labelSpan="S4 M3 L2 XL2"
-                style={{
-                    alignItems: "center",
-                }}
+                style={{ alignItems: "center" }}
             >
                 <FormItem labelContent={<Label>Language</Label>}>
                     <Select
+                        key={props.language}
                         onChange={(e) =>
-                            props.changeLanguage(
-                                e.detail.selectedOption.innerText,
-                                props.currentValueHelpDef!,
-                            )
+                            props.changeLanguage(e.detail.selectedOption.innerText, def!)
                         }
                         valueState="None"
                     >
-                        {props.currentValueHelpDef?.languages.map((item: string) => {
-                            return (
-                                <Option key={item} selected={props.language == item}>
-                                    {item}
-                                </Option>
-                            )
-                        })}
+                        {def?.languages.map((item: string) => (
+                            <Option key={item} selected={props.language === item}>
+                                {item}
+                            </Option>
+                        ))}
                     </Select>
-                </FormItem>
-                <FormItem labelContent={<Label>Valid until</Label>}>
-                    {props.valueHelpValue != undefined && (
-                        <Label style={{ marginBlock: 10 }}>{props.valueHelpValue.validUntil}</Label>
-                    )}
                 </FormItem>
                 <FormItem labelContent={<Label>Values</Label>}>
                     <Table
                         headerRow={
                             <TableHeaderRow sticky>
-                                <TableHeaderCell width="12rem">Key</TableHeaderCell>
-                                <TableHeaderCell>Value</TableHeaderCell>
-                                <TableHeaderCell width="100px"></TableHeaderCell>
+                                {columns.map((col) => (
+                                    <TableHeaderCell key={col}>{col}</TableHeaderCell>
+                                ))}
+                                {props.edit && isLocal && (
+                                    <TableHeaderCell width="60px" />
+                                )}
                             </TableHeaderRow>
                         }
                     >
-                        {props.valueHelpValue != undefined && (
-                            <>
-                                {Object.keys(props.valueHelpValue.values)
-                                    .sort()
-                                    .map(function (key) {
-                                        return (
-                                            <TableRow key={key}>
-                                                <TableCell>
-                                                    <Label>{key}</Label>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {props.edit &&
-                                                        props.currentValueHelpDef?.adapter ==
-                                                            "local" && (
-                                                            <Input
-                                                                type={InputType.Text}
-                                                                value={
-                                                                    props.valueHelpValue?.values[
-                                                                        key
-                                                                    ]
-                                                                }
-                                                                placeholder={
-                                                                    props.valueHelpValue?.values[
-                                                                        key
-                                                                    ]
-                                                                }
-                                                                onChange={(
-                                                                    e: Ui5CustomEvent<
-                                                                        InputDomRef,
-                                                                        never
-                                                                    >,
-                                                                ) => {
-                                                                    var v =
-                                                                        props.valueHelpValue?.values
-                                                                    v[key] =
-                                                                        e.target.attributes.getNamedItem(
-                                                                            "value",
-                                                                        )!.nodeValue!
-                                                                    props.changeValueHelpValue({
-                                                                        ...props.valueHelpValue!,
-                                                                        values: v,
-                                                                    })
-                                                                }}
-                                                                style={{ width: "100%" }}
-                                                            />
-                                                        )}
-                                                    {(!props.edit ||
-                                                        props.currentValueHelpDef?.adapter !=
-                                                            "local") && (
-                                                        <Text>
-                                                            {props.valueHelpValue?.values[key]}
-                                                        </Text>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {props.edit &&
-                                                        props.currentValueHelpDef?.adapter ==
-                                                            "local" && (
-                                                            <Button
-                                                                icon="decline"
-                                                                design={ButtonDesign.Transparent}
-                                                                onClick={() => {
-                                                                    var v =
-                                                                        props.valueHelpValue?.values
-                                                                    delete v[key]
-                                                                    props.changeValueHelpValue({
-                                                                        ...props.valueHelpValue!,
-                                                                        values: v,
-                                                                    })
-                                                                }}
-                                                            />
-                                                        )}
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                            </>
-                        )}
-                        {props.edit &&
-                            props.language &&
-                            props.currentValueHelpDef?.adapter == "local" && (
-                                <TableRow>
+                        {(props.valueHelpValue?.values ?? []).map((row, rowIndex) => (
+                            <TableRow key={rowIndex}>
+                                {columns.map((col, colIndex) => (
+                                    <TableCell key={col}>
+                                        {props.edit && isLocal ? (
+                                            <Input
+                                                type={InputType.Text}
+                                                value={row[col] ?? ""}
+                                                readonly={colIndex === 0}
+                                                onChange={(e: Ui5CustomEvent<InputDomRef, never>) =>
+                                                    updateCell(
+                                                        rowIndex,
+                                                        col,
+                                                        e.target.attributes.getNamedItem("value")!.nodeValue!,
+                                                    )
+                                                }
+                                                style={{ width: "100%" }}
+                                            />
+                                        ) : (
+                                            <Text>{row[col]}</Text>
+                                        )}
+                                    </TableCell>
+                                ))}
+                                {props.edit && isLocal && (
                                     <TableCell>
                                         <Button
-                                            icon="add"
-                                            onClick={() => {
-                                                props.setDialogAddValueOpen(true)
-                                            }}
-                                        >
-                                            Add value
-                                        </Button>
+                                            icon="decline"
+                                            design={ButtonDesign.Transparent}
+                                            onClick={() => deleteRow(rowIndex)}
+                                        />
                                     </TableCell>
-                                    <TableCell></TableCell>
-                                    <TableCell></TableCell>
-                                </TableRow>
-                            )}
+                                )}
+                            </TableRow>
+                        ))}
+                        {props.edit && props.language && isLocal && (
+                            <TableRow>
+                                <TableCell>
+                                    <Button
+                                        icon="add"
+                                        onClick={() => props.setDialogAddValueOpen(true)}
+                                    >
+                                        Add value
+                                    </Button>
+                                </TableCell>
+                                {columns.slice(1).map((col) => (
+                                    <TableCell key={col} />
+                                ))}
+                                {props.edit && isLocal && <TableCell />}
+                            </TableRow>
+                        )}
                     </Table>
                 </FormItem>
             </Form>

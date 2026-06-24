@@ -152,7 +152,7 @@ public class ValueHelpService {
             }
 
             if (def.getLanguages() != null &&
-                    def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
+                    def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
                 throw new RuntimeException("Locales " + def.getLanguages() + " not valid");
             }
 
@@ -177,7 +177,7 @@ public class ValueHelpService {
                 }
             }
             if (def.getLanguages() != null &&
-                    def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
+                    def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
                 throw new RuntimeException("Locales " + def.getLanguages() + " not valid");
             }
             dao.updateDef(def);
@@ -319,7 +319,7 @@ public class ValueHelpService {
                 }
 
                 if (def.getLanguages() != null &&
-                        def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
+                        def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
                     log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because languages" +
                             def.getLanguages() + " are not valid");
                     notImportedDefs.add(def.getId());
@@ -370,7 +370,7 @@ public class ValueHelpService {
                                 }
 
                                 if (!value.getLocale().toString().equals("_")) {
-                                    if (!this.appCfg.getLocales().contains(value.getLocale().toString())) {
+                                    if (!Arrays.asList(findAllDefinedLocales()).contains(value.getLocale().toString())) {
                                         log.error("ValueHelpValue with language " + value.getLocale() +
                                                 " of definition " + def.getId() +
                                                 " could not be inserted because locale is not valid.");
@@ -486,7 +486,7 @@ public class ValueHelpService {
                 // Import values
                 IterableUtils.forEach(def.getValueHelpValues(), value -> {
                     if (!value.getLocale().toString().equals("_")) {
-                        if (!this.appCfg.getLocales().contains(value.getLocale().toString())) {
+                        if (!Arrays.asList(findAllDefinedLocales()).contains(value.getLocale().toString())) {
                             log.error("Warning: Locale " + value.getLocale() + " in value with id " + value.getId() +
                                     " not valid. Value could not be created");
                             notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());

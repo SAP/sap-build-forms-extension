@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
+import com.sap.bfx.valuehelp.model.ValueHelpType;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -100,9 +101,38 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
     public void addDef(ValueHelpDef vhd) {
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO forms_vh_defs (id, ttl, adapter, config, description, languages, key_key, value_keys, format_template) VALUES (?,?,?,?,?,?,?,?,?)");
+                    "INSERT INTO forms_vh_defs (id, ttl, type, adapter, config, description, languages, key_key, value_keys, format_template) VALUES (?,?,?,?,?,?,?,?,?,?)");
             ps.setString(1, vhd.getId());
             ps.setLong(2, vhd.getTtl());
+            ps.setString(3, vhd.getValueHelpType() != null ? vhd.getValueHelpType().getIdentifier() : "freestyle");
+            ps.setString(4, vhd.getAdapter());
+            ps.setString(5, vhd.getConfig());
+            ps.setString(6, vhd.getDescription());
+            if (vhd.getLanguages().size() > 0) {
+                ps.setString(7, String.join(", ", vhd.getLanguages()));
+            } else {
+                ps.setString(7, "");
+            }
+            ps.setString(8, vhd.getKeyKey());
+            if (vhd.getValueKeys().size() > 0) {
+                ps.setString(9, String.join(", ", vhd.getValueKeys()));
+            } else {
+                ps.setString(9, "");
+            }
+            ps.setString(10, vhd.getFormatTemplate());
+
+            return ps;
+        });
+    }
+
+    @Transactional
+    @Override
+    public void updateDef(ValueHelpDef vhd) {
+        jdbc.update(con -> {
+            PreparedStatement ps = con.prepareStatement(
+                    "UPDATE forms_vh_defs SET ttl=?, type=?, adapter=?, config=?, description=?, languages=?, key_key=?, value_keys=?, format_template=? where id=?");
+            ps.setLong(1, vhd.getTtl());
+            ps.setString(2, vhd.getValueHelpType() != null ? vhd.getValueHelpType().getIdentifier() : "freestyle");
             ps.setString(3, vhd.getAdapter());
             ps.setString(4, vhd.getConfig());
             ps.setString(5, vhd.getDescription());
@@ -118,34 +148,7 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
                 ps.setString(8, "");
             }
             ps.setString(9, vhd.getFormatTemplate());
-
-            return ps;
-        });
-    }
-
-    @Transactional
-    @Override
-    public void updateDef(ValueHelpDef vhd) {
-        jdbc.update(con -> {
-            PreparedStatement ps = con.prepareStatement(
-                    "UPDATE forms_vh_defs SET ttl=?, adapter=?, config=?, description=?, languages=?, key_key=?, value_keys=?, format_template=? where id=?");
-            ps.setLong(1, vhd.getTtl());
-            ps.setString(2, vhd.getAdapter());
-            ps.setString(3, vhd.getConfig());
-            ps.setString(4, vhd.getDescription());
-            if (vhd.getLanguages().size() > 0) {
-                ps.setString(5, String.join(", ", vhd.getLanguages()));
-            } else {
-                ps.setString(5, "");
-            }
-            ps.setString(6, vhd.getKeyKey());
-            if (vhd.getValueKeys().size() > 0) {
-                ps.setString(7, String.join(", ", vhd.getValueKeys()));
-            } else {
-                ps.setString(7, "");
-            }
-            ps.setString(8, vhd.getFormatTemplate());
-            ps.setString(9, vhd.getId());
+            ps.setString(10, vhd.getId());
 
             return ps;
         });
@@ -320,6 +323,8 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
                 vhd.setValueKeys(new ArrayList<>(Arrays.asList(rs.getString("value_keys").split(", "))));
             }
             vhd.setFormatTemplate(rs.getString("format_template"));
+            String type = rs.getString("type");
+            vhd.setValueHelpType(ValueHelpType.CURRENCY.getIdentifier().equals(type) ? ValueHelpType.CURRENCY : ValueHelpType.FREESTYLE);
 
             return vhd;
         }

@@ -10,4 +10,21 @@ export default {
 
     confirm_delete_vh: "Delete value help definition {id}?",
     confirm_delete_selected_vh: "Delete {count} selected value help definitions?",
+
+    err_valuekey_duplicate: "This value-key already exists",
+    err_valuekey_overlaps_keykey: "Value-key must not be the same as the key-key",
+
+    lbl_select_all: "Select all",
+    lbl_multiselect: "Multiselect",
+    lbl_upload_file: "Upload File",
+    lbl_download: "Download",
+    lbl_download_selected: "Download selected",
+    lbl_new_value_help: "New Value Help",
+    lbl_delete_selected: "Delete selected",
+    lbl_value_helps: "Value Helps",
+    lbl_adapter: "Adapter",
+    lbl_description: "Description",
+    lbl_ttl: "TTL",
+    lbl_ttl_static: "static",
+    lbl_ttl_refresh: "refresh",
 }
