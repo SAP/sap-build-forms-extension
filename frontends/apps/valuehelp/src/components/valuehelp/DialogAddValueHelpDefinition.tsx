@@ -20,8 +20,8 @@ import InputType from "@ui5/webcomponents/dist/types/InputType"
 
 import { Margin } from "commons"
 
-import { ValueHelpDef } from "../../features/definitions"
-import { useValueHelpState } from "../../features/store"
+import { ValueHelpDef } from "../../features/model"
+import { useValueHelpState } from "../../features/valuehelpstate"
 
 /**
  * Props for the DialogAddValueHelpDefinition component

@@ -15,10 +15,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-@Component
+/**
+ *  Service for handling callbacks within the framework.
+ */
+@Service
 @Slf4j
 public class CallbackService {
 
@@ -249,21 +253,19 @@ public class CallbackService {
             log.info("found event handlers:");
             eventHandlerMap.clear();
             handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(it -> {
-                it.getKeys().forEach(key -> {
-                    log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + key);
-                    for (var version : versions) {
-                        final var sd = scenarioService.findDefinitionByVersion(version).get();
-                        final var ed = sd.findElementByKey((String) key);
-                        if ((ed != null && it.match(ed.getKey(), it.getType(), version))
-                                || it.getType().equals(EventType.TriggerEvent)) {
-                            // this event handler matches for the given version. Storing it in the
-                            // event-handler-map
-                            var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
-                            var eventInfo = ehm.computeIfAbsent((String) key, k -> new EventHandlerInfo(version, ed));
-                            eventInfo.add(it);
-                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), key, version,
-                                    it.getClass().getName());
-                        }
+                log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + it.getKey());
+                for (var version : versions) {
+                    final var sd = scenarioService.findDefinitionByVersion(version).get();
+                    final var ed = sd.findElementByKey(it.getKey());
+                    if ((ed != null && it.match(ed.getKey(), it.getType(), version)) ||
+                            it.getType().equals(EventType.TriggerEvent)) {
+                        // this event handler matches for the given version. Storing it in the
+                        // event-handler-map
+                        var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
+                        var eventInfo = ehm.computeIfAbsent(it.getKey(), k -> new EventHandlerInfo(version, ed));
+                        eventInfo.add(it);
+                        log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), it.getKey(),
+                                version, it.getClass().getName());
                     }
                 });
             });

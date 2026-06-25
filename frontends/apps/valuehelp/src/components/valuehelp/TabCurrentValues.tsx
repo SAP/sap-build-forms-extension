@@ -19,7 +19,7 @@ import {
 import InputType from "@ui5/webcomponents/dist/types/InputType"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
 
-import { ValueHelpDef, ValueHelpValue } from "../../features/definitions"
+import { ValueHelpDef, ValueHelpValue } from "../../features/model"
 
 /**
  *  The properties for the DialogAddValueHelpValue component.

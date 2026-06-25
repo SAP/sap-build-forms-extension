@@ -1,12 +1,9 @@
 package com.sap.bfx.valuehelp;
 
 import com.sap.bfx.definition.ScenarioDefinition;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -47,20 +44,6 @@ public class ValueHelpService {
      * @return a Pair containing the value help ID and its corresponding version
      */
     public GetValueHelpResponse findValues(final String id, final Locale locale) {
-        // TODO(ML) Provide an implementation based on the branch ml-multiple-values-valuehelp
-//        return client.findValues(id, locale);
-        return new GetValueHelpResponse();
-    }
-
-    @Data
-    @NoArgsConstructor
-    public static class GetValueHelpResponse {
-        private String Id;
-        private String locale;
-        private long version;
-        private String keyKey;
-        private List<String> valueKeys;
-        private String formatTemplate;
-        private List<Map<String, String>> items;
+        return client.findValues(id, locale);
     }
 }

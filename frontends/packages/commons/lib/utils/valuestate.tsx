@@ -18,6 +18,22 @@ export function valueState(
 
 /**
  *
+ * @param v
+ * @param noneisPositive
+ * @returns
+ */
+export function requiredValueState(
+    v: any,
+    noneisPositive?: boolean,
+): "Positive" | "Negative" | "None" {
+    if (v === undefined || v === null || v === "") {
+        return "Negative"
+    }
+    return noneisPositive ? "Positive" : "None"
+}
+
+/**
+ *
  * @param err
  * @returns
  */

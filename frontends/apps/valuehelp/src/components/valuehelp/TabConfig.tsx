@@ -19,7 +19,7 @@ import {
 import { createUseStyles } from "react-jss"
 
 import InputType from "@ui5/webcomponents/dist/types/InputType"
-import { ValueHelpDef } from "../../features/definitions"
+import { ValueHelpDef } from "../../features/model"
 
 /**
  * Styles of the component.

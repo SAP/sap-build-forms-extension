@@ -3,7 +3,7 @@ import { useState } from "react"
 import { createUseStyles } from "react-jss"
 import { Bar, Button, Dialog, Form, FormItem, Input, Label } from "@ui5/webcomponents-react"
 
-import { ValueHelpValue } from "../../features/definitions"
+import { ValueHelpValue } from "../../features/model"
 
 /**
  * Dialog to Add a Value Help Value
