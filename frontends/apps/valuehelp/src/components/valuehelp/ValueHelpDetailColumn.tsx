@@ -1,4 +1,7 @@
+import { useEffect } from "react"
+
 import { useIntl } from "react-intl"
+import { useForm } from "react-hook-form"
 
 import {
     DynamicPage,
@@ -13,11 +16,12 @@ import {
     ToolbarButton,
 } from "@ui5/webcomponents-react"
 import ButtonDesign from "@ui5/webcomponents/dist/types/ButtonDesign"
-import FCLLayout from "@ui5/webcomponents-fiori/dist/types/FCLLayout"
 
 import { ValueHelpDef, ValueHelpValue } from "../../features/model"
-import ConfigTab from "./TabConfig"
+import { useValueHelpState } from "../../features/valuehelpstate"
+import ValueHelpDefinitionForm from "./ValueHelpDefinitionForm"
 import CurrentValuesTab from "./TabCurrentValues"
+import { Tab } from "@ui5/webcomponents-react"
 
 interface ValueHelpDetailColumnProps {
     slot?: string
@@ -28,7 +32,7 @@ interface ValueHelpDetailColumnProps {
     edit: boolean
     fullscreen: boolean
     onEdit(): void
-    onSave(): void
+    onSave(def: ValueHelpDef): void
     onDelete(): void
     onClose(): void
     onFullscreen(): void
@@ -36,7 +40,6 @@ interface ValueHelpDetailColumnProps {
     onChangeValueHelpValue(v: ValueHelpValue): void
     onSetDialogAddValueOpen(o: boolean): void
     onChangeLanguages(def: ValueHelpDef): void
-    onSetCurrentValueHelpDef(def: ValueHelpDef): void
 }
 
 export default function ({
@@ -56,9 +59,18 @@ export default function ({
     onChangeValueHelpValue,
     onSetDialogAddValueOpen,
     onChangeLanguages,
-    onSetCurrentValueHelpDef,
 }: ValueHelpDetailColumnProps) {
     const intl = useIntl()
+    const state = useValueHelpState()
+
+    const form = useForm<ValueHelpDef>({ defaultValues: currentValueHelpDef ?? {} as ValueHelpDef })
+
+    // Sync form values whenever the selected definition changes.
+    useEffect(() => {
+        if (currentValueHelpDef) {
+            form.reset(currentValueHelpDef)
+        }
+    }, [currentValueHelpDef])
 
     return (
         <div slot={slot} style={{ height: "100%" }}>
@@ -68,31 +80,31 @@ export default function ({
                     <FlexBox wrap="Wrap">
                         <FlexBox direction="Column">
                             <FlexBox style={{ paddingBlock: 2 }}>
-                                <Label>Description:</Label>
+                                <Label>{intl.formatMessage({ id: "lbl_description" })}:</Label>
                                 <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
                                     {currentValueHelpDef?.description}
                                 </Text>
                             </FlexBox>
                             <FlexBox style={{ paddingBlock: 2 }}>
-                                <Label>TTL:</Label>
+                                <Label>{intl.formatMessage({ id: "lbl_ttl" })}:</Label>
                                 {currentValueHelpDef?.ttl === -1 && (
                                     <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
-                                        static
+                                        {intl.formatMessage({ id: "lbl_ttl_static" })}
                                     </Text>
                                 )}
                                 {currentValueHelpDef?.ttl === 0 && (
                                     <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
-                                        refresh
+                                        {intl.formatMessage({ id: "lbl_ttl_refresh" })}
                                     </Text>
                                 )}
                                 {currentValueHelpDef && currentValueHelpDef.ttl > 0 && (
                                     <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
-                                        {currentValueHelpDef.ttl} min
+                                        {intl.formatMessage({ id: "lbl_ttl_minutes" }, { value: currentValueHelpDef.ttl })}
                                     </Text>
                                 )}
                             </FlexBox>
                             <FlexBox style={{ paddingBlock: 2 }}>
-                                <Label>Adapter:</Label>
+                                <Label>{intl.formatMessage({ id: "lbl_adapter" })}:</Label>
                                 <Text style={{ marginLeft: "2px", wordBreak: "break-all" }}>
                                     {currentValueHelpDef?.adapter}
                                 </Text>
@@ -119,7 +131,7 @@ export default function ({
                             />
                             <ToolbarButton
                                 icon="save"
-                                onClick={onSave}
+                                onClick={() => form.handleSubmit(onSave)()}
                                 design="Emphasized"
                                 text={intl.formatMessage({ id: "common_save" })}
                             />
@@ -150,25 +162,25 @@ export default function ({
                 style={{ width: "100%" }}
                 tabLayout="Standard"
             >
-                <ConfigTab
-                    currentValueHelpDef={currentValueHelpDef}
-                    setCurrentValueHelpDef={onSetCurrentValueHelpDef}
-                    edit={edit}
-                    changeLanguages={onChangeLanguages}
-                    availableLanguages={availableLanguages}
-                    openMessageBox={() => {}}
-                />
+                <Tab icon="settings" selected text={intl.formatMessage({ id: "tab_config" })}>
+                    <ValueHelpDefinitionForm
+                        isNew={false}
+                        editMode={edit}
+                        availableLanguages={availableLanguages}
+                        availableAdapters={state.adapters}
+                        changeLanguages={onChangeLanguages}
+                        form={form}
+                    />
+                </Tab>
                 {currentValueHelpDef?.adapter === "local" && (
                     <CurrentValuesTab
-                        edit={edit}
-                        currentValueHelpDef={currentValueHelpDef}
-                        valueHelpValue={valueHelpValue}
-                        language={language}
-                        setCurrentValueHelpDef={onSetCurrentValueHelpDef}
-                        changeValueHelpValue={onChangeValueHelpValue}
-                        changeLanguage={onChangeLanguage}
-                        setDialogAddValueOpen={onSetDialogAddValueOpen}
-                    />
+                            edit={edit}
+                            currentValueHelpDef={currentValueHelpDef}
+                            valueHelpValue={valueHelpValue}
+                            language={language}
+                            changeValueHelpValue={onChangeValueHelpValue}
+                            changeLanguage={onChangeLanguage}
+                            setDialogAddValueOpen={onSetDialogAddValueOpen}                  />
                 )}
             </TabContainer>
         </DynamicPage>

@@ -29,26 +29,16 @@ export default function () {
      */
     useEffect(() => {
         // load definitions
-        refresh()
+        state.findDefs(messages).then((action: any) => {
+            if (apiOk(action.status)) {
+                messages.toast(Severity.Success, "msg_valuehelpdefs_loaded")
+            }
+        })
         // async load adapters
         state.findAdapters(messages)
         // async load languages
         state.findLanguages(messages)
     }, [])
-
-    /**
-     *  Refreshes the ValueHelp definitions based on optional request parameters.
-     *
-     * @param requestParams
-     */
-    function refresh(requestParams?: object) {
-        state.clearDefs()
-        state.findDefs(messages, requestParams).then((action: any) => {
-            if (apiOk(action.status)) {
-                messages.toast(Severity.Success, "msg_valuehelpdefs_loaded")
-            }
-        })
-    }
 
     /**
      * Filters the ValueHelp definitions based on search criteria.
@@ -66,22 +56,26 @@ export default function () {
     function filterVH(s: string | undefined, sAdapter: string[] | undefined) {
         const effectiveS = s ?? ui.searchId
         const effectiveAdapter = sAdapter ?? ui.searchAdapter
+        let requestParams: object | undefined
         if (effectiveS || effectiveAdapter.length > 0) {
             if (effectiveS && effectiveAdapter.length > 0) {
-                refresh({ search: effectiveS, adapter: effectiveAdapter })
+                requestParams = { search: effectiveS, adapter: effectiveAdapter }
             } else if (effectiveS) {
-                refresh({ search: effectiveS })
+                requestParams = { search: effectiveS }
             } else {
-                refresh({ adapter: effectiveAdapter.join(",") })
+                requestParams = { adapter: effectiveAdapter.join(",") }
             }
-        } else {
-            refresh(undefined)
         }
-        if (ui.listMode === ListSelectionMode.Multiple) {
-            ui.setSelectedDefs(
-                ui.selectedDefs.filter((id) => state.defs.some((v: ValueHelpDef) => v.id === id)),
-            )
-        }
+        state.clearDefs()
+        state.findDefs(messages, requestParams).then((action: any) => {
+            if (apiOk(action.status)) {
+                messages.toast(Severity.Success, "msg_valuehelpdefs_loaded")
+                if (ui.listMode === ListSelectionMode.Multiple) {
+                    const loadedIds = new Set((action.data as ValueHelpDef[]).map((v) => v.id))
+                    ui.setSelectedDefs(ui.selectedDefs.filter((id) => loadedIds.has(id)))
+                }
+            }
+        })
     }
 
     /**
@@ -90,7 +84,7 @@ export default function () {
      * @param v
      */
     function changeLanguages(v: ValueHelpDef) {
-        if (v.languages.length === 0) {
+        if (!v.languages || v.languages.length === 0) {
             if (
                 ui.language !== "_" ||
                 ui.valueHelpValue?.locale !== "_" ||
@@ -144,7 +138,9 @@ export default function () {
                         })
                     }
                 })
-                .catch(() => {})
+                .catch(() => {
+                    console.error("Unexpected Error occured!")
+                })
         }
     }
 
@@ -160,6 +156,7 @@ export default function () {
                 if (ui.listMode === ListSelectionMode.Multiple) {
                     ui.setSelectedDefs([...ui.selectedDefs, def.id])
                 }
+                ui.setDialogAddDefOpen(false)
                 openValueHelpDef(action.data)
                 filter()
                 messages.toast(Severity.Success, "msg_valuehelpdef_created", { id: def.id })
@@ -182,9 +179,9 @@ export default function () {
             Severity.Warning,
             "confirm_delete_vh",
             { id: def.id },
-            [MessageOption.Ok, MessageOption.Cancel],
+            [MessageOption.Yes, MessageOption.Cancel],
         )
-        if (result !== MessageOption.Ok) return
+        if (result !== MessageOption.Yes) return
 
         state.deleteDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
@@ -206,12 +203,12 @@ export default function () {
             Severity.Warning,
             "confirm_delete_selected_vh",
             { count: ui.selectedDefs.length },
-            [MessageOption.Ok, MessageOption.Cancel],
+            [MessageOption.Yes, MessageOption.Cancel],
         )
-        if (result !== MessageOption.Ok) return
+        if (result !== MessageOption.Yes) return
 
         state.deleteDefs(messages, ui.selectedDefs).then((action: any) => {
-            if (action.status === 204) {
+            if (apiOk(action.status)) {
                 console.log(`Selected value help definitions have been deleted successfully`)
                 if (ui.selectedDefs.includes(ui.currentValueHelpDef?.id!)) {
                     ui.resetDetail()
@@ -224,126 +221,113 @@ export default function () {
     }
 
     /**
-     * Updates the current ValueHelp definition.
+     * Updates the current ValueHelp definition and saves pending value changes.
+     *
+     * @param def - The form values submitted by react-hook-form.
      */
-    function updateCurrentValueHelp() {
-        state.updateDef(messages, ui.currentValueHelpDef!).then((action: any) => {
+    function updateCurrentValueHelp(def: ValueHelpDef) {
+        const previousDef = ui.currentValueHelpDef
+        state.updateDef(messages, def).then((action: any) => {
             if (apiOk(action.status)) {
                 console.log(
-                    `ValueHelp definition ${ui.currentValueHelpDef?.id} has been updated successfully`,
+                    `ValueHelp definition ${def?.id} has been updated successfully`,
                 )
                 if (ui.listMode === ListSelectionMode.Multiple) {
-                    ui.setSelectedDefs([...ui.selectedDefs, ui.currentValueHelpDef!.id])
+                    ui.setSelectedDefs([...ui.selectedDefs, def.id])
                 }
+
+                // Strip columns for any value-keys that were removed
+                const removedKeys = (previousDef?.valueKeys ?? []).filter(
+                    (k) => !(def.valueKeys ?? []).includes(k),
+                )
+                if (removedKeys.length > 0 && def.adapter === "local") {
+                    const langs = def.languages.length > 0 ? def.languages : ["_"]
+                    langs.forEach((locale) => {
+                        state.findLatestValues(messages, def.id, locale).then((valAction: any) => {
+                            if (apiOk(valAction.status) && valAction.data?.values?.length > 0) {
+                                const cleaned = {
+                                    ...valAction.data,
+                                    values: valAction.data.values.map((row: Record<string, string>) => {
+                                        const newRow = { ...row }
+                                        removedKeys.forEach((k) => delete newRow[k])
+                                        return newRow
+                                    }),
+                                }
+                                state.updateValues(messages, cleaned)
+                            }
+                        })
+                    })
+                }
+
                 openValueHelpDef(action.data)
                 filter()
                 messages.toast(Severity.Success, "msg_valuehelpdef_updated", {
-                    id: ui.currentValueHelpDef!.id,
+                    id: def.id,
                 })
             } else if (action.status === 409) {
                 console.log("Definition ID is already existent.")
                 messages.dialog(
                     Severity.Error,
                     "err_valuehelpdef_id_existent",
-                    { id: ui.currentValueHelpDef!.id },
+                    { id: def.id },
                     [MessageOption.Ok],
                 )
             }
         })
     }
 
-    // function updateValueHelpValues() {
-    //     updatedValueHelpValues!.map((c) => {
-    //         if (
-    //             c.version == -1 &&
-    //             Object.keys(c.values).length > 0 &&
-    //             (currentValueHelpDef?.languages.includes(c.locale) || c.locale == "_")
-    //         ) {
-    //             const p = backendDispatch(
-    //                 `/v1/valuehelpvalues/${encodeURIComponent(c?.id)}/${encodeURIComponent(
-    //                     c.locale,
-    //                 )}`,
-    //                 "POST",
-    //                 { ...c, version: 0 },
-    //                 undefined,
-    //             )
-    //             p.then((action: any) => {
-    //                 if (action.status == 201) {
-    //                     const data = action.data
-    //                     ui.setValueHelpValue(data)
-    //                 } else {
-    //                     console.log(`Error while creating valueHelpValue ${c?.id}`)
-    //                     messages.dialog(Severity.Error, "err_valuehelpvalue_create", undefined, [MessageOption.Ok])
-    //                 }
-    //             })
-    //         } else if (c.version >= 0) {
-    //             if (
-    //                 Object.keys(c.values).length > 0 &&
-    //                 (currentValueHelpDef?.languages.includes(c.locale) || c.locale == "_")
-    //             ) {
-    //                 const p = backendDispatch(
-    //                     `/v1/valuehelpvalues/${encodeURIComponent(c?.id)}/${encodeURIComponent(
-    //                         c.locale,
-    //                     )}`,
-    //                     "PUT",
-    //                     c,
-    //                     undefined,
-    //                 )
-    //                 p.then((action: any) => {
-    //                     if (action.status == 200) {
-    //                         const data = action.data
-    //                         ui.setValueHelpValue(data)
-    //                     } else if (action.status == 409) {
-    //                         console.log(`Error while updating valueHelpValue ${c?.id}`)
-    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_update", undefined, [MessageOption.Ok])
-    //                     } else {
-    //                         console.log(`Error while updating valueHelpValue ${c?.id}`)
-    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_update_version", undefined, [MessageOption.Ok])
-    //                     }
-    //                 })
-    //             } else {
-    //                 const p = backendDispatch(
-    //                     `/v1/valuehelpvalues/${encodeURIComponent(c?.id)}/${encodeURIComponent(
-    //                         c.locale,
-    //                     )}`,
-    //                     "DELETE",
-    //                     undefined,
-    //                     undefined,
-    //                 )
-    //                 p.then((action: any) => {
-    //                     if (action.status == 204) {
-    //                         ui.setValueHelpValue(undefined)
-    //                     } else {
-    //                         console.log(`Error while deleting valueHelpValue ${c?.id}`)
-    //                         messages.dialog(Severity.Error, "err_valuehelpvalue_delete", undefined, [MessageOption.Ok])
-    //                     }
-    //                 })
-    //             }
-    //         }
-    //     })
-    //     ui.setUpdatedValueHelpValues([])
-    // }
+    /**
+     * Persists all pending value edits (create / update / delete) to the backend.
+     * Accepts the latest def so locale validation is not stale when called alongside updateCurrentValueHelp.
+     */
+    function saveValues(currentDef?: ValueHelpDef) {
+        const defForValidation = currentDef ?? ui.currentValueHelpDef
+        const pending = ui.updatedValueHelpValues
+        const requests = pending.flatMap((c) => {
+            const validLocale =
+                defForValidation?.languages.includes(c.locale) || c.locale === "_"
+            if (!validLocale) return []
+
+            if (c.version === -1 && c.values.length > 0) {
+                return [state.addValues(messages, c).then((action: any) => {
+                    if (apiOk(action.status)) ui.setValueHelpValue(action.data)
+                })]
+            } else if (c.version >= 0 && c.values.length > 0) {
+                return [state.updateValues(messages, c).then((action: any) => {
+                    if (apiOk(action.status)) ui.setValueHelpValue(action.data)
+                })]
+            } else if (c.version >= 0 && c.values.length === 0) {
+                return [state.deleteValues(messages, c.id, c.locale).then((action: any) => {
+                    if (apiOk(action.status)) ui.setValueHelpValue(undefined)
+                })]
+            }
+            return []
+        })
+        Promise.all(requests).then(() => {
+            ui.setUpdatedValueHelpValues([])
+        })
+    }
 
     /**
      * Downloads the ValueHelp definitions as an XML file.
      */
     function download(): void {
-        let requestParams = {}
+        let requestParams: URLSearchParams | undefined
         if (ui.listMode === ListSelectionMode.Multiple) {
-            if (
-                state.defs.every(
-                    (objekt: ValueHelpDef) =>
-                        ui.selectedDefs.includes(objekt.id) || ui.selectedDefs.length < 1,
-                )
-            ) {
-                // download all displayed
-                requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
-            } else {
-                // download selected
-                requestParams = { ids: ui.selectedDefs }
+            const allSelected = state.defs.every((def: ValueHelpDef) =>
+                ui.selectedDefs.includes(def.id),
+            )
+            if (!allSelected && ui.selectedDefs.length > 0) {
+                // download selected ids
+                requestParams = new URLSearchParams()
+                ui.selectedDefs.forEach((id) => requestParams!.append("ids", id))
             }
-        } else {
-            requestParams = { search: ui.searchId, adapter: ui.searchAdapter }
+        }
+        if (!requestParams) {
+            // download all displayed (apply current search filters)
+            requestParams = new URLSearchParams()
+            if (ui.searchId) requestParams.append("search", ui.searchId)
+            ui.searchAdapter.forEach((a) => requestParams!.append("adapter", a))
         }
         state.findDefExport(messages, requestParams).then((action: any) => {
             if (apiOk(action.status)) {
@@ -355,6 +339,7 @@ export default function () {
                 a.download = "valueHelpDefinitions.xml"
                 document.body.appendChild(a)
                 a.click()
+                document.body.removeChild(a)
                 window.URL.revokeObjectURL(url)
                 messages.toast(Severity.Success, "msg_valuehelpdefs_exported")
             }
@@ -368,29 +353,53 @@ export default function () {
      * @param override
      * @param useTechnicalName
      */
-    function upload(_file: File, _override: boolean, _useTechnicalName: boolean): void {
-        // setUploadLoading(true)
-        // const formData = new FormData()
-        // formData.append("file", file)
-        // const p = backendDispatch("/v1/valuehelpdefs/import", "POST", formData, {
-        //     override: override,
-        //     useTechnicalName: useTechnicalName,
-        // })
-        // p.then((action: any) => {
-        //     ui.setUploadLoading(false)
-        //     ui.setDialogUploadFileOpen(false)
-        //     if (action.status == 200) {
-        //         ui.resetDetail()
-        //         filter()
-        //         if (action.data) {
-        //             messages.dialog(Severity.Warning, "msg_upload_warnings", undefined, [MessageOption.Ok])
-        //         } else {
-        //             messages.toast(Severity.Success, "msg_upload_success")
-        //         }
-        //     } else {
-        //         messages.dialog(Severity.Error, "err_upload_failed", undefined, [MessageOption.Ok])
-        //     }
-        // })
+    function upload(file: File, override: boolean, useTechnicalName: boolean): void {
+        ui.setUploadLoading(true)
+        state.importDefs(messages, file, override, useTechnicalName).then((action: any) => {
+            ui.setUploadLoading(false)
+            ui.setDialogUploadFileOpen(false)
+            if (apiOk(action.status)) {
+                ui.resetDetail()
+                filter()
+                if (action.data) {
+                    messages.dialog(Severity.Warning, "msg_upload_warnings", undefined, [MessageOption.Ok])
+                } else {
+                    messages.toast(Severity.Success, "msg_upload_success")
+                }
+            } else {
+                messages.dialog(Severity.Error, "err_upload_failed", undefined, [MessageOption.Ok])
+            }
+        })
+    }
+
+    /**
+     * Copies the selected definitions (multi-select) or the current definition (single mode).
+     */
+    function copyDef() {
+        if (ui.listMode === ListSelectionMode.Multiple) {
+            ui.setCopiedDefs(state.defs.filter((d: ValueHelpDef) => ui.selectedDefs.includes(d.id)))
+        } else if (ui.currentValueHelpDef) {
+            ui.setCopiedDefs([ui.currentValueHelpDef])
+        }
+    }
+
+    /**
+     * Pastes copied definitions with unique IDs, allocating all new IDs before adding any.
+     */
+    function pasteDef() {
+        if (ui.copiedDefs.length === 0) return
+        const taken = new Set(state.defs.map((d: ValueHelpDef) => d.id))
+        ui.copiedDefs.forEach((source) => {
+            const base = source.id.replace(/ \(\d+\)$/, "")
+            let candidate = base
+            let n = 1
+            while (taken.has(candidate)) {
+                candidate = `${base} (${n})`
+                n++
+            }
+            taken.add(candidate)
+            addValueHelpDef({ ...source, id: candidate })
+        })
     }
 
     /**
@@ -420,7 +429,7 @@ export default function () {
                 startColumn={
                     <ValueHelpListColumn
                         defs={state.defs}
-                        adapters={state.adapters}
+                        adapters={["local", ...state.adapters]}
                         searchId={ui.searchId}
                         searchAdapter={ui.searchAdapter}
                         listMode={ui.listMode}
@@ -451,6 +460,9 @@ export default function () {
                             }
                         }}
                         onAdd={() => ui.setDialogAddDefOpen(true)}
+                        onCopy={copyDef}
+                        onPaste={pasteDef}
+                        hasCopiedDef={ui.copiedDefs.length > 0}
                         onDeleteSelected={deleteSelectedValueHelps}
                         onDownload={download}
                         onUpload={() => ui.setDialogUploadFileOpen(true)}
@@ -465,7 +477,10 @@ export default function () {
                         edit={ui.edit}
                         fullscreen={ui.fullscreen}
                         onEdit={ui.toggleEdit}
-                        onSave={updateCurrentValueHelp}
+                        onSave={(def) => {
+                            updateCurrentValueHelp(def)
+                            saveValues(def)
+                        }}
                         onDelete={() =>
                             ui.currentValueHelpDef && deleteValueHelpDef(ui.currentValueHelpDef)
                         }
@@ -482,7 +497,6 @@ export default function () {
                         onChangeValueHelpValue={ui.changeValueHelpValue}
                         onSetDialogAddValueOpen={ui.setDialogAddValueOpen}
                         onChangeLanguages={changeLanguages}
-                        onSetCurrentValueHelpDef={ui.setCurrentValueHelpDef}
                     />
                 }
             />
@@ -493,10 +507,13 @@ export default function () {
                 isIdExistent={ui.isDefIdExistent}
                 setIsIdExistent={ui.setIsDefIdExistent}
                 availableLanguages={state.languages}
+                availableAdapters={state.adapters}
+                existingIds={state.defs.map((d) => d.id)}
             />
             <DialogAddValueHelpValue
                 dialogAddValueOpen={ui.dialogAddValueOpen}
-                valueHelpValue={ui.valueHelpValue!}
+                currentValueHelpDef={ui.currentValueHelpDef}
+                valueHelpValue={ui.valueHelpValue}
                 setDialogAddValueOpen={ui.setDialogAddValueOpen}
                 changeValueHelpValue={ui.changeValueHelpValue}
             />

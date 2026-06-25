@@ -71,11 +71,13 @@ public class ValueHelpController {
         final var response = valueHelpService.findValues(id, new Locale(locale));
         final var values = new HashMap<String, String>();
         response.getValues().forEach(it -> {
-            final var key = values.get(response.getKeyKey());
-            var value = values.get(response.getValueKeys().get(0));
-            if (StringUtils.isEmpty(response.getFormatTemplate())) {
+            final var key = it.get(response.getKeyKey());
+            final String value;
+            if (StringUtils.isNotEmpty(response.getFormatTemplate())) {
                 final var subs = new StringSubstitutor(it);
                 value = subs.replace(response.getFormatTemplate());
+            } else {
+                value = it.get(response.getValueKeys().get(0));
             }
             values.put(key, value);
         });

@@ -3,7 +3,7 @@ import {AxiosResponse} from "axios"
 
 import {apiOk, copyAndReplace, handleError, MessageIntf} from "commons"
 
-import {ValueHelpDef} from "./model"
+import {ValueHelpDef, ValueHelpValue} from "./model"
 import {backend} from "./backend"
 
 /**
@@ -77,6 +77,21 @@ interface ValueHelpState {
     findDefExport(messages: MessageIntf, requestParams: any): Promise<AxiosResponse<any> | Error>
 
     /**
+     * Function to import value help definitions from a file.
+     *
+     * @param messages
+     * @param file
+     * @param override
+     * @param useTechnicalName
+     */
+    importDefs(
+        messages: MessageIntf,
+        file: File,
+        override: boolean,
+        useTechnicalName: boolean,
+    ): Promise<AxiosResponse<any> | Error>
+
+    /**
      * Function to find all available adapters.
      *
      * @param messages
@@ -102,13 +117,48 @@ interface ValueHelpState {
         defId: string,
         locale: string,
     ): Promise<AxiosResponse<any> | Error>
+
+    /**
+     * Function to create values for a given value help definition and locale.
+     *
+     * @param messages
+     * @param value
+     */
+    addValues(
+        messages: MessageIntf,
+        value: ValueHelpValue,
+    ): Promise<AxiosResponse<ValueHelpValue> | Error>
+
+    /**
+     * Function to update values for a given value help definition and locale.
+     *
+     * @param messages
+     * @param value
+     */
+    updateValues(
+        messages: MessageIntf,
+        value: ValueHelpValue,
+    ): Promise<AxiosResponse<ValueHelpValue> | Error>
+
+    /**
+     * Function to delete values for a given value help definition and locale.
+     *
+     * @param messages
+     * @param id
+     * @param locale
+     */
+    deleteValues(
+        messages: MessageIntf,
+        id: string,
+        locale: string,
+    ): Promise<AxiosResponse<void> | Error>
 }
 
 /**
  * Zustand store for value help state management.
  * This store holds the definitions, adapters, and languages related to value helps.
  */
-export const useValueHelpState = create<ValueHelpState>((set, get) => ({
+export const useValueHelpState = create<ValueHelpState>((set) => ({
     defs: [],
     adapters: [],
     languages: [],
@@ -205,9 +255,7 @@ export const useValueHelpState = create<ValueHelpState>((set, get) => ({
                 "DELETE",
             )
             if (apiOk(response.status)) {
-                const defs = get().defs
-                const pos = defs.findIndex((it) => it.id === def.id)
-                set({defs: defs.slice(0, pos).concat(defs.slice(pos + 1))})
+                set((state) => ({defs: state.defs.filter((it) => it.id !== def.id)}))
                 return Promise.resolve(response)
             } else {
                 return handleError(response, "deleteDef", messages)
@@ -224,16 +272,16 @@ export const useValueHelpState = create<ValueHelpState>((set, get) => ({
         defs: string[],
     ): Promise<AxiosResponse<void> | Error> => {
         try {
-            const response = await backend.callDirect(messages, `/v1/valuehelpdefs`, "DELETE", {
-                ids: defs,
-            })
+            const params = new URLSearchParams()
+            defs.forEach((id) => params.append("ids", id))
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpdefs?${params.toString()}`,
+                "DELETE",
+            )
             if (apiOk(response.status)) {
-                let currentDefs = get().defs
-                defs.forEach((def) => {
-                    const pos = currentDefs.findIndex((it) => it.id === def)
-                    currentDefs = currentDefs.slice(0, pos).concat(currentDefs.slice(pos + 1))
-                })
-                set({defs: currentDefs})
+                const idsToDelete = new Set(defs)
+                set((state) => ({defs: state.defs.filter((it) => !idsToDelete.has(it.id))}))
                 return Promise.resolve(response)
             }
 
@@ -261,6 +309,33 @@ export const useValueHelpState = create<ValueHelpState>((set, get) => ({
                 return Promise.resolve(response)
             }
             return handleError(response, "findDefExport", messages)
+        } catch (err) {
+            console.error(`Error: ${err}`)
+            setTimeout(() => messages.fatal("common_error_backend"), 10)
+            return Promise.reject(err)
+        }
+    },
+
+    importDefs: async (
+        messages: MessageIntf,
+        file: File,
+        override: boolean,
+        useTechnicalName: boolean,
+    ): Promise<AxiosResponse<any> | Error> => {
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpdefs/import`,
+                "POST",
+                formData,
+                { params: { override, useTechnicalName } },
+            )
+            if (apiOk(response.status)) {
+                return Promise.resolve(response)
+            }
+            return handleError(response, "importDefs", messages)
         } catch (err) {
             console.error(`Error: ${err}`)
             setTimeout(() => messages.fatal("common_error_backend"), 10)
@@ -319,6 +394,75 @@ export const useValueHelpState = create<ValueHelpState>((set, get) => ({
                 return Promise.resolve(response)
             } else {
                 return handleError(response, "findLatestValues", messages)
+            }
+        } catch (err) {
+            console.error(`Error: ${err}`)
+            setTimeout(() => messages.fatal("common_error_backend"), 10)
+            return Promise.reject(err)
+        }
+    },
+
+    addValues: async (
+        messages: MessageIntf,
+        value: ValueHelpValue,
+    ): Promise<AxiosResponse<ValueHelpValue> | Error> => {
+        try {
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpvalues/${encodeURIComponent(value.id)}/${encodeURIComponent(value.locale)}`,
+                "POST",
+                {...value, version: 0},
+            )
+            if (apiOk(response.status)) {
+                return Promise.resolve(response)
+            } else {
+                return handleError(response, "addValues", messages)
+            }
+        } catch (err) {
+            console.error(`Error: ${err}`)
+            setTimeout(() => messages.fatal("common_error_backend"), 10)
+            return Promise.reject(err)
+        }
+    },
+
+    updateValues: async (
+        messages: MessageIntf,
+        value: ValueHelpValue,
+    ): Promise<AxiosResponse<ValueHelpValue> | Error> => {
+        try {
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpvalues/${encodeURIComponent(value.id)}/${encodeURIComponent(value.locale)}`,
+                "PUT",
+                value,
+            )
+            if (apiOk(response.status)) {
+                return Promise.resolve(response)
+            } else {
+                return handleError(response, "updateValues", messages)
+            }
+        } catch (err) {
+            console.error(`Error: ${err}`)
+            setTimeout(() => messages.fatal("common_error_backend"), 10)
+            return Promise.reject(err)
+        }
+    },
+
+    deleteValues: async (
+        messages: MessageIntf,
+        id: string,
+        locale: string,
+    ): Promise<AxiosResponse<void> | Error> => {
+        try {
+            const response = await backend.callDirect(
+                messages,
+                `/v1/valuehelpvalues/${encodeURIComponent(id)}/${encodeURIComponent(locale)}`,
+                "DELETE",
+            )
+            if (apiOk(response.status)) {
+                return Promise.resolve(response)
+            } else {
+                return handleError(response, "deleteValues", messages)
             }
         } catch (err) {
             console.error(`Error: ${err}`)

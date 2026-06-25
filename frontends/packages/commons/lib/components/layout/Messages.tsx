@@ -207,6 +207,9 @@ function MessagesProvider(props: { children: ReactNode }) {
             case MessageBoxAction.No:
                 result = MessageOption.No
                 break
+            case MessageBoxAction.Cancel:
+                result = MessageOption.Cancel
+                break
             default:
                 if (escPressed) {
                     result = MessageOption.Cancel
@@ -216,7 +219,7 @@ function MessagesProvider(props: { children: ReactNode }) {
                     return
                 }
         }
-        if (resolverRef.current && result) {
+        if (resolverRef.current && result !== undefined) {
             resolverRef.current(result)
         }
         setType(undefined)
@@ -237,6 +240,9 @@ function MessagesProvider(props: { children: ReactNode }) {
                     break
                 case MessageOption.No:
                     actions.push(MessageBoxAction.No)
+                    break
+                case MessageOption.Cancel:
+                    actions.push(MessageBoxAction.Cancel)
                     break
                 default:
                     actions.push(opt)
