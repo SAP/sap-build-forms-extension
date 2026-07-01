@@ -35,6 +35,7 @@ import { backendDispatch } from "../utils/backend"
 import useMessagesStore from "../state/messages"
 import { Elem, Scenario, tabs, Mixin, Parent, ElementPart } from "../utils/scenarioDefinitions"
 import { collectVariantsFromElements } from "../utils/variantUtils"
+import { toPascalCase } from "../utils/formUtils"
 import Structure from "./layout/StructureTab"
 import LanguagesTab from "./layout/LanguagesTab"
 import CopyDialog from "./layout/CopyDialog"
@@ -206,7 +207,7 @@ export default function () {
     function setNewEl(newEl: Elem) {
         // Clear error messages for changed fields
         if (el && newEl.name) {
-            const elementId = newEl.name.charAt(0).toUpperCase() + newEl.name.slice(1)
+            const elementId = toPascalCase(newEl.name)
 
             // Check which fields changed and clear their specific error messages
             if (el.name !== newEl.name) {
@@ -766,7 +767,7 @@ export default function () {
                                 })
 
                                 var texts: any = JSON.parse(JSON.stringify(treeItemsShown?.texts!))
-                                var oldName = indexesDelete!.name
+                                var oldName = toPascalCase(indexesDelete!.name)
 
                                 Object.keys(texts).forEach((key) => {
                                     if (texts![key][`${oldName}.short` as any] != undefined) {

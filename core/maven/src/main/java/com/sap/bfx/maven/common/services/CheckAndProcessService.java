@@ -91,7 +91,7 @@ public class CheckAndProcessService extends AbstractProcessor {
             this.addError(sd, null, "Version ${sd.version} is duplicate", ElementPart.Version);
         }
 
-        sd.setRootElementName(IdentifierUtils.capitalCamelCase(sd.getRootElementName()));
+        sd.setRootElementName(IdentifierUtils.toPascalCase(sd.getRootElementName()));
 
         final var processingInfo = new ProcessingInfo(project, sd);
 

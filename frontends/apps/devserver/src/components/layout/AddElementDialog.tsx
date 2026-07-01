@@ -26,7 +26,7 @@ import { useIntl } from "react-intl"
 import useElementsStore from "../../state/elements"
 import TreeItemBase from "@ui5/webcomponents/dist/TreeItemBase"
 import ElementTypeSelect from "./ElementTypeSelect"
-import { generateUniqueId } from "../../utils/formUtils"
+import { generateUniqueId, toPascalCase } from "../../utils/formUtils"
 import { useMessages, Severity } from "commons"
 
 interface Props {
@@ -387,11 +387,12 @@ export default function AddElementDialog(props: Props) {
                                     var texts: any = JSON.parse(
                                         JSON.stringify(props.treeItemsShown?.texts!),
                                     )
+                                    const pascalName = toPascalCase(newEl.name)
                                     Object.keys(texts).forEach((key) => {
-                                        texts![key][`${newEl.name}.short`] = ""
-                                        texts[key]![`${newEl.name}.long`] = ""
-                                        texts![key][`${newEl.name}.title`] = ""
-                                        texts[key][`${newEl.name}.doc`] = ""
+                                        texts![key][`${pascalName}.short`] = ""
+                                        texts[key]![`${pascalName}.long`] = ""
+                                        texts![key][`${pascalName}.title`] = ""
+                                        texts[key][`${pascalName}.doc`] = ""
                                     })
                                     editTexts({
                                         version: props.version,

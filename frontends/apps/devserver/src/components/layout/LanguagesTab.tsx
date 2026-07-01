@@ -18,6 +18,7 @@ import {
 import { useEffect, useState } from "react"
 import { useIntl } from "react-intl"
 import { Scenario } from "../../utils/scenarioDefinitions"
+import { toPascalCase } from "../../utils/formUtils"
 import TextEdit from "./TextEdit"
 import useElementsStore from "../../state/elements"
 import { Severity, useMessages } from "commons"
@@ -218,7 +219,10 @@ export default function LanguagesTab(props: Props) {
                         Object.keys(props?.treeItemsShown?.texts![props.language as any])
                             .filter((v) => {
                                 if (searchValue.trim().length > 0) {
-                                    return v.toLowerCase().includes(searchValue.toLowerCase())
+                                    return (
+                                        v.toLowerCase().includes(searchValue.toLowerCase()) ||
+                                        v.toLowerCase().includes(toPascalCase(searchValue).toLowerCase())
+                                    )
                                 } else {
                                     return true
                                 }

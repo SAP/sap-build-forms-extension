@@ -12,6 +12,17 @@ import {
     UploadType,
 } from "./scenarioDefinitions"
 
+// mirrors Java's IdentifierUtils.toPascalCase() and keeps frontend/backend text keys in sync
+export function toPascalCase(name: string): string {
+    if (!name) return name
+    const result = name
+        .split(/[\s\-_]+/)
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join("")
+    return result.charAt(0).toUpperCase() + result.slice(1)
+}
+
 /**
  * Generates a unique identifier for form elements
  * This ensures new elements are treated the same as saved elements
@@ -58,7 +69,7 @@ export function haveChildrenError(child: Elem, messages: Message[], isFirstEl: b
     if (
         !isFirstEl &&
         messages.filter(
-            (a: any) => a.elementId == child.name.charAt(0).toUpperCase() + child.name.slice(1),
+            (a: any) => a.elementId == toPascalCase(child.name),
         ).length > 0
     ) {
         return true
@@ -251,7 +262,7 @@ export function getChildrenMessageSeverities(
             ...messages
                 .filter(
                     (a: any) =>
-                        a.elementId == child.name.charAt(0).toUpperCase() + child.name.slice(1),
+                        a.elementId == toPascalCase(child.name),
                 )
                 .map((e) => e.severity),
         )

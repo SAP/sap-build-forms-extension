@@ -45,6 +45,7 @@ import {
     changeElAtTypeChange,
     elementInfo2ValueState,
     getHighestSeverity,
+    toPascalCase,
 } from "../../utils/formUtils"
 import useMessagesStore from "../../state/messages"
 import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
@@ -207,8 +208,8 @@ React.useEffect(() => {
                     texts[language] = {}
                 }
                 postfixes.forEach((postfix) => {
-                    const oldKey = `${oldName}${postfix}`
-                    const newKey = `${newName}${postfix}`
+                    const oldKey = `${toPascalCase(oldName)}${postfix}`
+                    const newKey = `${toPascalCase(newName)}${postfix}`
 
                     if (texts[language][newKey] === undefined) {
                         texts[language][newKey] = texts[language][oldKey] ?? ""
@@ -372,7 +373,7 @@ React.useEffect(() => {
     const allMessages = useMessagesStore((state) => state.messages)
     const messages = React.useMemo(() => {
         if (props.el) {
-            const elementId = props.el.name.charAt(0).toUpperCase() + props.el.name.slice(1)
+            const elementId = toPascalCase(props.el.name)
             return allMessages.filter((m) => m.defVersion == props.version && m.elementId == elementId)
         }
         return allMessages.filter((m) => m.defVersion == props.version)

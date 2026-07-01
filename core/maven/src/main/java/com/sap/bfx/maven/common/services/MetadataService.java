@@ -491,7 +491,7 @@ import java.util.*;
                     return className;
                 }
                 final var helpClassName = (it.hasOwnType() && it.getType() != UIElementType.Form &&
-                        it.getType() != UIElementType.Wizard) ? className + IdentifierUtils.camelCase(it.getName()) :
+                        it.getType() != UIElementType.Wizard) ? className + IdentifierUtils.toPascalCase(it.getName()) :
                         className;
                 // recursive action for subtree
                 var r = findAccessClassForElement(it.getElements(), helpClassName, search);

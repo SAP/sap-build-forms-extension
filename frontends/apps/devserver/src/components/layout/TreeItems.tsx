@@ -4,7 +4,7 @@ import { FlexBox, Icon, Tag, TreeItem, TreeItemCustom } from "@ui5/webcomponents
 import { Elem, Message } from "../../utils/scenarioDefinitions"
 import { compare, containsChildSearchString } from "../../utils/sortUtils"
 import useMessagesStore from "../../state/messages"
-import { getChildrenMessageSeverities, getHighestSeverity } from "../../utils/formUtils"
+import { getChildrenMessageSeverities, getHighestSeverity, toPascalCase } from "../../utils/formUtils"
 import SeverityIcon from "./SeverityIcon"
 import TagDesign from "@ui5/webcomponents/dist/types/TagDesign"
 import DraggableTreeItem from "./DraggableTreeItem"
@@ -148,8 +148,7 @@ export default function TreeItems(props: Props) {
                                             .filter(
                                                 (a: any) =>
                                                     a.elementId ==
-                                                    item.name.charAt(0).toUpperCase() +
-                                                        item.name.slice(1),
+                                                    toPascalCase(item.name),
                                             )
                                             .map((e: Message) => e.severity),
                                     )}

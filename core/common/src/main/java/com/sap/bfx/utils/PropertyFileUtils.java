@@ -57,10 +57,10 @@ public final class PropertyFileUtils {
                 }
                 var parts = line.split("=");
                 if (parts.length == 2) {
-                    texts.put(IdentifierUtils.camelCase(prefix + StringUtils.trim(parts[0])),
+                    texts.put(IdentifierUtils.toPascalCase(prefix + StringUtils.trim(parts[0])),
                             StringUtils.trim(parts[1]));
                 } else if (parts.length == 1) {
-                    texts.put(IdentifierUtils.camelCase(prefix + StringUtils.trim(parts[0])), "");
+                    texts.put(IdentifierUtils.toPascalCase(prefix + StringUtils.trim(parts[0])), "");
                 }
             }
         } catch (Exception e) {
