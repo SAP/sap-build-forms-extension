@@ -1134,7 +1134,9 @@ React.useEffect(() => {
                                                 })
                                             }}
                                         >
-                                            {(Object.keys(DataTypeValue) as Array<string>).map(
+                                            {(Object.keys(DataTypeValue) as Array<string>).filter(
+                                                (key) => !(props.el?.type === "input" && key === "Auto")
+                                            ).map(
                                                 (key) => {
                                                     return (
                                                         <Option

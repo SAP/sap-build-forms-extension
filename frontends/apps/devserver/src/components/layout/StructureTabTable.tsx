@@ -720,7 +720,9 @@ export default function StructureTabTable(props: Props) {
                                             }
                                         }}
                                     >
-                                        {(Object.keys(DataTypeValue) as Array<string>).map((key) => {
+                                        {(Object.keys(DataTypeValue) as Array<string>).filter(
+                                            (key) => !(getElemByIndex(instance.row.original.index)?.type === "input" && key === "Auto")
+                                        ).map((key) => {
                                             return (
                                                 <Option
                                                     selected={
