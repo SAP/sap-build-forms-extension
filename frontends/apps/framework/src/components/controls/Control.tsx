@@ -355,6 +355,22 @@ export function getDoc(texts: Record<string, string>, def: Definition): string {
 
 /**
  *
+ * @param texts
+ * @param def
+ * @returns
+ */
+export function getPlaceholder(texts: Record<string, string>, def: Definition): string | undefined {
+    if (texts) {
+        const text = texts[def.id + ".placeholder"]
+        if (typeof text === "string" && text.length > 0) {
+            return text
+        }
+    }
+    return undefined
+}
+
+/**
+ *
 
  */
 export interface ResultHandlerIntf {

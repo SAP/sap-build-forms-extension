@@ -232,6 +232,7 @@ export enum TextPostfix {
     long = ".long",
     title = ".title",
     doc = ".doc",
+    placeholder = ".placeholder",
 }
 
 export type WizardFormatOptions = {

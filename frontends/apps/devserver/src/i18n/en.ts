@@ -81,6 +81,7 @@ export default {
     element_label_texts_long: "long",
     element_label_texts_title: "title",
     element_label_texts_doc: "doc",
+    element_label_texts_placeholder: "placeholder",
     element_label_type: "Type",
     element_label_design: "Design",
     element_label_icon: "Icon",

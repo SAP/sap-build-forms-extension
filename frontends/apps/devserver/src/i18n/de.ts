@@ -80,6 +80,7 @@ export default {
     element_label_texts_long: "Lang",
     element_label_texts_title: "Titel",
     element_label_texts_doc: "Doku",
+    element_label_texts_placeholder: "Platzhalter",
     element_label_type: "Typ",
     element_label_design: "Design",
     element_label_icon: "Icon",

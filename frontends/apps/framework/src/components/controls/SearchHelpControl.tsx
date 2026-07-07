@@ -10,6 +10,7 @@ import { useMessages } from "commons"
 import {
     ControlProps,
     getLabel,
+    getPlaceholder,
     handleAction,
     handleChange,
     handleEnterFocus,
@@ -96,7 +97,7 @@ function SearchDialog(props: DetailDialogProps) {
 }
 
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const intl = useIntl()
@@ -119,6 +120,7 @@ export default function (props: ControlProps) {
             <Input
                 id={def.key}
                 value={(element?.va as string) ?? ""}
+                placeholder={getPlaceholder(texts, def)}
                 onChange={(e) => handleChange(dispatch, def, rowId, messages, e.target.value ?? "")}
                 onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                 onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}

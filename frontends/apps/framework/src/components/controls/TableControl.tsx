@@ -41,7 +41,7 @@ import { update } from "../../features/sessions/sessionSlice"
 import { loadIntoCache } from "../../features/valuehelps/valuehelpsSlice"
 import { deleteRow, triggerEvent } from "../../features/sessions/sessionActions"
 
-import { ControlProps, getLabel, handleBrowseTable, handleChangeTablePageSize } from "./Control"
+import { ControlProps, getLabel, getPlaceholder, handleBrowseTable, handleChangeTablePageSize } from "./Control"
 import Control from "./Control"
 import ControlGridContainer from "./ControlGridContainer"
 import { elementInfo2ValueState } from "./utils"
@@ -610,7 +610,7 @@ export default function (props: ControlProps) {
                     backgroundColor: hasTableError ? "var(--sapField_InvalidBackground)" : undefined,
                     borderRadius: hasTableError ? "0.25rem" : undefined,
                 }}
-                noDataText={intl.formatMessage({ id: "common_no_data" })}
+                noDataText={getPlaceholder(texts, def) ?? intl.formatMessage({ id: "common_no_data" })}
                 overflowMode="Scroll"
                 rowActionCount={calculateActionCount()}
                 loading={loading}

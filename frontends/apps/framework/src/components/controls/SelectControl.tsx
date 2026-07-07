@@ -6,7 +6,7 @@ import { Option, Select, Text } from "@ui5/webcomponents-react"
 
 import { useMessages } from "commons"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
@@ -19,7 +19,7 @@ import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const vhs = useAppSelector((state) => state.valuehelps.vhs)
@@ -78,7 +78,10 @@ export default function (props: ControlProps) {
                 {emptySelection && (
                     <Option
                         selected={typeof element?.va !== "string" || element.va === ""}
-                    ></Option>
+                        data-id=""
+                    >
+                        {getPlaceholder(texts, def) ?? ""}
+                    </Option>
                 )}
                 {options.map((it, i) => (
                     <Option key={"s" + i} selected={it.value == element?.va} data-id={it.value}>

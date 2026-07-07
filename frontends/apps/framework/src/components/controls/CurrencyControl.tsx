@@ -19,7 +19,7 @@ import {
 
 import { useMessages } from "commons"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { CurrencyAmount, FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
@@ -227,7 +227,7 @@ function CurrencyDialog({
  * @returns CurrencyControl component
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const intl = useIntl()
@@ -330,6 +330,7 @@ export default function (props: ControlProps) {
                 </Button>
                 <Input
                     value={displayAmount.toString()}
+                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => handleAmountChange(e.target.value ?? "")}
                     onFocus={() => {
                         const digits = selectedCurrency?.digits ?? 2

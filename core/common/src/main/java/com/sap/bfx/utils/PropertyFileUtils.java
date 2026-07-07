@@ -115,6 +115,7 @@ public final class PropertyFileUtils {
             writer.write(getText(ed.getName() + DefinitionNames.PF_TITLE, texts, defaultTexts) + "\n");
             writer.write(getText(ed.getName() + DefinitionNames.PF_LONG, texts, defaultTexts) + "\n");
             writer.write(getText(ed.getName() + DefinitionNames.PF_DOC, texts, defaultTexts) + "\n");
+            writer.write(getText(ed.getName() + DefinitionNames.PF_PLACEHOLDER, texts, defaultTexts) + "\n");
 
             // ensure that all ElementDefinitions are also handled (direct or if inside a collection)
             for (var pd : PropertyUtils.getPropertyDescriptors(ed.getClass())) {

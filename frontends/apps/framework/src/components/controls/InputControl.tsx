@@ -16,7 +16,7 @@ import {
     fromInternalTime
 } from "../../utils/DataFormatUtils"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
 
@@ -62,6 +62,7 @@ export default function (props: ControlProps) {
                     value={(element?.va as string) ?? ""}
                     displayFormat="short"
                     value-format='yyyy-MM-dd'
+                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => {
                         const dateValue = (datePickerRef.current as any)?.dateValue
                         if (dateValue) {
@@ -94,6 +95,7 @@ export default function (props: ControlProps) {
                     value={element?.va ? fromInternalDateTime((element.va as string), getLanguage()!) : ""}
                     displayFormat="short"
                     valueFormat='yyyy-MM-ddTHH:mm:ss'
+                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => {
                         console.log(`DateTimePicker onChange triggered with value: ${e.target.value}`)
                         const dateValue = (dateTimePickerRef.current as any)?.dateValue
@@ -127,6 +129,7 @@ export default function (props: ControlProps) {
                     value={element?.va ? fromInternalTime((element.va as string), getLanguage()!) : ""}
                     displayFormat="medium"
                     valueFormat="HH:mm:ss"
+                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => {
                         const timeValue = (timePickerRef.current as any)?.dateValue
                         if (timeValue) {
@@ -157,6 +160,7 @@ export default function (props: ControlProps) {
                 <Input
                     id={def.key}
                     value={convertInput(element)}
+                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => {
                         let value: string | number = e.target.value ?? ""
                         if (def.dataType === DataType.Int) {

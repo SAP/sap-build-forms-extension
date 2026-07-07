@@ -201,6 +201,7 @@ React.useEffect(() => {
                 TextPostfix.long,
                 TextPostfix.title,
                 TextPostfix.doc,
+                TextPostfix.placeholder,
             ]
 
             Object.keys(texts).forEach((language) => {
@@ -673,6 +674,17 @@ React.useEffect(() => {
                                         <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_doc" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.doc}
+                                                texts={props.treeItemsShown?.texts!}
+                                                defaultLanguage={props.defaultLanguage}
+                                                currentName={props.el.name}
+                                                scenarioMixinName={props.scenarioMixinName}
+                                                version={props.version}
+                                                setUpdate={props.setUpdate}
+                                            />
+                                        </FormItem>
+                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_placeholder" })}</Label>}>
+                                            <StructureTabTextsInput
+                                                postfix={TextPostfix.placeholder}
                                                 texts={props.treeItemsShown?.texts!}
                                                 defaultLanguage={props.defaultLanguage}
                                                 currentName={props.el.name}

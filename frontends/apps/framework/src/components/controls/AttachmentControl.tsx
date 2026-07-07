@@ -36,7 +36,7 @@ import { FileUploaderChangeEventDetail } from "@ui5/webcomponents/dist/FileUploa
 
 import { useMessages } from "commons"
 
-import { ControlProps, getLabel } from "./Control"
+import { ControlProps, getLabel, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import { Attachment, FormService } from "../../features/sessions/forms"
@@ -810,6 +810,7 @@ function FileUploaderControl(props: ControlProps) {
 
                 <List
                     selectionMode={existingAttachmentsFU.length > 0 ? getselect(def.select) : "None"}
+                    noDataText={getPlaceholder(texts, def)}
                 >
                     {(element?.va as Attachment[]).map((att, i) => (
                         <ListItemCustom key={i}>
@@ -1127,7 +1128,7 @@ function UploadCollectionControl(props: ControlProps) {
                     backgroundColor: hasAttachmentError ? "var(--sapField_InvalidBackground)" : undefined,
                     borderRadius: hasAttachmentError ? "0.25rem" : undefined,
                 }}
-                    noDataText={intl.formatMessage({ id: "attachment_drag_drop_hint" })}
+                    noDataText={getPlaceholder(texts, def) ?? intl.formatMessage({ id: "attachment_drag_drop_hint" })}
                     noDataDescription={intl.formatMessage({ id: "attachment_or_click_add" })}
                     selectionMode={existingAttachments.length > 0 || pendingFiles.length > 0 ? getselect(def.select) : "None"}
                     header={
