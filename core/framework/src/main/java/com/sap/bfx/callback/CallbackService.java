@@ -14,13 +14,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 /**
- *  Service for handling callbacks within the framework.
+ * Service for handling callbacks within the framework.
  */
 @Service
 @Slf4j
@@ -50,9 +49,8 @@ public class CallbackService {
         if (optDefinition.isEmpty()) {
             throw new FormsCoreException("cannot find active scenario definition, please check your configuration!");
         }
-        final var version = ctx.getScenarioDefinition() != null
-                ? ctx.getScenarioDefinition().getVersion()
-                : optDefinition.get().getVersion();
+        final var version = ctx.getScenarioDefinition() != null ? ctx.getScenarioDefinition().getVersion() :
+                optDefinition.get().getVersion();
 
         var result = (previous == null) ? new CallbackResult() : previous;
         var hm = hookMap.get(version);
@@ -105,8 +103,8 @@ public class CallbackService {
                 validate(ctx);
             }
         } catch (NotAuthorizedException e) {
-            log.error("Not authorized to execute callback for app='{}', roles='{}' by user='{}'",
-                    e.getAppName(), e.getRoles(), e.getUser());
+            log.error("Not authorized to execute callback for app='{}', roles='{}' by user='{}'", e.getAppName(),
+                    e.getRoles(), e.getUser());
             throw ExceptionUtils.from(e);
         } catch (Throwable t) {
             throw ExceptionUtils.from("Error during lifecycle-hook-call for type '" + type + "'", t);
@@ -132,9 +130,8 @@ public class CallbackService {
 
         log.debug("CallbackService.callEvent: started for {}", sourceKey);
 
-        final var version = ctx.getScenarioDefinition() != null
-                ? ctx.getScenarioDefinition().getVersion()
-                : VersionSelector.IGNORE;
+        final var version =
+                ctx.getScenarioDefinition() != null ? ctx.getScenarioDefinition().getVersion() : VersionSelector.IGNORE;
 
         var result = (previous == null) ? new CallbackResult() : previous;
         var ehm = eventHandlerMap.get(version);
@@ -209,8 +206,8 @@ public class CallbackService {
                 final var element = FormUtils.findElementByRowAndKey(session.getForm(), sourceRowId, sourceKey);
                 session.getJournal().addUpdated(sourceRowId, element, ChangePropertyType.Value, element.getValue());
             } else {
-                throw new FormsCoreException(String.format("No handlers found for '%s' of '%s' in version '%d'",
-                        type, sourceKey, version));
+                throw new FormsCoreException(
+                        String.format("No handlers found for '%s' of '%s' in version '%d'", type, sourceKey, version));
             }
         }
 
@@ -252,20 +249,22 @@ public class CallbackService {
         if (!handlers.isEmpty()) {
             log.info("found event handlers:");
             eventHandlerMap.clear();
-            handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(it -> {
-                log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + it.getKey());
-                for (var version : versions) {
-                    final var sd = scenarioService.findDefinitionByVersion(version).get();
-                    final var ed = sd.findElementByKey(it.getKey());
-                    if ((ed != null && it.match(ed.getKey(), it.getType(), version)) ||
-                            it.getType().equals(EventType.TriggerEvent)) {
-                        // this event handler matches for the given version. Storing it in the
-                        // event-handler-map
-                        var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
-                        var eventInfo = ehm.computeIfAbsent(it.getKey(), k -> new EventHandlerInfo(version, ed));
-                        eventInfo.add(it);
-                        log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), it.getKey(),
-                                version, it.getClass().getName());
+            handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(evt -> {
+                evt.getKeys().forEach(key -> {
+                    log.debug("  Event handler candidate: " + evt.getClass().getName() + " for key=" + key);
+                    for (var version : versions) {
+                        final var sd = scenarioService.findDefinitionByVersion(version).get();
+                        final var ed = sd.findElementByKey((String) key);
+                        if ((ed != null && evt.match(ed.getKey(), evt.getType(), version)) ||
+                                evt.getType().equals(EventType.TriggerEvent)) {
+                            // this event handler matches for the given version. Storing it in the
+                            // event-handler-map
+                            var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
+                            var eventInfo = ehm.computeIfAbsent(ed.getKey(), k -> new EventHandlerInfo(version, ed));
+                            eventInfo.add(evt);
+                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", evt.getType(), key, version,
+                                    evt.getClass().getName());
+                        }
                     }
                 });
             });
