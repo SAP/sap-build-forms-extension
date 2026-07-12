@@ -43,7 +43,7 @@ public class ValueHelpService {
      * @param locale the Locale for which to find values
      * @return a Pair containing the value help ID and its corresponding version
      */
-    public GetValueHelpResponse findValues(final String id, final Locale locale) {
+    public ValueHelpData findValues(final String id, final Locale locale) {
         return client.findValues(id, locale);
     }
 }

@@ -1,9 +1,14 @@
 package com.sap.bfx.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.sap.bfx.definition.EventType;
 import com.sap.bfx.exception.BadRequestException;
+import com.sap.bfx.exception.ExceptionUtils;
+import com.sap.bfx.exception.FormsCoreException;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.valuehelp.ValueHelpService;
+import com.sap.bfx.valuehelp.model.ValueHelpType;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,6 +38,7 @@ public class ValueHelpController {
 
     private final ValueHelpService valueHelpService;
     private final SecurityService securityService;
+    private final ObjectMapper om;
 
     /**
      * Constructor for ValueHelpController.
@@ -44,6 +50,8 @@ public class ValueHelpController {
     public ValueHelpController(final ValueHelpService valueHelpService, final SecurityService securityService) {
         this.valueHelpService = valueHelpService;
         this.securityService = securityService;
+
+        om = JsonMapper.builder().build();
     }
 
     /**
@@ -72,12 +80,23 @@ public class ValueHelpController {
         final var values = new HashMap<String, String>();
         response.getValues().forEach(it -> {
             final var key = it.get(response.getKeyKey());
-            final String value;
-            if (StringUtils.isNotEmpty(response.getFormatTemplate())) {
-                final var subs = new StringSubstitutor(it);
-                value = subs.replace(response.getFormatTemplate());
+
+            String value;
+            if (response.getType().equals(ValueHelpType.FREESTYLE)) {
+                if (StringUtils.isNotEmpty(response.getFormatTemplate())) {
+                    final var subs = new StringSubstitutor(it);
+                    value = subs.replace(response.getFormatTemplate());
+                } else {
+                    value = it.get(response.getValueKeys().get(0));
+                }
+            } else if (response.getType().equals(ValueHelpType.CURRENCY)) {
+                try {
+                    value = new String(om.writeValueAsBytes(it));
+                } catch (Exception e) {
+                    throw ExceptionUtils.from(e);
+                }
             } else {
-                value = it.get(response.getValueKeys().get(0));
+                throw new FormsCoreException("unsupported valuehelp type '" + response.getType().getIdentifier() + "'");
             }
             values.put(key, value);
         });

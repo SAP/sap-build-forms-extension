@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class GetValueHelpResponse {
+public class ValueHelpData {
     private String id;
     private String locale;
     private long version;

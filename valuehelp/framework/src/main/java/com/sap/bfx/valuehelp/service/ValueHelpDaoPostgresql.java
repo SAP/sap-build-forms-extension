@@ -276,11 +276,10 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
     public Map<String, Long> findValuesVersion(Collection<String> ids, String locale) {
         var result = new HashMap<String, Long>();
 
+        final var params = ArrayUtils.addFirst(ids.toArray(new String[0]), locale);
         final String inSQL = String.join(",", Collections.nCopies(ids.size(), "?"));
         jdbc.query(String.format("SELECT id,version FROM forms_vh_values WHERE locale=? AND id IN(%s)", inSQL),
-                (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)),
-                ArrayUtils.addFirst(ids.toArray(new String[0]), locale));
-
+                (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)), params);
         return result;
     }
 
@@ -324,7 +323,8 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
             }
             vhd.setFormatTemplate(rs.getString("format_template"));
             String type = rs.getString("type");
-            vhd.setValueHelpType(ValueHelpType.CURRENCY.getIdentifier().equals(type) ? ValueHelpType.CURRENCY : ValueHelpType.FREESTYLE);
+            vhd.setValueHelpType(ValueHelpType.CURRENCY.getIdentifier().equals(type) ? ValueHelpType.CURRENCY :
+                    ValueHelpType.FREESTYLE);
 
             return vhd;
         }

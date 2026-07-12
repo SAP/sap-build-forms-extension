@@ -21,23 +21,33 @@ import java.util.*;
 
 import static com.sap.bfx.definition.DefinitionNames.*;
 
-@Data class SessionResponse {
+/**
+ * SessionResponse is a data class that represents the response of a session in the application.
+ * It contains information about the session, including its ID, locale, values, scenario definition,
+ * value helps, backend journal, form, callback service, page title, header title, and messages.
+ */
+@Data
+class SessionResponse {
     private String sessionId;
     private Locale locale;
     private ElementMap values;
     private ScenarioDefinition def;
-    private Map<String, Long> valueHelps;
+    private Map<String, Long> valueHelpVersions;
     private BackendJournal journal;
     private Form form;
     private CallbackService callbackService;
     private String pageTitle;
     private String headerTitle;
     private Collection<CallbackResult.Message> messages;
+    private Map<String, Map<String, String>> dynamicValuehelps;
 
     /**
-     * @param sessionId
-     * @param result
-     * @param journal
+     * Constructs a new SessionResponse with the specified session ID, callback result, form, and backend journal.
+     *
+     * @param sessionId the unique identifier of the session
+     * @param result    the CallbackResult containing information about the session's state
+     * @param form      the Form associated with the session
+     * @param journal   the BackendJournal containing changes made during the session
      */
     public SessionResponse(final String sessionId, final CallbackResult result, final Form form,
                            final BackendJournal journal) {
@@ -48,40 +58,39 @@ import static com.sap.bfx.definition.DefinitionNames.*;
     }
 
     /**
-     * @param result
+     * Sets the result of the session response based on the provided CallbackResult.
+     * If the result is null, no changes are made to the session response.
+     *
+     * @param result the CallbackResult containing information about the session's state
      */
     public final void setResult(final CallbackResult result) {
         if (result == null) {
             return;
         }
 
-        this.pageTitle = result.getPageTitle();
-        this.headerTitle = result.getHeaderTitle();
-        this.messages = result.getMessages();
+        pageTitle = result.getPageTitle();
+        headerTitle = result.getHeaderTitle();
+        messages = result.getMessages();
+        dynamicValuehelps = result.getValueHelps();
     }
 
     /**
-     *
+     * SessionResponseSerializer is a custom serializer for the SessionResponse class.
+     * It defines how to serialize the SessionResponse object into JSON format.
      */
     static class SessionResponseSerializer extends StdSerializer<SessionResponse> {
         final static DateTimeFormatter DT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         final static DateTimeFormatter D_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         /**
-         *
+         * Constructs a new SessionResponseSerializer for the SessionResponse class.
          */
         SessionResponseSerializer() {
             super(SessionResponse.class);
         }
 
-        /**
-         * @param value    Value to serialize; can <b>not</b> be null.
-         * @param gen      Generator used to output resulting Json content
-         * @param provider Provider that can be used to get serializers for
-         *                 serializing Objects value contains, if any.
-         * @throws IOException
-         */
-        @Override public void serialize(SessionResponse value, JsonGenerator gen, SerializerProvider provider)
+        @Override
+        public void serialize(SessionResponse value, JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
 
             gen.writeStartObject();
@@ -90,8 +99,8 @@ import static com.sap.bfx.definition.DefinitionNames.*;
             if (value.locale != null) {
                 gen.writeStringField("locale", value.locale.toString());
             }
-            if (value.valueHelps != null) {
-                gen.writeObjectField("vhs", value.valueHelps);
+            if (value.valueHelpVersions != null) {
+                gen.writeObjectField("vhs", value.valueHelpVersions);
             }
             if (value.def != null) {
                 gen.writeFieldName("def");
@@ -113,17 +122,22 @@ import static com.sap.bfx.definition.DefinitionNames.*;
             if (value.messages != null && !value.messages.isEmpty()) {
                 gen.writeObjectField("msg", value.messages);
             }
+            if (value.dynamicValuehelps != null && !value.dynamicValuehelps.isEmpty()) {
+                gen.writeObjectField("dvhs", value.dynamicValuehelps);
+            }
 
             gen.writeEndObject();
         }
 
         /**
-         * @param sd
-         * @param locale
-         * @param callbackService
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes the ScenarioDefinition object into JSON format.
+         *
+         * @param sd              the ScenarioDefinition to be serialized
+         * @param locale          the locale for which to serialize the texts
+         * @param callbackService the CallbackService used to find event handlers
+         * @param gen             the JsonGenerator used for writing JSON content
+         * @param provider        the SerializerProvider used for serialization
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeDef(final ScenarioDefinition sd, final Locale locale,
                                   final CallbackService callbackService, JsonGenerator gen, SerializerProvider provider)
@@ -144,12 +158,15 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param fieldName
-         * @param elements
-         * @param eventHandlersMap
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes a list of ElementDefinition objects into JSON format.
+         *
+         * @param fieldName        the name of the field to be used in the JSON output
+         * @param elements         the list of ElementDefinition objects to be serialized
+         * @param eventHandlersMap a map of event handlers associated with the elements
+         * @param gen              the JsonGenerator used for writing JSON content
+         * @param provider         the SerializerProvider used for serialization
+         * @param parents          a list of parent ElementDefinition objects for context
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeElementsDef(final String fieldName, final List<ElementDefinition> elements,
                                           final Map<String, CallbackService.EventHandlerInfo> eventHandlersMap,
@@ -170,11 +187,14 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param element
-         * @param eventHandlersMap
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes an ElementDefinition object into JSON format.
+         *
+         * @param element          the ElementDefinition to be serialized
+         * @param eventHandlersMap a map of event handlers associated with the elements
+         * @param gen              the JsonGenerator used for writing JSON content
+         * @param provider         the SerializerProvider used for serialization
+         * @param parentElements   a list of parent ElementDefinition objects for context
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeElementDef(final ElementDefinition element,
                                          final Map<String, CallbackService.EventHandlerInfo> eventHandlersMap,
@@ -434,10 +454,12 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param values
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes an ElementMap object into JSON format.
+         *
+         * @param values   the ElementMap to be serialized
+         * @param gen      the JsonGenerator used for writing JSON content
+         * @param provider the SerializerProvider used for serialization
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeElementMap(final ElementMap values, JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
@@ -469,10 +491,12 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param row
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes an ElementRow object into JSON format.
+         *
+         * @param row      the ElementRow to be serialized
+         * @param gen      the JsonGenerator used for writing JSON content
+         * @param provider the SerializerProvider used for serialization
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeElementRow(final ElementRow row, JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
@@ -486,13 +510,15 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param rowId
-         * @param key
-         * @param value
-         * @param journal
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes a value based on its type into JSON format.
+         *
+         * @param rowId    the ID of the row containing the value
+         * @param key      the key associated with the value
+         * @param value    the value to be serialized
+         * @param journal  the BackendJournal containing changes made during the session
+         * @param gen      the JsonGenerator used for writing JSON content
+         * @param provider the SerializerProvider used for serialization
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeValue(final String rowId, final String key, final Object value, BackendJournal journal,
                                     JsonGenerator gen, SerializerProvider provider) throws IOException {
@@ -575,10 +601,14 @@ import static com.sap.bfx.definition.DefinitionNames.*;
         }
 
         /**
-         * @param journal
-         * @param gen
-         * @param provider
-         * @throws IOException
+         * Serializes the BackendJournal object into JSON format.
+         * It checks and validates the changes in the journal before writing them to the output.
+         *
+         * @param form     the Form associated with the session
+         * @param journal  the BackendJournal containing changes made during the session
+         * @param gen      the JsonGenerator used for writing JSON content
+         * @param provider the SerializerProvider used for serialization
+         * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeJournal(final Form form, final BackendJournal journal, JsonGenerator gen,
                                       SerializerProvider provider) throws IOException {
@@ -629,10 +659,10 @@ import static com.sap.bfx.definition.DefinitionNames.*;
          * will always be reported, changes of tables as well. Changes of elements in tables will not be reported,
          * but the table itself will be marked as changed.
          *
-         * @param form
-         * @param rowId
-         * @param key
-         * @param journal
+         * @param form    the form to be used
+         * @param rowId   the rowId of the element to be checked
+         * @param key     the key of the element to be checked
+         * @param journal the BackendJournal containing changes made during the session
          * @return true if change needs to be reported, false if not
          */
         private boolean checkChangeNecessary(final Form form, final String rowId, final String key,

@@ -52,11 +52,11 @@ public class ValueHelpClient {
      * @param locale The locale of the value-help
      * @return A structure with information about the value-help and the values for the given locale
      */
-    public GetValueHelpResponse findValues(String id, Locale locale) {
+    public ValueHelpData findValues(String id, Locale locale) {
         final var response =
                 stub.getValueHelp(GetValueHelpRequest.newBuilder().setId(id).setLocale(locale.toString()).build());
 
-        final var result = new GetValueHelpResponse();
+        final var result = new ValueHelpData();
         result.setId(response.getId());
         result.setLocale(response.getLocale());
         result.setVersion(response.getVersion());

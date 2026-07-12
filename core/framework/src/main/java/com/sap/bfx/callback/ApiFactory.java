@@ -3,6 +3,7 @@ package com.sap.bfx.callback;
 import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.session.Form;
 import com.sap.bfx.session.FormsService;
+import com.sap.bfx.valuehelp.ValueHelpService;
 import com.sap.bfx.workflow.WorkflowApi;
 import com.sap.bfx.workflow.WorkflowService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,23 @@ import org.springframework.stereotype.Service;
 @Service
 public class ApiFactory {
 
+    private final FormsService formService;
+    private final WorkflowService workflowService;
+    private final ValueHelpService valueHelpService;
+
+    /**
+     * Constructor for ApiFactory.
+     *
+     * @param formService      Reference of FormsService
+     * @param workflowService  Reference of WorkflowService
+     * @param valueHelpService Reference of ValueHelpService
+     */
     @Autowired
-    FormsService formService;
-    @Autowired
-    WorkflowService workflowService;
+    public ApiFactory(FormsService formService, WorkflowService workflowService, ValueHelpService valueHelpService) {
+        this.formService = formService;
+        this.workflowService = workflowService;
+        this.valueHelpService = valueHelpService;
+    }
 
     /**
      * Returns an instance of the requested API class, initialized with the provided form context.
@@ -37,7 +51,7 @@ public class ApiFactory {
             return (T) new WorkflowApiImpl(workflowService);
         }
         if (ValuehelpApi.class.equals(apiCls)) {
-            return (T) new ValuehelpApiImpl();
+            return (T) new ValuehelpApiImpl(valueHelpService);
         }
 
         throw ExceptionUtils.from("Unsupported API class requested in ApiFactory.getApi(): " + apiCls.getName());

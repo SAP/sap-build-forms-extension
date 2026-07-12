@@ -91,9 +91,11 @@ public class ValueHelpsServer extends ValueHelpsServiceGrpc.ValueHelpsServiceImp
                 responseObserver.onError(Status.INVALID_ARGUMENT.asRuntimeException());
             }
 
+            final var template =
+                    StringUtils.isBlank(def.get().getFormatTemplate()) ? "" : def.get().getFormatTemplate();
             var response = GetValueHelpResponse.newBuilder().setId(request.getId()).setLocale(request.getLocale())
                                                .setVersion(value.getRight()).setKeyKey(def.get().getKeyKey())
-                                               .setFormatTemplate(def.get().getFormatTemplate())
+                                               .setFormatTemplate(template)
                                                .setType(def.get().getValueHelpType().getIdentifier());
             response.addAllValueKey(def.get().getValueKeys());
             new ObjectMapper().readValue(value.getLeft(), List.class).forEach(it -> {

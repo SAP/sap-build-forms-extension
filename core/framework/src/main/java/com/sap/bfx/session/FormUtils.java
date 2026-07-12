@@ -21,8 +21,10 @@ import java.util.function.Predicate;
 /**
  * Form related utility methods
  */
-@Slf4j public class FormUtils {
+@Slf4j
+public class FormUtils {
 
+    public static final String NM_ADD_DATA = "add";
     public static final String NM_AMOUNT = "a";
     public static final String NM_CHANGED_BY = "cb";
     public static final String NM_CHANGED_AT = "ca";

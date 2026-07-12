@@ -14,91 +14,84 @@ import java.util.*;
  * @param <AC>
  */
 public class ContextImpl<AC extends AccessClass> implements Context<AC> {
+    final Map<String, Object> params = new HashMap<>();
     ApiFactory apiFactory;
     AccessClassFactory acFactory;
-
     ScenarioDefinition scenarioDefinition;
     Session session;
     String displayState;
     Locale locale;
-    Map<String, Object> params = new HashMap<>();
     AC data;
     DataApi dataApi;
     AbstractAuthenticationToken token;
     ElementPos source;
     String taskInstanceId;
 
-    /**
-     * @param apiCls
-     * @param <T>
-     * @return
-     */
     @Override
     public <T extends Api> T getApi(Class<T> apiCls) {
         return apiFactory.getApi(apiCls, session.getForm());
     }
 
-    /**
-     * @param key
-     * @return
-     */
-    @Override
-    public Object getAddData(String key) {
-        return params.get(key);
-    }
-
-    /**
-     * @return
-     */
     @Override
     public String getDisplayState() {
         return displayState;
     }
 
-    /**
-     * @param state
-     */
     @Override
     public void setDisplayState(String state) {
         this.displayState = state;
     }
 
-    /**
-     * @return
-     */
     @Override
     public Locale getLocale() {
         return locale;
     }
 
-    /**
-     * @param locale
-     */
     @Override
     public void setLocale(Locale locale) {
         this.locale = locale;
     }
 
-    /**
-     * @return
-     */
     @Override
     public Set<String> getAddDataKeys() {
+        return session.getAdditionalData().keySet();
+    }
+
+    @Override
+    public Object addData(String key) {
+        return session.getAdditionalData().get(key);
+    }
+
+    @Override
+    public void addData(String key, Object value) {
+        session.getAdditionalData().put(key, value);
+    }
+
+    @Override
+    public void deleteAddData(String key) {
+        session.getAdditionalData().remove(key);
+    }
+
+    @Override
+    public Set<String> getParamsKeys() {
         return params.keySet();
     }
 
-    /**
-     * @param key
-     * @param value
-     */
     @Override
-    public void setAddData(String key, Object value) {
+    public Object param(String key) {
+        return params.get(key);
+    }
+
+    @Override
+    public void param(String key, Object value) {
         params.put(key, value);
     }
 
-    /**
-     * @return
-     */
+    @Override
+    public void deleteParam(String key) {
+        params.remove(key);
+    }
+
     @Override
     public AC getData() {
         if (data == null) {
@@ -108,15 +101,15 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     }
 
     /**
-     * @param value
+     * Sets the access class data for the current context. This method allows you to provide a specific instance of
+     * the access class, which can be used to manage and manipulate data related to the current scenario and form.
+     *
+     * @param value access class instance
      */
     public void setData(final AC value) {
         data = value;
     }
 
-    /**
-     * @return
-     */
     @Override
     public DataApi getDataApi() {
         if (dataApi == null) {
@@ -126,31 +119,26 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     }
 
     /**
-     * @param value
+     * Sets the data API for the current context. This method allows you to provide a specific instance of
+     * the data API, which can be used to manage and manipulate data related to the current scenario and form in
+     * a generic way.
+     *
+     * @param value the DataApi object instane
      */
     public void setDataApi(final DataApi value) {
         dataApi = value;
     }
 
-    /**
-     * @return
-     */
     @Override
     public ScenarioDefinition getScenarioDefinition() {
         return scenarioDefinition;
     }
 
-    /**
-     * @return
-     */
     @Override
     public AbstractAuthenticationToken getToken() {
         return token;
     }
 
-    /**
-     * @return
-     */
     @Override
     public ElementPos getSource() {
         return source;
@@ -159,15 +147,9 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     @Override
     public Settings getP13NValue(String s) {
         Collection<Settings> settings = session.getSettings();
-        return settings.stream()
-                .filter(setting -> setting.getKey().equals(s))
-                .findFirst()
-                .orElse(null);
+        return settings.stream().filter(setting -> setting.getKey().equals(s)).findFirst().orElse(null);
     }
 
-    /**
-     * @return
-     */
     @Override
     public String getTaskInstanceId() {
         return taskInstanceId;
