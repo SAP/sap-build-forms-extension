@@ -230,7 +230,7 @@ import java.util.concurrent.CountDownLatch;
         // define form
         Form form = null;
         if (isTaskContext) {
-            securityService.ensureAuthorized(token, EventType.TaskExecutionAuth, Boolean.FALSE, null, null);
+            securityService.ensureAuthorized(token, EventType.TaskExecutionAuth, Boolean.FALSE, null, (String) null);
             // handle loading the forms information from workflow engine (in detail from task input data) and
             // continue with loading the necessary information (e.g. according scenario definition version)
             String principalPropagationDestinationName =
@@ -252,11 +252,11 @@ import java.util.concurrent.CountDownLatch;
             form = formsService.loadById(taskInputContext.getFormsProcessID());
         }
         if (isShowContext) {
-            securityService.ensureAuthorized(token, EventType.ShowContextAuth, Boolean.FALSE, null, null);
+            securityService.ensureAuthorized(token, EventType.ShowContextAuth, Boolean.FALSE, null, (String) null);
             form = formsService.loadById(formsId);
         }
         if (isInitContext) {
-            securityService.ensureAuthorized(token, EventType.StartProcessAuth, Boolean.FALSE, null, null);
+            securityService.ensureAuthorized(token, EventType.StartProcessAuth, Boolean.FALSE, null, (String) null);
         }
 
         // Callback at begin of round-trip
@@ -265,7 +265,7 @@ import java.util.concurrent.CountDownLatch;
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, preContext, null);
 
         // Collect and define variables for context
-        Optional<ScenarioDefinition> sdOpt = null;
+        Optional<ScenarioDefinition> sdOpt;
         if (isTaskContext || isShowContext) {
             sdOpt = definitionService.findDefinitionByVersion(form.getScenarioVersion());
         } else {

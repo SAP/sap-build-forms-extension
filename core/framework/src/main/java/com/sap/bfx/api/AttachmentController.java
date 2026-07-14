@@ -158,7 +158,7 @@ public class AttachmentController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("missing id");
         }
-        securityService.ensureAuthorized(token, EventType.DownloadAttachmentAuth, Boolean.FALSE, null, null);
+        securityService.ensureAuthorized(token, EventType.DownloadAttachmentAuth, Boolean.FALSE, null, (String) null);
 
         var context = contextFactory.createContext(token, null, null, null, null, null, null, null);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);

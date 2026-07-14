@@ -102,7 +102,7 @@ public class CallbackService {
             }
         } catch (NotAuthorizedException e) {
             log.error("Not authorized to execute callback for app='{}', roles='{}' by user='{}'",
-                    e.getAppName(), e.getRoles(), e.getUser());
+                    e.getAppName(), e.getAuthObjects(), e.getUser());
             throw ExceptionUtils.from(e);
         } catch (Throwable t) {
             throw ExceptionUtils.from("Error during lifecycle-hook-call for type '" + type + "'", t);

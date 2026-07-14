@@ -195,7 +195,7 @@ public class ScenarioController {
             description = "This operation returns the string of forms scenario base URL, where the SessionController of the scenario is executed.")
     public ResponseEntity<ScenarioBaseUrlResponse> getFormsScenarioBaseUrl(HttpServletRequest request,
                                                                            AbstractAuthenticationToken token) {
-        securityService.ensureAuthorized(token, EventType.GetScenarioControllerAuth, Boolean.FALSE, null, null);
+        securityService.ensureAuthorized(token, EventType.GetScenarioControllerAuth, Boolean.FALSE, null, (String) null);
         String serverName =
                 request.getRequestURL().substring(0, request.getRequestURL().indexOf(request.getRequestURI()));
         return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ScenarioBaseUrlResponse(serverName));

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 @Slf4j
-public class LocalXsuaaTokenSecurityEnabledCondition implements Condition {
+public class LocalOidcSecurityEnabledCondition implements Condition {
     /**
      * @param context
      * @param metadata
@@ -16,9 +16,9 @@ public class LocalXsuaaTokenSecurityEnabledCondition implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         final var localJwtFile = context.getEnvironment().getProperty("forms.localJwtFile", "");
-        final var xsappname = context.getEnvironment().getProperty("forms.xsAppName", "");
+        final var authType = context.getEnvironment().getProperty("forms.security.auth.type", "");
 
-        log.debug("forms.JwtFile is '{}' and forms.xsAppName is '{}'", localJwtFile, xsappname);
-        return StringUtils.isNotBlank(localJwtFile) && StringUtils.isBlank(xsappname);
+        log.debug("forms.JwtFile is '{}' and forms.security.auth.type is '{}'", localJwtFile, authType);
+        return StringUtils.isNotBlank(localJwtFile) && StringUtils.isBlank(authType);
     }
 }

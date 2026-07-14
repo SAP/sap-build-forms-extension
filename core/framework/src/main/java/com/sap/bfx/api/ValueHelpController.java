@@ -47,7 +47,7 @@ public class ValueHelpController {
         if (StringUtils.isBlank(locale)) {
             throw new BadRequestException("Illegal or missing locale");
         }
-        securityService.ensureAuthorized(token, EventType.FindValueHelpAuth, Boolean.FALSE, null, null);
+        securityService.ensureAuthorized(token, EventType.FindValueHelpAuth, Boolean.FALSE, null, (String) null);
 
         var result = valueHelpService.findValues(id, new Locale(locale));
         return ResponseEntity

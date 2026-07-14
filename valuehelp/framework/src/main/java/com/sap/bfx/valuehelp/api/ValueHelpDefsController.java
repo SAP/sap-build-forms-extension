@@ -3,7 +3,8 @@ package com.sap.bfx.valuehelp.api;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
-import com.sap.bfx.valuehelp.security.ValueHelpRoles;
+import com.sap.bfx.valuehelp.security.ValueHelpGroups;
+import com.sap.bfx.valuehelp.security.ValueHelpGroups;
 import com.sap.bfx.valuehelp.service.ValueHelpService;
 import jakarta.validation.Valid;
 import jakarta.xml.bind.JAXBException;
@@ -50,7 +51,7 @@ public class ValueHelpDefsController {
     public Collection<ValueHelpDef> findAll(@RequestParam(required = false) String search,
                                             @RequestParam(required = false) String[] adapter,
                                             AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findAllDefs(search, adapter);
     }
 
@@ -61,7 +62,7 @@ public class ValueHelpDefsController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findDefById(id);
         if (resultOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"
@@ -74,7 +75,7 @@ public class ValueHelpDefsController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllAdapter(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findAllAdapter();
     }
 
@@ -82,7 +83,7 @@ public class ValueHelpDefsController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllDefinedAdapter(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findAllDefinedAdapter();
     }
 
@@ -90,7 +91,7 @@ public class ValueHelpDefsController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public String[] getLocales(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findAllDefinedLocales();
     }
 
@@ -101,7 +102,7 @@ public class ValueHelpDefsController {
                                                       @RequestParam(required = false) String[] adapter,
                                                       @RequestParam(required = false) String[] ids,
                                                       AbstractAuthenticationToken token) {
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
 
         byte[] xmlByteArray;
         if (search != null && search.length() > 0 && adapter != null && adapter.length > 0) {
@@ -131,7 +132,7 @@ public class ValueHelpDefsController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         if (!id.equals(valueHelpDef.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided ID in URL does not match ID in request body");
         }
@@ -150,7 +151,7 @@ public class ValueHelpDefsController {
                                            @RequestParam boolean override,
                                            @RequestParam boolean useTechnicalName,
                                            AbstractAuthenticationToken token) {
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         String msg;
         if (file.isEmpty()) {
             return ResponseEntity
@@ -184,7 +185,7 @@ public class ValueHelpDefsController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         if (!id.equals(valueHelpDef.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided ID in URL does not match ID in request body");
         }
@@ -204,7 +205,7 @@ public class ValueHelpDefsController {
         if (Arrays.stream(ids).anyMatch(StringUtils::isBlank)) {
             throw new BadRequestException("Missing value for ids");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         for (String id : ids) {
             var resultOpt = service.findDefById(id);
             if (resultOpt.isEmpty()) {
@@ -222,7 +223,7 @@ public class ValueHelpDefsController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findDefById(id);
         if (resultOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"

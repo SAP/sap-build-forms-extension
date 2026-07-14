@@ -3,7 +3,7 @@ package com.sap.bfx.valuehelp.api;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.valuehelp.model.ValueHelp;
-import com.sap.bfx.valuehelp.security.ValueHelpRoles;
+import com.sap.bfx.valuehelp.security.ValueHelpGroups;
 import com.sap.bfx.valuehelp.service.ValueHelpService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ public class ValueHelpValuesController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findValueById(id);
     }
 
@@ -58,7 +58,7 @@ public class ValueHelpValuesController {
         if (StringUtils.isBlank(locale)) {
             throw new BadRequestException("Missing locale");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         return service.findValueByIdLocale(id, locale);
     }
 
@@ -72,7 +72,7 @@ public class ValueHelpValuesController {
         if (StringUtils.isBlank(locale)) {
             throw new BadRequestException("Missing locale");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpDisplay, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findValueLatestVersionByIdLocale(id, locale);
         if (resultOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-values with id '"
@@ -106,7 +106,7 @@ public class ValueHelpValuesController {
         if (valueHelp.getVersion() != 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided version is not 0");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findValueByIdLocaleVersion(id, locale, 0);
         if (resultOpt.isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Entity with id " + id + " and locale " + locale +
@@ -135,7 +135,7 @@ public class ValueHelpValuesController {
         } else if (valueHelp.getLocale() == null || !locale.equals(valueHelp.getLocale().toString())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided locale in URL does not match locale in request body");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findValueByIdLocaleVersion(id, locale, valueHelp.getVersion());
         if (resultOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cannot find entity with id " + id + " and locale "
@@ -153,7 +153,7 @@ public class ValueHelpValuesController {
         if (StringUtils.isBlank(locale)) {
             throw new BadRequestException("Missing locale");
         }
-        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpRoles.ValueHelpEdit);
+        securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         var resultOpt = service.findValueLatestVersionByIdLocale(id, locale);
         if (resultOpt.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-value with id '"
