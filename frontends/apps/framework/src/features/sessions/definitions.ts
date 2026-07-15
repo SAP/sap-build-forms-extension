@@ -131,6 +131,7 @@ export interface Definition {
     columnOptions?: { minColumnWidth?: string; maxColumnWidth?: string }
     size?: { height: string; width: string }
     inputType?: string
+    shortcut?: string
 }
 
 /**

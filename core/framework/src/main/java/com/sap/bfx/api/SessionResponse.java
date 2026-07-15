@@ -308,6 +308,9 @@ import static com.sap.bfx.definition.DefinitionNames.*;
                     if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getTooltip())) {
                         gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) element).getTooltip());
                     }
+                    if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getShortcut())) {
+                        gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) element).getShortcut());
+                    }
                     break;
                 case Icon:
                     if (StringUtils.isNotBlank(((IconElementDefinition) element).getIcon())) {

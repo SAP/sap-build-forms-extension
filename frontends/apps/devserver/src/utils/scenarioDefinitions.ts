@@ -42,6 +42,7 @@ export type Elem = {
     design?: DesignValue | AttachmentDesignType
     icon?: string
     tooltip?: string
+    shortcut?: ShortcutValue
     dialogKey?: string
     select?: SelectValue
     style?: StyleValue
@@ -133,6 +134,27 @@ export enum DesignValue {
     Attention = "attention",
     Warn = "warn",
     Info = "info",
+}
+
+export enum ShortcutValue {
+    // F keys (F1/F5/F6/F11/F12 omitted — browser/OS protected, cannot be prevented)
+    F1 = "f1", F2 = "f2", F3 = "f3", F4 = "f4", F5 = "f5", F6 = "f6", F7 = "f7", F8 = "f8", F9 = "f9", F10 = "f10", F11 = "f11", F12 = "f12",
+    // Ctrl + letter (Cmd on Mac) — CtrlN/CtrlT/CtrlW omitted (new window/tab/close, browser-protected)
+     CtrlB = "ctrl+b", CtrlD = "ctrl+d",
+    CtrlE = "ctrl+e", CtrlF = "ctrl+f", CtrlG = "ctrl+g", CtrlH = "ctrl+h",
+    CtrlI = "ctrl+i", CtrlJ = "ctrl+j", CtrlK = "ctrl+k", CtrlL = "ctrl+l",
+    CtrlM = "ctrl+m", CtrlO = "ctrl+o", CtrlP = "ctrl+p",
+    CtrlQ = "ctrl+q", CtrlR = "ctrl+r", CtrlS = "ctrl+s",
+    CtrlU = "ctrl+u",
+    CtrlX = "ctrl+x", CtrlY = "ctrl+y", CtrlZ = "ctrl+z",
+    // Alt + letter (Option on Mac — uses e.code so special characters are not an issue)
+    AltA = "alt+a", AltB = "alt+b", AltC = "alt+c", AltD = "alt+d",
+    AltE = "alt+e", AltF = "alt+f", AltG = "alt+g", AltH = "alt+h",
+    AltI = "alt+i", AltJ = "alt+j", AltK = "alt+k", AltL = "alt+l",
+    AltM = "alt+m", AltN = "alt+n", AltO = "alt+o", AltP = "alt+p",
+    AltQ = "alt+q", AltR = "alt+r", AltS = "alt+s", AltT = "alt+t",
+    AltU = "alt+u", AltV = "alt+v", AltW = "alt+w", AltX = "alt+x",
+    AltY = "alt+y", AltZ = "alt+z",
 }
 
 export enum SelectValue {

@@ -69,4 +69,10 @@ export default {
     currency_col_digits: "Nachkommastellen",
     currency_col_name: "Name",
     currency_empty_selection: "(keine Währung)",
+
+    button_shortcut_triggered: "''{label}'' ausgeführt",
+
+    "default.msg.validation.required": "Feld ist ein Pflichtfeld",
+    "default.msg.validation.min": "Wert liegt unter dem Minimum",
+    "default.msg.text": "{text}",
 }

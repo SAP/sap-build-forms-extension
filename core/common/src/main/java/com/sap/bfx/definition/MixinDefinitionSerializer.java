@@ -77,6 +77,9 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 if (((ButtonElementDefinition) ed).getTooltip() != null && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
                     gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
                 }
+                if (((ButtonElementDefinition) ed).getShortcut() != null && !((ButtonElementDefinition) ed).getShortcut().isEmpty()) {
+                    gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) ed).getShortcut());
+                }
                 break;
             case Currency:
                 gen.writeObjectFieldStart(NM_VALUE_HELP);

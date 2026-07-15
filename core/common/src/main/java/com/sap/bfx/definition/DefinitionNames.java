@@ -53,6 +53,7 @@ public class DefinitionNames {
     public final static String NM_SELECT = "select";
     public final static String NM_SELECTED_TAB = "selectedTab";
     public static final String NM_SEVERITY = "severity";
+    public final static String NM_SHORTCUT = "shortcut";
     public final static String NM_SHOW_AS_COLUMN = "showAsColumn";
     public final static String NM_SHOW_LABEL = "showLabel";
     public final static String NM_SHOW_HELP = "showHelp";

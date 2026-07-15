@@ -159,6 +159,9 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 if (((ButtonElementDefinition) ed).getLinkHRef() != null && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
                     gen.writeStringField(NM_LINK_HREF, ((ButtonElementDefinition) ed).getLinkHRef());
                 }
+                if (((ButtonElementDefinition) ed).getShortcut() != null && !((ButtonElementDefinition) ed).getShortcut().isEmpty()) {
+                    gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) ed).getShortcut());
+                }
                 break;
             case Currency:
                 if(((CurrencyElementDefinition) ed).getValueHelp() != null) {

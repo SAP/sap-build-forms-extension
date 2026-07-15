@@ -69,4 +69,10 @@ export default {
     currency_col_digits: "Digits",
     currency_col_name: "Name",
     currency_empty_selection: "(no currency)",
+
+    button_shortcut_triggered: "''{label}'' triggered",
+
+    "default.msg.validation.required": "Field is required",
+    "default.msg.validation.min": "Value is below minimum",
+    "default.msg.text": "{text}",
 }
