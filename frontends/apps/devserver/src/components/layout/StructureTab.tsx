@@ -1,5 +1,6 @@
 import { FlexBox, Input, Label, Switch, Icon } from "@ui5/webcomponents-react"
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import { Elem, Parent, Scenario } from "../../utils/scenarioDefinitions"
 import StructureTabTree from "./StructureTabTree"
 import StructureTabTable from "./StructureTabTable"
@@ -35,6 +36,7 @@ interface Props {
 export default function StructureTab(props: Props) {
     const [tableView, setTableView] = useState(false)
     const [search, setSearch] = useState<string>("")
+    const intl = useIntl()
 
     return (
         <VariantFilterProvider selectedVariants={props.selectedVariants}>
@@ -58,7 +60,7 @@ export default function StructureTab(props: Props) {
                         valueState="None"
                         value={search}
                         showClearIcon={true}
-                        placeholder="Search for element name"
+                        placeholder={intl.formatMessage({ id: "structure_search_placeholder" })}
                     />
                 </FlexBox>
 
@@ -68,7 +70,7 @@ export default function StructureTab(props: Props) {
                     direction="Row"
                     style={{ flex: 1, gap: "0.5rem" }}
                 >
-                    <Label>Table view</Label>
+                    <Label>{intl.formatMessage({ id: "structure_table_view_label" })}</Label>
                     <Switch
                         onChange={(e) => {
                             const nextTableView = e.target.checked!
@@ -105,7 +107,7 @@ export default function StructureTab(props: Props) {
                     setParents={props.setParents}
                     copiedEl={props.copiedEl}
                     setCopiedEl={props.setCopiedEl}
-                    search={search}  // ADD THIS
+                    search={search} 
                     registerFlushPendingNameCommit={props.registerFlushPendingNameCommit}
                 />
             )}
@@ -128,7 +130,7 @@ export default function StructureTab(props: Props) {
                     setUpdate={props.setUpdate}
                     renderTable={props.renderTable}
                     setRenderTable={props.setRenderTable}
-                    search={search}  // ADD THIS
+                    search={search} 
                 />
             )}
             </FlexBox>

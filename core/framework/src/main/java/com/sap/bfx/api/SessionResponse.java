@@ -233,7 +233,7 @@ class SessionResponse {
 
             }
 
-            if (isChildOfTable && element.getColumnOptions() != null) {
+            if ((isChildOfTable || element.getType() == UIElementType.Table) && element.getColumnOptions() != null) {
                 gen.writeObjectFieldStart(NM_COLUMN_OPTIONS);
                 gen.writeStringField(NM_MIN_COLUMN_WIDTH, element.getColumnOptions().getMinColumnWidth());
                 gen.writeStringField(NM_MAX_COLUMN_WIDTH, element.getColumnOptions().getMaxColumnWidth());
@@ -325,10 +325,16 @@ class SessionResponse {
                     if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getLinkHRef())) {
                         gen.writeStringField("linkHRef", ((ButtonElementDefinition) element).getLinkHRef());
                     }
+                    if (StringUtils.isNotBlank(((ButtonElementDefinition) element).getTooltip())) {
+                        gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) element).getTooltip());
+                    }
                     break;
                 case Icon:
                     if (StringUtils.isNotBlank(((IconElementDefinition) element).getIcon())) {
                         gen.writeStringField(NM_ICON, ((IconElementDefinition) element).getIcon());
+                    }
+                    if (StringUtils.isNotBlank(((IconElementDefinition) element).getTooltip())) {
+                        gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) element).getTooltip());
                     }
                     break;
                 case Dialog:

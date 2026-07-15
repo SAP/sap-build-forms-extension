@@ -1,6 +1,7 @@
 import { Input } from "@ui5/webcomponents-react"
 import { createUseStyles } from "react-jss"
 import useElementsStore from "../../state/elements"
+import { toPascalCase } from "../../utils/formUtils"
 
 interface Props {
     postfix: string
@@ -40,25 +41,23 @@ export default function StructureTabTextsInput(props: Props) {
             value={
                 props.texts![
                     props.defaultLanguage ?? (Object.keys(props.texts! ?? {}).sort()[0] as any)
-                ]?.[`${props.currentName}${props.postfix}` as any] ?? ""
+                ]?.[`${toPascalCase(props.currentName!)}${props.postfix}` as any] ?? ""
             }
             className={classes.largeInput}
             onChange={(e) => {
                 var texts: any = JSON.parse(JSON.stringify(props.texts!))
+                const key = `${toPascalCase(props.currentName!)}${props.postfix}`
                 if (props.defaultLanguage) {
                     if (!texts![props.defaultLanguage as any]) {
                         texts![props.defaultLanguage as any] = {}
                     }
-                    texts![props.defaultLanguage as any][`${props.currentName}${props.postfix}`] =
-                        getInputValue(e)
+                    texts![props.defaultLanguage as any][key] = getInputValue(e)
                 } else {
-                    texts![Object.keys(props.texts!).sort()[0]][
-                        `${props.currentName}${props.postfix}`
-                    ] = getInputValue(e)
+                    texts![Object.keys(props.texts!).sort()[0]][key] = getInputValue(e)
                 }
                 Object.keys(props.texts!).map((l) => {
-                    if (texts![l][`${props.currentName}${props.postfix}`] == undefined) {
-                        texts![l][`${props.currentName}${props.postfix}`] = ""
+                    if (texts![l][key] == undefined) {
+                        texts![l][key] = ""
                     }
                 })
                 editTexts({

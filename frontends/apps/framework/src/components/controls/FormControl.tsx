@@ -14,15 +14,14 @@ import { TabContainerTabSelectEventDetail } from "@ui5/webcomponents/dist/TabCon
 
 import { Card2, Severity, useMessages } from "commons"
 
-import { ElementInfo, FormService, ROOT_ROW } from "../../features/sessions/forms"
+import { Attachment, ElementInfo, ElementMapRow, FormService, isTable, ROOT_ROW, TableInfo } from "../../features/sessions/forms"
 import { ControlProps, getLabel, handleChange } from "./Control"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import SegmentControl from "./SegmentControl"
-import { UIElement, UserEventType } from "../../features/sessions/definitions"
+import { Definition, hasChildren, UIElement, UserEventType } from "../../features/sessions/definitions"
 import { update } from "../../features/sessions/sessionSlice"
 import { ElementProp } from "../../features/sessions/journal"
 import { isEventValid } from "../../features/sessions/sessionActions"
-import Dialog from "@ui5/webcomponents/dist/Dialog"
 import DialogControl from "./DialogControl"
 
 /**
@@ -41,6 +40,54 @@ function calcDesign(ei: ElementInfo | boolean | undefined): "Default" | "Positiv
     }
 
     return "Default"
+}
+
+const NON_DATA_ELEMENTS = new Set([
+    UIElement.Alert,
+    UIElement.Button,
+    UIElement.Dummy,
+    UIElement.Icon,
+    UIElement.Image,
+    UIElement.Link,
+    UIElement.Text,
+    UIElement.Toolbar,
+])
+
+function hasSegmentError(segmentDef: Definition, form: ElementMapRow): boolean {
+    if (!segmentDef.elements) return false
+    for (const child of segmentDef.elements) {
+        if (NON_DATA_ELEMENTS.has(child.uiElement)) continue
+        const el = FormService.findElementByRowAndKey(ROOT_ROW, child.key, form)
+        if (el?.msg?.severity === Severity.Error && el?.vi === true) {
+            // Exception Attachment: look for childen
+            if (child.uiElement === UIElement.Attachment) {
+                const attachments = el.va as Attachment[]
+                if (!Array.isArray(attachments) || attachments.length === 0) return true
+            } else {
+                return true
+            }
+        }
+        if (hasChildren(child) && hasSegmentError(child, form)) {
+            return true
+        }
+        // Exception Table: scan every row for cell-level errors
+        if (child.uiElement === UIElement.Table && el?.va && isTable(el.va)) {
+            const tableInfo = el.va as TableInfo
+            if (tableInfo.r && tableInfo.d && child.elements) {
+                for (const rowId of tableInfo.r) {
+                    const row = tableInfo.d[rowId]
+                    if (!row) continue
+                    for (const col of child.elements) {
+                        const colEl = FormService.findElementByKey(col.key, row.values)
+                        if (colEl?.msg?.severity === Severity.Error) {
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false
 }
 
 /**
@@ -114,12 +161,20 @@ export default function (props: ControlProps) {
         // Rendering of segments as tabs
         if (it.uiElement === UIElement.Segment && childElement?.vi) {
             const isSelected = it.key === element?.va
+            let design: "Default" | "Positive" | "Negative"
+            if (hasSegmentError(it, form)) {
+                design = "Negative"
+            } else if (calcDesign(childElement?.msg) === "Positive") {
+                design = "Positive"
+            } else {
+                design = "Default"
+            }
             tabs.push(
                 <Tab
                     key={it.id}
                     data-key={it.key}
                     text={getLabel(texts, it)}
-                    design={calcDesign(childElement?.msg)}
+                    design={design}
                     selected={isSelected}
                 >
                     {isSelected && (

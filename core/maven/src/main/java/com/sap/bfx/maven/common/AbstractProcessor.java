@@ -84,7 +84,7 @@ public abstract class AbstractProcessor {
 
     protected void normalizeNameKey(final ElementDefinition ed) {
         final var name = ed.getName();
-        ed.setName(IdentifierUtils.capitalCamelCase(name));
+        ed.setName(IdentifierUtils.toPascalCase(name));
         ed.setKey(IdentifierUtils.key(name));
     }
 

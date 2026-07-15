@@ -7,7 +7,8 @@ public enum InputType implements Identifier {
     Text("text"),
     Password("password"),
     Number("number"),
-    Email("email");
+    Email("email"),
+    Telephone("telephone");
 
     private final String identifier;
 

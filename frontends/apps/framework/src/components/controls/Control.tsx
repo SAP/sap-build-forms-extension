@@ -123,6 +123,14 @@ export function handleChange(
         update({
             def,
             rowId,
+            prop: ElementProp.Message,
+            value: undefined,
+        }),
+    )
+    dispatch(
+        update({
+            def,
+            rowId,
             prop: ElementProp.Value,
             value,
         }),
@@ -343,6 +351,22 @@ export function getDoc(texts: Record<string, string>, def: Definition): string {
     }
 
     return text
+}
+
+/**
+ *
+ * @param texts
+ * @param def
+ * @returns
+ */
+export function getPlaceholder(texts: Record<string, string>, def: Definition): string | undefined {
+    if (texts) {
+        const text = texts[def.id + ".placeholder"]
+        if (typeof text === "string" && text.length > 0) {
+            return text
+        }
+    }
+    return undefined
 }
 
 /**

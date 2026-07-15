@@ -30,7 +30,7 @@ export default {
     common_show: "Show",
     common_delete: "Delete",
     common_edit: "Edit",
-    common_table_add: "Tabellenzeile hinzufügen",
+    common_table_add: "Add table row",
     common_text: "{text}",
     common_upload: "Upload",
     common_select_files: "Select files",

@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit"
 
 import { FrontendJournal, ElementProp, JournalService } from "./journal"
-import { DataTypes, Form, FormService, TableInfo } from "./forms"
+import { DataTypes, ElementInfo, Form, FormService, TableInfo } from "./forms"
 import { SessionState } from "../states"
 import { createSession, deleteRow, handleSessionResponse, triggerEvent } from "./sessionActions"
 import { DownloadAttachmentInput, deleteAttachment, uploadAttachment } from "./attachmentActions"
@@ -95,6 +95,10 @@ export const sessionSlice = createSlice({
                             action.payload.value as boolean,
                             action.payload.rowId,
                         )
+                        state.form = new Form("", state.form.values)
+                        break
+                    case ElementProp.Message:
+                        element.msg = action.payload.value as ElementInfo | undefined
                         state.form = new Form("", state.form.values)
                         break
                 }

@@ -1,4 +1,5 @@
 import { ReactNode, useState } from "react"
+import { useIntl } from "react-intl"
 import { TreeItemCustom } from "@ui5/webcomponents-react"
 import useElementsStore from "../../state/elements"
 import { useMessages, Severity } from "commons"
@@ -24,6 +25,7 @@ export default function DraggableTreeItem(props: Props) {
     const editDetailData = useElementsStore((state) => state.editDetailData)
     const elements = useElementsStore((state) => state.elements)
     const { toast } = useMessages()
+    const intl = useIntl()
 
     type CollectionKey = "elements" | "leftElements" | "rightElements"
 
@@ -249,7 +251,7 @@ export default function DraggableTreeItem(props: Props) {
 
         // Prevent invalid parent->child drop.
         if (isDescendant(draggedId, droppedOnId)) {
-            toast(Severity.Warning, "Cannot move element into its own child")
+            toast(Severity.Warning, intl.formatMessage({ id: "element_cannot_move_into_child" }))
             setDropPosition('inside')
             return
         }

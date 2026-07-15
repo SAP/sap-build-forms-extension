@@ -9,7 +9,7 @@ import { useMessages } from "commons"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import { ValuehelpsService } from "../../features/valuehelps/logic"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
 import { FormService } from "../../features/sessions/forms"
@@ -28,7 +28,7 @@ interface ValueName {
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const intl = useIntl()
     const dispatch = useAppDispatch()
     const messages = useMessages()
@@ -55,6 +55,7 @@ export default function (props: ControlProps) {
             <MultiComboBox
                 id={def.key}
                 style={{ width: "100%" }}
+                placeholder={getPlaceholder(texts, def)}
                 readonly={elementDisabled || !element?.ed || !globalEd}
                 required={element?.rq}
                 onOpen={() => console.log("onOpen")}
