@@ -40,6 +40,7 @@ const initialState: SessionState = {
     pageTitle: "...",
     vhs: {},
     ignore: true,
+    dvhs: {},
 }
 
 /**

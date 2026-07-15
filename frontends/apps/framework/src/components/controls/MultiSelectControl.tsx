@@ -7,9 +7,16 @@ import { MultiComboBox, MultiComboBoxItem } from "@ui5/webcomponents-react"
 import { useMessages } from "commons"
 
 import { useAppDispatch, useAppSelector } from "../../features/store"
-import { ValuehelpsService } from "../../features/valuehelps/logic"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
+import {
+    ControlProps,
+    handleChange,
+    handleEnterFocus,
+    handleLeaveFocus,
+    getPlaceholder,
+    handleDynamicValueHelp,
+    handleValueHelp,
+} from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
 import { FormService } from "../../features/sessions/forms"
@@ -33,6 +40,7 @@ export default function (props: ControlProps) {
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const vhs = useAppSelector((state) => state.valuehelps.vhs)
+    const dvhs = useAppSelector((state) => state.session.dvhs)
     const locale = useAppSelector((state) => state.session.locale)
     const [options, setOptions] = useState<ValueName[]>([])
     const [elementDisabled, setElementDisabled] = useState<boolean>(true)
@@ -40,14 +48,12 @@ export default function (props: ControlProps) {
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
     const emptySelection = def.vh?.emptySelection ?? false
 
+    // the following useEffects handle "static" and "dynamic" value-helps.
     useEffect(() => {
-        if (def.vh && vhs[def.vh.name]) {
-            const p = ValuehelpsService.loadFormLocalstore(def.vh.name, locale)
-            p.then((values) => {
-                setOptions(ValuehelpsService.createVHOptions(values, def.vh))
-                setElementDisabled(false)
-            })
-        }
+        handleDynamicValueHelp(def, dvhs, setOptions, setElementDisabled)
+    }, [dvhs])
+    useEffect(() => {
+        handleValueHelp(def, vhs, locale, setOptions, setElementDisabled)
     }, [vhs])
 
     return (
