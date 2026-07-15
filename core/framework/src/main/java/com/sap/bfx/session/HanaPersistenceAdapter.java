@@ -1,6 +1,5 @@
 package com.sap.bfx.session;
 
-import com.sap.bfx.callback.PersistenceAdapter;
 import com.sap.bfx.definition.FormAttributes;
 import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.exception.ExceptionUtils;
@@ -11,7 +10,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowCallbackHandler;
 
 import java.io.ByteArrayInputStream;
@@ -21,16 +19,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+/**
+ * Implements the PersistenceAdapter interface for the SAP HANA database
+ */
 @Slf4j
-public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
-
-    private final JdbcTemplate jdbc;
+public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter {
 
     /**
-     * @param jdbc
+     * Constructor
+     *
+     * @param jdbc The JdbcTemplate to be used to access the database. It is expected that the JdbcTemplate is
+     *             configured with a DataSource that has auto-commit set to false.
      */
     protected HanaPersistenceAdapter(final JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+        super(jdbc);
     }
 
     @Override
@@ -38,10 +40,9 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
 
         var res = new MutablePair<FormAttributes, InputStream>();
 
-        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE id=? LIMIT 1",
-                (PreparedStatementSetter) ps -> {
-                    ps.setString(1, id);
-                }, new FormCallbackHandler(res));
+        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE id=? LIMIT 1", ps -> {
+            ps.setString(1, id);
+        }, new FormCallbackHandler(res));
         return res;
     }
 
@@ -50,11 +51,10 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
 
         var res = new MutablePair<FormAttributes, InputStream>();
 
-        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE scenario_nm=? AND ref_id=? LIMIT 1",
-                (PreparedStatementSetter) ps -> {
-                    ps.setString(1, scenarioName);
-                    ps.setString(2, refId);
-                }, new FormCallbackHandler(res));
+        jdbc.query("SELECT * FROM forms_data.forms_forms WHERE scenario_nm=? AND ref_id=? LIMIT 1", ps -> {
+            ps.setString(1, scenarioName);
+            ps.setString(2, refId);
+        }, new FormCallbackHandler(res));
         return res;
     }
 
@@ -68,9 +68,10 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
     protected void internalSave(final FormAttributes formAttributes, final InputStream data, final boolean isNew) {
         if (isNew) {
             jdbc.update(con -> {
-                final var ps = con.prepareStatement("INSERT INTO forms_data.forms_forms (id,version,ref_id,scenario_nm," +
-                        "scneario_ver,wf_adapter,user_nm,ts,template_nm,description,finished_at,functional_id," +
-                        "started_at,started_by,state,detail_state,data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                final var ps = con.prepareStatement(
+                        "INSERT INTO forms_data.forms_forms (id,version,ref_id,scenario_nm," +
+                                "scneario_ver,wf_adapter,user_nm,ts,template_nm,description,finished_at,functional_id," +
+                                "started_at,started_by,state,detail_state,data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
                 ps.setString(1, formAttributes.getId());
                 ps.setLong(2, formAttributes.getVersion());
                 ps.setString(3, formAttributes.getRefId());
@@ -81,24 +82,24 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
                 ps.setTimestamp(8, Timestamp.from(formAttributes.getChangedAt()));
                 ps.setString(9, formAttributes.getTemplateName());
                 ps.setString(10, formAttributes.getDescription());
-                ps.setTimestamp(11, formAttributes.getFinishedAt() != null
-                        ? Timestamp.from(formAttributes.getFinishedAt()) : null);
+                ps.setTimestamp(11,
+                        formAttributes.getFinishedAt() != null ? Timestamp.from(formAttributes.getFinishedAt()) : null);
                 ps.setString(12, formAttributes.getFunctionalId());
-                ps.setTimestamp(13, formAttributes.getStartedAt() != null
-                        ? Timestamp.from(formAttributes.getStartedAt()) : null);
+                ps.setTimestamp(13,
+                        formAttributes.getStartedAt() != null ? Timestamp.from(formAttributes.getStartedAt()) : null);
                 ps.setString(14, formAttributes.getStartedBy());
-                ps.setString(15, formAttributes.getState() != null
-                        ? formAttributes.getState().getIdentifier() : ProcessState.Draft.getIdentifier());
+                ps.setString(15, formAttributes.getState() != null ? formAttributes.getState().getIdentifier() :
+                        ProcessState.Draft.getIdentifier());
                 ps.setString(16, formAttributes.getDetailState());
                 ps.setBlob(17, data);
                 return ps;
             });
         } else {
             jdbc.update(con -> {
-                final var ps = con.prepareStatement("UPDATE forms_data.forms_forms SET data=?,version=?,ref_id=?,"
-                        + "scenario_nm=?,scneario_ver=?,wf_adapter=?,user_nm=?,ts=?,template_nm=?,description=?,"
-                        + "finished_at=?,functional_id=?,started_at=?,started_by=?,state=?,detail_state=?"
-                        + " WHERE id=? AND version=?");
+                final var ps = con.prepareStatement("UPDATE forms_data.forms_forms SET data=?,version=?,ref_id=?," +
+                        "scenario_nm=?,scneario_ver=?,wf_adapter=?,user_nm=?,ts=?,template_nm=?,description=?," +
+                        "finished_at=?,functional_id=?,started_at=?,started_by=?,state=?,detail_state=?" +
+                        " WHERE id=? AND version=?");
                 ps.setBlob(1, data);
                 ps.setLong(2, formAttributes.getVersion());
                 ps.setString(3, formAttributes.getRefId());
@@ -109,14 +110,14 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
                 ps.setTimestamp(8, Timestamp.from(formAttributes.getChangedAt()));
                 ps.setString(9, formAttributes.getTemplateName());
                 ps.setString(10, formAttributes.getDescription());
-                ps.setTimestamp(11, formAttributes.getFinishedAt() != null
-                        ? Timestamp.from(formAttributes.getFinishedAt()) : null);
+                ps.setTimestamp(11,
+                        formAttributes.getFinishedAt() != null ? Timestamp.from(formAttributes.getFinishedAt()) : null);
                 ps.setString(12, formAttributes.getFunctionalId());
-                ps.setTimestamp(13, formAttributes.getStartedAt() != null
-                        ? Timestamp.from(formAttributes.getStartedAt()) : null);
+                ps.setTimestamp(13,
+                        formAttributes.getStartedAt() != null ? Timestamp.from(formAttributes.getStartedAt()) : null);
                 ps.setString(14, formAttributes.getStartedBy());
-                ps.setString(15, formAttributes.getState() != null
-                        ? formAttributes.getState().getIdentifier() : ProcessState.Draft.getIdentifier());
+                ps.setString(15, formAttributes.getState() != null ? formAttributes.getState().getIdentifier() :
+                        ProcessState.Draft.getIdentifier());
                 ps.setString(16, formAttributes.getDetailState());
                 ps.setString(17, formAttributes.getId());
                 ps.setLong(18, formAttributes.getVersion() - 1); // optimistic locking
@@ -141,17 +142,14 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
     /**
      * Callback handler to map a ResultSet row to a Form object and InputStream
      */
-    private static class FormCallbackHandler implements RowCallbackHandler {
-
-        private MutablePair<FormAttributes, InputStream> result;
+    private record FormCallbackHandler(MutablePair<FormAttributes, InputStream> result) implements RowCallbackHandler {
 
         /**
          * Constructor
          *
          * @param result pair to store the result
          */
-        FormCallbackHandler(MutablePair<FormAttributes, InputStream> result) {
-            this.result = result;
+        private FormCallbackHandler {
         }
 
         /**
@@ -175,8 +173,7 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
                 form.setScenarioVersion(rs.getInt("scneario_ver"));
                 form.setStartedAt(JdbcUtils.fromResultSetToInstant(rs, "started_at"));
                 form.setStartedBy(rs.getString("started_by"));
-                form.setState(EnumUtils.valueById(ProcessState.class, rs.getString("state"),
-                        ProcessState.Draft));
+                form.setState(EnumUtils.valueById(ProcessState.class, rs.getString("state"), ProcessState.Draft));
                 form.setTemplateName(rs.getString("template_nm"));
                 form.setVersion(rs.getLong("version"));
                 form.setWorkflowAdapter(rs.getString("wf_adapter"));
@@ -189,8 +186,9 @@ public abstract class HanaPersistenceAdapter implements PersistenceAdapter {
                     result.setRight(new ByteArrayInputStream(b));
                 }
             } catch (SQLException e) {
-                throw ExceptionUtils.from("Error loading form: " + e.getMessage() + " (" + e.getSQLState()
-                        + "," + e.getErrorCode() + ")", e);
+                throw ExceptionUtils.from(
+                        "Error loading form: " + e.getMessage() + " (" + e.getSQLState() + "," + e.getErrorCode() + ")",
+                        e);
             } catch (Exception e) {
                 throw ExceptionUtils.from(e);
             }

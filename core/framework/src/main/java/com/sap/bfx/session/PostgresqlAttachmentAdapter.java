@@ -1,12 +1,9 @@
 package com.sap.bfx.session;
 
-import com.sap.bfx.callback.AttachmentAdapter;
 import com.sap.bfx.exception.ExceptionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowCallbackHandler;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,14 +20,17 @@ import java.util.concurrent.atomic.AtomicReference;
  * Beside this, the connection must be configured with auto-commit == false!
  */
 @Slf4j
-public abstract class PostgresqlAttachmentAdapter implements AttachmentAdapter {
-    private final JdbcTemplate jdbc;
+public abstract class PostgresqlAttachmentAdapter extends AbstractAttachmentAdapter {
+
 
     /**
-     * @param jdbc
+     * Constructor
+     *
+     * @param jdbc The JdbcTemplate to be used to access the database. It is expected that the JdbcTemplate is
+     *             configured with a DataSource that has auto-commit set to false.
      */
     protected PostgresqlAttachmentAdapter(final JdbcTemplate jdbc) {
-        this.jdbc = jdbc;
+        super(jdbc);
     }
 
     /**
@@ -66,25 +66,23 @@ public abstract class PostgresqlAttachmentAdapter implements AttachmentAdapter {
     public InputStream load(String ref) {
         final var result = new AtomicReference<InputStream>(null);
 
-        jdbc.query("SELECT content FROM forms_attachments WHERE id=?",
-                (PreparedStatementSetter) ps -> {
-                    ps.setString(1, ref);
-                },
-                (RowCallbackHandler) rs -> {
-                    try {
-                        byte[] b = null;
-                        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                            IOUtils.copy(rs.getBlob(1).getBinaryStream(), baos);
-                            b = baos.toByteArray();
-                        }
-                        result.set(new ByteArrayInputStream(b));
-                    } catch (SQLException e) {
-                        throw ExceptionUtils.from("Error loading attachment: " + e.getMessage() + " ("
-                                + e.getSQLState() + "," + e.getErrorCode() + ")", e);
-                    } catch (Exception e) {
-                        throw ExceptionUtils.from(e);
-                    }
-                });
+        jdbc.query("SELECT content FROM forms_attachments WHERE id=?", ps -> {
+            ps.setString(1, ref);
+        }, rs -> {
+            try {
+                byte[] b = null;
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    IOUtils.copy(rs.getBlob(1).getBinaryStream(), baos);
+                    b = baos.toByteArray();
+                }
+                result.set(new ByteArrayInputStream(b));
+            } catch (SQLException e) {
+                throw ExceptionUtils.from("Error loading attachment: " + e.getMessage() + " (" + e.getSQLState() + "," +
+                        e.getErrorCode() + ")", e);
+            } catch (Exception e) {
+                throw ExceptionUtils.from(e);
+            }
+        });
 
         return result.get();
     }

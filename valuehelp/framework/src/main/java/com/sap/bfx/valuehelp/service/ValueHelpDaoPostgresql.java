@@ -1,27 +1,18 @@
 package com.sap.bfx.valuehelp.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
-import com.sap.bfx.valuehelp.model.ValueHelpType;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -29,12 +20,11 @@ import java.util.*;
  */
 @Repository
 @Slf4j
-public class ValueHelpDaoPostgresql implements ValueHelpDao {
-    private final JdbcTemplate jdbc;
+public class ValueHelpDaoPostgresql extends AbstractValueHelpDao {
 
     @Autowired
     public ValueHelpDaoPostgresql(@Qualifier("dataSourceCore") final DataSource ds) {
-        this.jdbc = new JdbcTemplate(ds);
+        super(ds);
     }
 
     @Override
@@ -301,55 +291,5 @@ public class ValueHelpDaoPostgresql implements ValueHelpDao {
         return result;
     }
 
-    public static class ValueHelpDefinitionRowMapper implements RowMapper<ValueHelpDef> {
-        @Override
-        public ValueHelpDef mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ValueHelpDef vhd = new ValueHelpDef();
-            vhd.setId(rs.getString("id"));
-            vhd.setTtl(rs.getLong("ttl"));
-            vhd.setAdapter(rs.getString("adapter"));
-            vhd.setConfig(rs.getString("config"));
-            vhd.setDescription(rs.getString("description"));
-            if (StringUtils.isBlank(rs.getString("languages"))) {
-                vhd.setLanguages(new ArrayList<>());
-            } else {
-                vhd.setLanguages(new ArrayList<>(Arrays.asList(rs.getString("languages").split(", "))));
-            }
-            vhd.setKeyKey(rs.getString("key_key"));
-            if (StringUtils.isBlank(rs.getString("value_keys"))) {
-                vhd.setValueKeys(new ArrayList<>());
-            } else {
-                vhd.setValueKeys(new ArrayList<>(Arrays.asList(rs.getString("value_keys").split(", "))));
-            }
-            vhd.setFormatTemplate(rs.getString("format_template"));
-            String type = rs.getString("type");
-            vhd.setValueHelpType(ValueHelpType.CURRENCY.getIdentifier().equals(type) ? ValueHelpType.CURRENCY :
-                    ValueHelpType.FREESTYLE);
 
-            return vhd;
-        }
-    }
-
-    public static class ValueHelpValueRowMapper implements RowMapper<ValueHelp> {
-        @Override
-        @SneakyThrows
-        public ValueHelp mapRow(ResultSet rs, int rowNum) {
-            ValueHelp vhd = new ValueHelp();
-            vhd.setId(rs.getString("id"));
-            vhd.setVersion(rs.getLong("version"));
-            if (rs.getString("locale").equals("_")) {
-                vhd.setLocale(new Locale("_"));
-            } else {
-                vhd.setLocale(new Locale(rs.getString("locale")));
-            }
-            vhd.setValidUntil(rs.getTimestamp("valid_until"));
-            try {
-                vhd.setValues(new ObjectMapper().readValue(rs.getString("values"), List.class));
-            } catch (Exception e) {
-                log.error("error reading values of value-help '" + vhd.getId() + "'", e);
-                throw ExceptionUtils.from(e);
-            }
-            return vhd;
-        }
-    }
 }
