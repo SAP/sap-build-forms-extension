@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.PathUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
+import org.apache.maven.project.MavenProject;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -35,6 +36,14 @@ public class MetadataService extends AbstractProcessor {
 
     private final Map<String, Map<Integer, MixinDefinition>> mixinDefinitionMap = new HashMap<>();
     private Map<Integer, ExtendedScenarioDefinition> scenarioDefinitionMap = new HashMap<>();
+
+    /**
+     * Names of mixins whose current in-memory definition came from a classpath jar (not the local
+     * filesystem metadata folder). Used by {@link #writeMixinMetadataFiles(String)} to skip writing
+     * these back — they are read-only from the dev server's perspective. Populated by
+     * {@link #scanMixinMetadataWithClasspath(String, MavenProject)}.
+     */
+    private final Set<String> classpathMixinNames = new HashSet<>();
 
     /**
      * Finds the scenario definition for a given version. If it does not exist, a new ExtendedScenarioDefinition is
@@ -183,6 +192,7 @@ public class MetadataService extends AbstractProcessor {
      */
     public void scanMixinMetadata(String rootPath) throws Exception {
         this.mixinDefinitionMap.clear();
+        this.classpathMixinNames.clear();
         final var paths = new ArrayList<String>();
 
         scanMetadata(MetadataType.Mixin, rootPath, paths);
@@ -222,6 +232,35 @@ public class MetadataService extends AbstractProcessor {
                 var map = this.findTextsMixin(name, version, this.getLocaleFromFilename(fParts[0]));
                 PropertyFileUtils.readTexts(path, "", map);
             }
+        }
+    }
+
+    /**
+     * Scan the local metadata folder AND the current project's dependency jars for mixin
+     * definitions. Local files take precedence when the same {@code (name, version)} exists in both
+     * sources. Mixins loaded exclusively from a jar have their names recorded in
+     * {@link #classpathMixinNames} so {@link #writeMixinMetadataFiles(String)} will skip writing
+     * them back — they are read-only from the dev server's perspective.
+     * <p>
+     * This method is intended for the dev server's mixin-listing endpoint. Build-time flows keep
+     * using {@link #scanMixinMetadata(String)}, which is filesystem-only.
+     */
+    public void scanMixinMetadataWithClasspath(String rootPath, MavenProject project) throws Exception {
+        scanMixinMetadata(rootPath);
+        if (project == null) return;
+
+        final var scanner = new MixinClasspathScanner();
+        final var jarMixins = scanner.scanAllMixins(project, log);
+        for (final var jarMixin : jarMixins) {
+            final var innerMap = mixinDefinitionMap.computeIfAbsent(jarMixin.getName(), k -> new HashMap<>());
+            // Local wins: only add if this (name, version) isn't already present from the local folder.
+            if (innerMap.containsKey(jarMixin.getVersion())) {
+                log.info("    classpath mixin '" + jarMixin.getName() + "' v" + jarMixin.getVersion()
+                        + "' shadowed by local file — using local");
+                continue;
+            }
+            innerMap.put(jarMixin.getVersion(), jarMixin);
+            classpathMixinNames.add(jarMixin.getName());
         }
     }
 
@@ -459,6 +498,12 @@ public class MetadataService extends AbstractProcessor {
         List<String> files_modified = new ArrayList<>();
         for (var mixinNames : this.mixinDefinitionMap.values()) {
             for (var mixin : mixinNames.values()) {
+                // Skip mixins that came from a classpath jar — those are read-only and must never
+                // be written to the local metadata folder, otherwise the local copy would shadow
+                // the shared jar on the next scan.
+                if (classpathMixinNames.contains(mixin.getName())) {
+                    continue;
+                }
                 mixin.setElements(sortElements(mixin.getElements()));
                 var f = findAndEnsureMixinFile(files, mixin.getName(), mixin.getVersion(), rootPath);
                 files_modified.add((f.getName()));
