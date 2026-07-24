@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 /**
  * Basic implementation of a data access object for P13N service
  */
-public abstract class AbstractCoreDao implements CoreDao {
+public abstract class AbstractP13NDao implements P13NDao {
     protected final JdbcTemplate jdbc;
 
     /**
@@ -15,7 +15,7 @@ public abstract class AbstractCoreDao implements CoreDao {
      *
      * @param ds the DataSource to be used for database access
      */
-    protected AbstractCoreDao(final DataSource ds) {
+    protected AbstractP13NDao(final DataSource ds) {
         this.jdbc = new JdbcTemplate(ds);
     }
 }

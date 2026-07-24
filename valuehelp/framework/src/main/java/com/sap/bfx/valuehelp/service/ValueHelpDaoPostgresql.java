@@ -18,7 +18,8 @@ import java.util.*;
 /**
  * @see <a href="https://www.jackrutorial.com/2018/08/multiple-datasource-in-spring-boot.html" />
  */
-@Repository
+@Repository("valueHelpDaoPostgresql")
+@Qualifier("valueHelpDaoPostgresql")
 @Slf4j
 public class ValueHelpDaoPostgresql extends AbstractValueHelpDao {
 

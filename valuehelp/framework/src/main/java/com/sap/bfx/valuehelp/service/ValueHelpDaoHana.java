@@ -21,7 +21,8 @@ import java.util.*;
 /**
  * @see <a href="https://www.jackrutorial.com/2018/08/multiple-datasource-in-spring-boot.html" />
  */
-@Repository
+@Repository("valueHelpDaoHana")
+@Qualifier("valueHelpDaoHana")
 @Slf4j
 public class ValueHelpDaoHana extends AbstractValueHelpDao {
 

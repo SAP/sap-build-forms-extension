@@ -17,12 +17,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-@Repository
+@Repository("p13nDaoHana")
+@Qualifier("p13nDaoHana")
 @Slf4j
-public class CoreDaoHana extends AbstractCoreDao {
+public class P13NDaoHana extends AbstractP13NDao {
 
     @Autowired
-    public CoreDaoHana(@Qualifier("dataSourceCore") final DataSource ds) {
+    public P13NDaoHana(@Qualifier("dataSourceCore") final DataSource ds) {
         super(ds);
     }
 

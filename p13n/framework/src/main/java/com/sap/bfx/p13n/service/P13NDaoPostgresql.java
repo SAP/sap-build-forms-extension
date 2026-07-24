@@ -17,12 +17,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-@Repository
+@Repository("p13nDaoPostgresql")
+@Qualifier("p13nDaoPostgresql")
 @Slf4j
-public class CoreDaoPostgresql extends AbstractCoreDao {
+public class P13NDaoPostgresql extends AbstractP13NDao {
     
     @Autowired
-    public CoreDaoPostgresql(@Qualifier("dataSourceCore") final DataSource ds) {
+    public P13NDaoPostgresql(@Qualifier("dataSourceCore") final DataSource ds) {
         super(ds);
     }
 

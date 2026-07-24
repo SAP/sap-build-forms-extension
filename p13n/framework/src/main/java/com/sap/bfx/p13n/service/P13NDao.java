@@ -11,7 +11,7 @@ import java.util.UUID;
 /**
  * Basic implementation of a data access object for P13N service
  */
-public interface CoreDao {
+public interface P13NDao {
 
     /**
      * find all personalizations in the database
