@@ -36,7 +36,10 @@ public class DefinitionNames {
     public final static String NM_LENGTH = "length";
     public final static String NM_LIMIT = "limit";
     public final static String NM_LINE_BREAK = "lineBreak";
+    public final static String NM_LINK_HREF = "linkHRef";
+    public final static String NM_LINK_TEXT = "linkText";
     public final static String NM_KEY = "key";
+    public final static String NM_KIND = "kind";
     public final static String NM_LEFT_ELEMENTS = "leftElements";
     public static final String NM_MESSAGE_KEY = "messageKey";
     public static final String NM_MIN_COLUMN_WIDTH = "minColumnWidth";
@@ -61,8 +64,6 @@ public class DefinitionNames {
     public final static String NM_SKIP_IN_SUMMARY = "skipInSummary";
     public final static String NM_SORT = "sort";
     public final static String NM_STYLE = "style";
-    public final static String NM_LINK_TEXT = "linkText";
-    public final static String NM_LINK_HREF = "linkHRef";
     public final static String NM_TEXTS = "texts";
     public final static String NM_TOOLBAR = "toolbar";
     public final static String NM_TOOLTIP = "tooltip";

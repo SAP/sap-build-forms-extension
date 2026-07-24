@@ -320,20 +320,21 @@ public class MetadataService extends AbstractProcessor {
         // Write definitions.json file to target directory
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(path + "/definitions.json", StandardCharsets.UTF_8))) {
-            this.writeMetadataAsJson(writer, true, true);
+            this.writeMetadataAsJson(writer, true, true, false);
         }
     }
 
     /**
-     * Writes the mixin metadata information to a JSON file named 'mixins.json' in the specified path. The method
-     * ensures that the parent directories exist before writing the file.
+     * Writes the mixin metadata information to a JSON structure and returns this as a string. Will be used from
+     * frontend and for writing files as well.
      *
+     * @param toFrontend whether the output is intended for frontend consumption
      * @throws IOException if any error occurs during file writing
      */
-    public String getMetadataAsJson() throws IOException {
+    public String getMetadataAsJson(final boolean toFrontend) throws IOException {
         final StringWriter writer = new StringWriter();
         try {
-            this.writeMetadataAsJson(writer, false, true);
+            this.writeMetadataAsJson(writer, false, true, toFrontend);
         } finally {
             IOUtils.closeQuietly(writer);
         }
@@ -364,13 +365,15 @@ public class MetadataService extends AbstractProcessor {
      * @param writer       the Writer to which the JSON will be written
      * @param includeKeys  whether to include keys in the serialized output
      * @param includeTexts whether to include texts in the serialized output
+     * @param toFrontend   whether the output is intended for frontend consumption
      * @throws IOException if any error occurs during writing
      */
-    private void writeMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts)
-            throws IOException {
+    private void writeMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts,
+                                     final boolean toFrontend) throws IOException {
         final var mapper = new ObjectMapper();
         final var module = new SimpleModule();
-        module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(includeKeys, includeTexts));
+        module.addSerializer(ScenarioDefinition.class,
+                new ScenarioDefinitionSerializer(includeKeys, includeTexts, toFrontend));
         mapper.registerModule(module);
         mapper.writeValue(writer, scenarioDefinitionMap);
     }
@@ -530,7 +533,7 @@ public class MetadataService extends AbstractProcessor {
         try (var writer = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8)) {
             final var mapper = new ObjectMapper(new YAMLFactory());
             final var module = new SimpleModule();
-            module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(false, false));
+            module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(false, false, false));
             mapper.registerModule(module);
 
             mapper.writeValue(writer, sd);
