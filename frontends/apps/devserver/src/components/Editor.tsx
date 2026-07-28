@@ -70,12 +70,14 @@ const useStyles = createUseStyles({
 export default function () {
     useEffect(() => {
         const p = backendDispatch("v1/scenarios/", "GET", undefined)
+        const p2 = backendDispatch("v1/scenarios/mixins", "GET", undefined)
+
         p.then((action: any) => {
             if (action.status == 200) {
                 const data = action.data
-                insertElements(data)
-                setTreeItemsShown(Object.keys(data).map((key) => data[key])[0])
-                setVersion(Object.keys(data).map((key) => data[key])[0].version)
+                if (Object.keys(data).length > 0) {
+                    insertElements(data)
+                }
             } else {
                 openMessageBox(
                     MessageBoxType.Error,
@@ -85,7 +87,6 @@ export default function () {
             }
         })
 
-        const p2 = backendDispatch("v1/scenarios/mixins", "GET", undefined)
         p2.then((action: any) => {
             if (action.status == 200) {
                 insertElementsMixin(action.data)
@@ -95,6 +96,25 @@ export default function () {
                     undefined,
                     <>An error occurred while loading mixin data.</>,
                 )
+            }
+        })
+
+        Promise.all([p, p2]).then(([scenarioAction, mixinAction]: any[]) => {
+            const hasScenario =
+                scenarioAction.status == 200 &&
+                Object.values(scenarioAction.data).length > 0
+            if (hasScenario) {
+                const firstScenario = Object.values(scenarioAction.data)[0] as any
+                setVersion(firstScenario.version)
+            } else if (mixinAction.status == 200) {
+                const firstMixinGroup = Object.values(mixinAction.data)[0] as any
+                const firstMixin = firstMixinGroup
+                    ? (Object.values(firstMixinGroup)[0] as any)
+                    : undefined
+                if (firstMixin?.name) {
+                    setScenarioMixin(firstMixin.name)
+                    setVersion(firstMixin.version)
+                }
             }
         })
     }, [])
@@ -133,8 +153,8 @@ export default function () {
     const [dialogAddLanguageOpen, setDialogAddLanguageOpen] = useState<boolean>(false)
     const [language, setLanguage] = useState<string>(
         treeItemsShown
-            ? "defaultLanguage" in treeItemsShown
-                ? treeItemsShown?.defaultLanguage!
+            ? !("kind" in treeItemsShown)
+                ? (treeItemsShown as Scenario).defaultLanguage!
                 : Object.keys(treeItemsShown?.texts!).sort()[0]
             : "en",
     )
@@ -145,6 +165,8 @@ export default function () {
     const availableVariants = treeItemsShown
         ? collectVariantsFromElements(treeItemsShown.elements)
         : []
+
+    const isReadOnly = "kind" in (treeItemsShown ?? {}) && (treeItemsShown as Mixin).kind !== "f"
 
     useEffect(() => {
         setSelectedVariants((current) =>
@@ -162,11 +184,11 @@ export default function () {
             (item: any) =>
                 item.version == version &&
                 (item.name == scenarioMixin ||
-                    (scenarioMixin == "Scenario" && item.defaultLanguage != null)),
+                    (scenarioMixin == "Scenario" && !("kind" in item))),
         )
         if (treeItems1.length > 0) {
             setTreeItemsShown(treeItems1[0])
-            if ("defaultLanguage" in treeItems1[0]) {
+            if (!("kind" in treeItems1[0])) {
                 setLanguage(treeItems1[0].defaultLanguage!)
             } else {
                 setLanguage(Object.keys(treeItems1[0].texts!).sort()[0])
@@ -175,12 +197,12 @@ export default function () {
             const treeItems2 = treeItems.filter(
                 (item: any) =>
                     item.name == scenarioMixin ||
-                    (scenarioMixin == "Scenario" && item.defaultLanguage != null),
+                    (scenarioMixin == "Scenario" && !("kind" in item)),
             )
             if (treeItems2.length > 0) {
                 setTreeItemsShown(treeItems2[0])
                 setVersion(treeItems2[0].version)
-                if ("defaultLanguage" in treeItems2[0]) {
+                if (!("kind" in treeItems2[0])) {
                     setLanguage(treeItems2[0].defaultLanguage!)
                 } else {
                     setLanguage(Object.keys(treeItems2[0].texts!).sort()[0])
@@ -195,7 +217,7 @@ export default function () {
                 (item: any) =>
                     item.version == version &&
                     (item.name == scenarioMixin ||
-                        (scenarioMixin == "Scenario" && item.defaultLanguage != null)),
+                        (scenarioMixin == "Scenario" && !("kind" in item))),
             )[0],
         )
     }, [update])
@@ -269,7 +291,7 @@ export default function () {
                                                 Object.assign(
                                                     {},
                                                     treeItems.filter(
-                                                        (item: any) => item.defaultLanguage != null,
+                                                        (item: any) => !("kind" in item),
                                                     ),
                                                 ),
                                             )
@@ -325,7 +347,7 @@ export default function () {
                                         icon="save"
                                         onClick={function Ta() {
                                             flushPendingNameCommitRef.current?.()
-                                            ;(document.activeElement as HTMLElement | null)?.blur()
+                                                ; (document.activeElement as HTMLElement | null)?.blur()
 
                                             const latestTreeItems = useElementsStore.getState().elements
 
@@ -338,7 +360,7 @@ export default function () {
                                                 Object.assign(
                                                     {},
                                                     latestTreeItems.filter(
-                                                        (item: any) => item.defaultLanguage != null,
+                                                        (item: any) => !("kind" in item),
                                                     ),
                                                 ),
                                             )
@@ -352,7 +374,7 @@ export default function () {
                                                             {},
                                                             latestTreeItems.filter(
                                                                 (item: any) =>
-                                                                    item.defaultLanguage == null,
+                                                                    "kind" in item,
                                                             ),
                                                         ),
                                                     )
@@ -406,9 +428,9 @@ export default function () {
                 }
                 content={
                     <>
-                        <FlexBox 
-                            direction="Row" 
-                            alignItems="Center" 
+                        <FlexBox
+                            direction="Row"
+                            alignItems="Center"
                             className={classes.dropdownContainer}
                         >
                             <Select
@@ -418,11 +440,13 @@ export default function () {
                                 className={classes.selectScenarioMixin}
                             >
                                 {[
-                                    "Scenario",
+                                    ...(treeItems.some((t: Scenario | Mixin) => !("kind" in t))
+                                        ? ["Scenario"]
+                                        : []),
                                     ...new Set(
                                         treeItems
                                             .filter(
-                                                (t1: Scenario | Mixin) => !("defaultLanguage" in t1),
+                                                (t1: Scenario | Mixin) => "kind" in t1,
                                             )
                                             .map((t: Scenario | Mixin) => t.name),
                                     ),
@@ -470,8 +494,8 @@ export default function () {
                                                 (item: any) =>
                                                     item.name == scenarioMixin ||
                                                     (scenarioMixin == "Scenario" &&
-                                                        item.defaultLanguage != null),
-                                            )
+                                                        !("kind" in item)),
+                                                    )
                                             .map((obj: Scenario | Mixin) => obj.version),
                                     ),
                                 ]
@@ -501,9 +525,9 @@ export default function () {
                             </MultiComboBox>
                         </FlexBox>
 
-                        <Panel 
-                            headerText="General Information" 
-                            headerLevel="H6" 
+                        <Panel
+                            headerText="General Information"
+                            headerLevel="H6"
                             collapsed={panelCollapsed}
                             onToggle={(e) => setPanelCollapsed(e.detail.collapsed)}
                         >
@@ -516,6 +540,7 @@ export default function () {
                                     <Input
                                         placeholder={treeItemsShown?.name}
                                         value={treeItemsShown?.name}
+                                        disabled={isReadOnly}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
@@ -532,7 +557,7 @@ export default function () {
                                         }}
                                     />
                                 </FormItem>
-                               {treeItemsShown && "active" in treeItemsShown && (
+                                {treeItemsShown && "active" in treeItemsShown && (
                                     <FormItem labelContent={<Label>Active</Label>}>
                                         <Switch
                                             onChange={(e) => {
@@ -545,11 +570,12 @@ export default function () {
                                             checked={treeItemsShown?.active}
                                         />
                                     </FormItem>
-                                )} 
+                                )}
                                 <FormItem labelContent={<Label>Access Object</Label>}>
                                     <Input
                                         placeholder={treeItemsShown?.accessObject}
                                         value={treeItemsShown?.accessObject}
+                                        disabled={isReadOnly}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
@@ -566,6 +592,7 @@ export default function () {
                                     <Input
                                         placeholder={treeItemsShown?.basePackage}
                                         value={treeItemsShown?.basePackage}
+                                        disabled={isReadOnly}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
@@ -578,7 +605,7 @@ export default function () {
                                         }}
                                     />
                                 </FormItem>
-                                {treeItemsShown && "defaultLanguage" in treeItemsShown && (
+                                {treeItemsShown && !("kind" in treeItemsShown) && (
                                     <FormItem labelContent={<Label>Default Language</Label>}>
                                         <Select
                                             onChange={function Ta(e) {
@@ -647,7 +674,7 @@ export default function () {
                             <Structure
                                 version={version}
                                 defaultLanguage={
-                                    treeItemsShown && "defaultLanguage" in treeItemsShown
+                                    treeItemsShown && !("kind" in treeItemsShown)
                                         ? treeItemsShown?.defaultLanguage
                                         : undefined
                                 }
@@ -672,6 +699,7 @@ export default function () {
                                 renderTable={renderTable}
                                 setRenderTable={setRenderTable}
                                 selectedVariants={selectedVariants}
+                                isReadOnly={isReadOnly}
                                 registerFlushPendingNameCommit={(fn) => {
                                     flushPendingNameCommitRef.current = fn
                                 }}
@@ -681,7 +709,7 @@ export default function () {
                         {tab == "Languages" && treeItemsShown && (
                             <LanguagesTab
                                 defaultLanguage={
-                                    "defaultLanguage" in treeItemsShown
+                                    !("kind" in treeItemsShown)
                                         ? treeItemsShown?.defaultLanguage
                                         : undefined
                                 }
@@ -694,6 +722,7 @@ export default function () {
                                 language={language}
                                 setLanguage={setLanguage}
                                 openMessageBox={openMessageBox}
+                                isReadOnly={isReadOnly}
                             />
                         )}
                     </>
@@ -719,15 +748,15 @@ export default function () {
                 languages={
                     treeItemsShown && treeItemsShown.texts
                         ? Object.keys(treeItemsShown.texts).concat(
-                            "defaultLanguage" in treeItemsShown &&
+                            !("kind" in treeItemsShown) &&
                                 !Object.keys(treeItemsShown.texts).includes(
-                                    treeItemsShown.defaultLanguage!,
+                                    (treeItemsShown as Scenario).defaultLanguage!,
                                 )
-                                ? [treeItemsShown.defaultLanguage!]
+                                ? [(treeItemsShown as Scenario).defaultLanguage!]
                                 : [],
                         )
-                        : treeItemsShown && "defaultLanguage" in treeItemsShown
-                            ? [treeItemsShown.defaultLanguage!]
+                        : treeItemsShown && !("kind" in treeItemsShown)
+                            ? [(treeItemsShown as Scenario).defaultLanguage!]
                             : []
                 }
                 language={language}

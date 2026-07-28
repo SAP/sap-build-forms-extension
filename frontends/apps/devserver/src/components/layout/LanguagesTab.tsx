@@ -16,18 +16,19 @@ import {
     TableRow,
 } from "@ui5/webcomponents-react"
 import { useEffect, useState } from "react"
-import { Scenario } from "../../utils/scenarioDefinitions"
+import { Mixin, Scenario } from "../../utils/scenarioDefinitions"
 import TextEdit from "./TextEdit"
 import useElementsStore from "../../state/elements"
 import { Severity, useMessages } from "commons"
 
 interface Props {
     defaultLanguage: string | undefined
-    treeItemsShown: Scenario | null
+    treeItemsShown: Scenario | Mixin | null
     update: number
     language: string
     version: number
     scenarioMixinName: string
+    isReadOnly: boolean
     setUpdate: (e: any) => void
     setDialogAddLanguageOpen: (o: boolean) => void
     setLanguage: (e: any) => void
@@ -56,7 +57,7 @@ export default function LanguagesTab(props: Props) {
                 style={{ paddingBottom: "1rem" }}
             >
                 <FormItem labelContent={<Label>Language Management</Label>}>
-                    <FlexBox direction="Row" style={{ gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <FlexBox direction="Row" style={{ gap: "0.5rem", alignItems: "center", flexWrap: "wrap", ...(props.isReadOnly ? { pointerEvents: "none", opacity: 0.6 } : {}) }}>
                         <Select
                             onChange={function Ta(e) {
                                 props.setLanguage(e.detail.selectedOption.textContent!.toString())
@@ -197,6 +198,7 @@ export default function LanguagesTab(props: Props) {
             </Form>
 
             <Table
+                style={props.isReadOnly ? { pointerEvents: "none", opacity: 0.6 } : undefined}
                 headerRow={
                     <TableHeaderRow>
                         <TableHeaderCell width="20rem">

@@ -11,6 +11,7 @@ export type Scenario = {
 }
 
 export type Mixin = {
+    kind: "f" | "cp"
     name?: string
     version?: number
     accessObject?: string

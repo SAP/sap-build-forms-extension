@@ -1,6 +1,6 @@
 import { FlexBox, Input, Label, Switch, Icon } from "@ui5/webcomponents-react"
 import { useState } from "react"
-import { Elem, Parent, Scenario } from "../../utils/scenarioDefinitions"
+import { Elem, Mixin, Parent, Scenario } from "../../utils/scenarioDefinitions"
 import StructureTabTree from "./StructureTabTree"
 import StructureTabTable from "./StructureTabTable"
 import { VariantFilterProvider } from "./VariantFilterContext"
@@ -8,7 +8,7 @@ import { VariantFilterProvider } from "./VariantFilterContext"
 interface Props {
     version: number
     defaultLanguage: string | undefined
-    treeItemsShown: Scenario | null | undefined
+    treeItemsShown: Scenario | Mixin | null | undefined
     update: number
     el: Elem | undefined
     element: string
@@ -16,6 +16,7 @@ interface Props {
     copiedEl: Elem | undefined
     scenarioMixinName: string
     renderTable: number
+    isReadOnly: boolean
     setEl: (e: any) => void
     setElement: (e: any) => void
     setParents: (e: any) => void
@@ -105,7 +106,8 @@ export default function StructureTab(props: Props) {
                     setParents={props.setParents}
                     copiedEl={props.copiedEl}
                     setCopiedEl={props.setCopiedEl}
-                    search={search}  // ADD THIS
+                    search={search}
+                    isReadOnly={props.isReadOnly}
                     registerFlushPendingNameCommit={props.registerFlushPendingNameCommit}
                 />
             )}
@@ -128,7 +130,8 @@ export default function StructureTab(props: Props) {
                     setUpdate={props.setUpdate}
                     renderTable={props.renderTable}
                     setRenderTable={props.setRenderTable}
-                    search={search}  // ADD THIS
+                    search={search}
+                    isReadOnly={props.isReadOnly}
                 />
             )}
             </FlexBox>

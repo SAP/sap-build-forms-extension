@@ -9,6 +9,7 @@ import {
     InputValue,
     leafNodes,
     Message,
+    Mixin,
     Parent,
     Scenario,
     SelectValue,
@@ -51,13 +52,14 @@ import { elementMatchesSelectedVariants } from "../../utils/variantUtils"
 interface Props {
     version: number
     defaultLanguage: string | undefined
-    treeItemsShown: Scenario | null | undefined
+    treeItemsShown: Scenario | Mixin | null | undefined
     el: Elem | undefined
     element: string
     parents: Parent[]
     scenarioMixinName: string
     update: number
     renderTable: number
+    isReadOnly: boolean
     setEl: (e: any) => void
     setElement: (e: any) => void
     setParents: (e: any) => void
@@ -236,7 +238,6 @@ export default function StructureTabTable(props: Props) {
         }
     }, [props.search, elementsTable]);
 
-    console.log(memorizedData)
 
     useEffect(() => {
         treeItemsRef.current = props.treeItemsShown
@@ -2528,7 +2529,7 @@ export default function StructureTabTable(props: Props) {
     )
 
     return (
-        <FlexBox style={{ paddingBottom: 15 }} >
+        <FlexBox style={{ paddingBottom: 15, ...(props.isReadOnly ? { pointerEvents: "none", opacity: 0.5 } : {}) }} >
             <div className={classes.buttonsTree}>
                 <Button
                     icon="add"

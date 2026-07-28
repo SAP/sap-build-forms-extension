@@ -30,6 +30,7 @@ import {
     ElementPart,
     InputValue,
     Message,
+    Mixin,
     Parent,
     Scenario,
     SelectValue,
@@ -55,13 +56,14 @@ import CategoriesTable from "./CategoriesTable"
 interface Props {
     version: number
     defaultLanguage: string | undefined
-    treeItemsShown: Scenario | null | undefined
+    treeItemsShown: Scenario | Mixin | null | undefined
     update: number
     el: Elem | undefined
     element: string
     parents: Parent[]
     copiedEl: Elem | undefined
     scenarioMixinName: string
+    isReadOnly: boolean
     setEl: (e: any) => void
     setElement: (e: any) => void
     setParents: (e: any) => void
@@ -110,47 +112,47 @@ export default function StructureTabTree(props: Props) {
 
     const [mode, setMode] = React.useState<ListSelectionMode>(ListSelectionMode.Single)
     const [nameDraft, setNameDraft] = React.useState<string>(props.el?.name ?? "")
-const treeRef = React.useRef<HTMLElement>(null)
-const currentNameRef = React.useRef<string | undefined>(props.el?.name)
-const textsRef = React.useRef<any>(props.treeItemsShown?.texts ?? {})
-const nameCommitTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
-const isTypingNameRef = React.useRef<boolean>(false)
-const nameDraftRef = React.useRef<string>(props.el?.name ?? "")
+    const treeRef = React.useRef<HTMLElement>(null)
+    const currentNameRef = React.useRef<string | undefined>(props.el?.name)
+    const textsRef = React.useRef<any>(props.treeItemsShown?.texts ?? {})
+    const nameCommitTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isTypingNameRef = React.useRef<boolean>(false)
+    const nameDraftRef = React.useRef<string>(props.el?.name ?? "")
 
-React.useEffect(() => {
-    currentNameRef.current = props.el?.name
-}, [props.el?.name])
+    React.useEffect(() => {
+        currentNameRef.current = props.el?.name
+    }, [props.el?.name])
 
-React.useEffect(() => {
-    textsRef.current = props.treeItemsShown?.texts ?? {}
-}, [props.treeItemsShown?.texts])
+    React.useEffect(() => {
+        textsRef.current = props.treeItemsShown?.texts ?? {}
+    }, [props.treeItemsShown?.texts])
 
-React.useEffect(() => {
-    if (nameCommitTimeoutRef.current) {
-        clearTimeout(nameCommitTimeoutRef.current)
-        nameCommitTimeoutRef.current = null
-    }
-    isTypingNameRef.current = false
-    const value = props.el?.name ?? ""
-    setNameDraft(value)
-    nameDraftRef.current = value
-}, [props.element])
-
-React.useEffect(() => {
-    if (!isTypingNameRef.current) {
+    React.useEffect(() => {
+        if (nameCommitTimeoutRef.current) {
+            clearTimeout(nameCommitTimeoutRef.current)
+            nameCommitTimeoutRef.current = null
+        }
+        isTypingNameRef.current = false
         const value = props.el?.name ?? ""
         setNameDraft(value)
         nameDraftRef.current = value
-    }
-}, [props.el?.name])
+    }, [props.element])
 
-React.useEffect(() => {
-    return () => {
-        if (nameCommitTimeoutRef.current) {
-            clearTimeout(nameCommitTimeoutRef.current)
+    React.useEffect(() => {
+        if (!isTypingNameRef.current) {
+            const value = props.el?.name ?? ""
+            setNameDraft(value)
+            nameDraftRef.current = value
         }
-    }
-}, [])
+    }, [props.el?.name])
+
+    React.useEffect(() => {
+        return () => {
+            if (nameCommitTimeoutRef.current) {
+                clearTimeout(nameCommitTimeoutRef.current)
+            }
+        }
+    }, [])
 
     const flushPendingNameCommit = () => {
         if (nameCommitTimeoutRef.current) {
@@ -164,12 +166,12 @@ React.useEffect(() => {
         }
     }
 
-React.useEffect(() => {
-    props.registerFlushPendingNameCommit?.(flushPendingNameCommit)
-    return () => {
-        props.registerFlushPendingNameCommit?.(undefined)
-    }
-}, [props.registerFlushPendingNameCommit, flushPendingNameCommit])
+    React.useEffect(() => {
+        props.registerFlushPendingNameCommit?.(flushPendingNameCommit)
+        return () => {
+            props.registerFlushPendingNameCommit?.(undefined)
+        }
+    }, [props.registerFlushPendingNameCommit, flushPendingNameCommit])
 
     const commitNameChange = (newName: string) => {
         if (!props.el) {
@@ -181,7 +183,8 @@ React.useEffect(() => {
             return
         }
 
-        if (props.treeItemsShown?.root != undefined && props.treeItemsShown?.root === oldName) {
+        const scenario = !("kind" in (props.treeItemsShown ?? {})) ? (props.treeItemsShown as Scenario) : null
+        if (scenario?.root != undefined && scenario.root === oldName) {
             editBaseData({
                 scenarioMixinName: props.scenarioMixinName,
                 version: props.version,
@@ -234,31 +237,31 @@ React.useEffect(() => {
         props.setUpdate((prev: number) => prev + 1)
     }
 
-React.useEffect(() => {
-    if (props.search && props.treeItemsShown?.elements) {
-        const timeoutId = setTimeout(() => {
-            const matchedIndex = findIndexByName(props.search)
-            if (matchedIndex) {
-                changeElement(matchedIndex)
-                
-                setTimeout(() => {
-                    const treeElement = treeRef.current
-                    if (treeElement) {
-                        const selectedItem = treeElement.querySelector(`[id="${matchedIndex}"]`)
-                        if (selectedItem) {
-                            selectedItem.scrollIntoView({ 
-                                behavior: 'smooth', 
-                                block: 'center' 
-                            })
-                        }
-                    }
-                }, 300)
-            }
-        }, 500)
+    React.useEffect(() => {
+        if (props.search && props.treeItemsShown?.elements) {
+            const timeoutId = setTimeout(() => {
+                const matchedIndex = findIndexByName(props.search)
+                if (matchedIndex) {
+                    changeElement(matchedIndex)
 
-        return () => clearTimeout(timeoutId)
-    }
-}, [props.search])
+                    setTimeout(() => {
+                        const treeElement = treeRef.current
+                        if (treeElement) {
+                            const selectedItem = treeElement.querySelector(`[id="${matchedIndex}"]`)
+                            if (selectedItem) {
+                                selectedItem.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'center'
+                                })
+                            }
+                        }
+                    }, 300)
+                }
+            }, 500)
+
+            return () => clearTimeout(timeoutId)
+        }
+    }, [props.search])
 
     function changeElement(i: string) {
         flushPendingNameCommit()
@@ -381,7 +384,7 @@ React.useEffect(() => {
             style={{
                 height: "calc(100vh - 200px)",
                 width: "100%",
-                overflow: "hidden" 
+                overflow: "hidden"
 
             }}
         >
@@ -400,121 +403,124 @@ React.useEffect(() => {
                     parents={props.parents}
                     setParents={props.setParents}
                     scenarioMixinName={props.scenarioMixinName}
-                    search={props.search} 
+                    search={props.search}
                     treeItemsShown={props.treeItemsShown}
                     update={props.update}
                     setUpdate={props.setUpdate}
                     version={props.version}
                     showDelete={true}
                     showSort={true}
+                    isReadOnly={props.isReadOnly}
                 />
                 <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
                     <div style={{ overflow: "auto", flex: 1 }}>
-                    <Breadcrumbs
-                        design="Standard"
-                        onItemClick={function Ki(e) {
-                            const itemId = e.detail.item.id
-                            changeElement(itemId)
-                            
-                            setTimeout(() => {
-                                const treeElement = treeRef.current
-                                if (treeElement) {
-                                    const selectedItem = treeElement.querySelector(`[id="${itemId}"]`)
-                                    if (selectedItem) {
-                                        selectedItem.scrollIntoView({ 
-                                            behavior: 'smooth', 
-                                            block: 'center' 
-                                        })
+                        <Breadcrumbs
+                            design="Standard"
+                            onItemClick={function Ki(e) {
+                                const itemId = e.detail.item.id
+                                changeElement(itemId)
+
+                                setTimeout(() => {
+                                    const treeElement = treeRef.current
+                                    if (treeElement) {
+                                        const selectedItem = treeElement.querySelector(`[id="${itemId}"]`)
+                                        if (selectedItem) {
+                                            selectedItem.scrollIntoView({
+                                                behavior: 'smooth',
+                                                block: 'center'
+                                            })
+                                        }
+                                    }
+                                }, 100)
+                            }}
+                            separators="Slash"
+                            style={{ paddingBottom: 10 }}
+                        >
+                            {props.parents.map((item) => {
+                                return (
+                                    <BreadcrumbsItem key={item.index} id={item.index}>
+                                        {item.elem.name}
+                                    </BreadcrumbsItem>
+                                )
+                            })}
+                        </Breadcrumbs>
+                        <Tree
+                            ref={treeRef}
+                            style={{ width: '99%' }}
+                            onItemClick={function Ta() {
+                                if (mode == ListSelectionMode.Delete) {
+                                    setMode(ListSelectionMode.Single)
+                                }
+                            }}
+                            onItemDelete={function Ta(e) {
+                                var i = e.detail.item?.attributes
+                                    .getNamedItem("id")
+                                    ?.nodeValue?.toString()
+                                if (i![i!.length - 2] == "l" || i![i!.length - 2] == "r") {
+                                    props.openMessageBox(
+                                        MessageBoxType.Error,
+                                        undefined,
+                                        <>This node cannot be deleted.</>,
+                                    )
+                                } else {
+                                    props.openMessageBox(
+                                        MessageBoxType.Confirm,
+                                        "Delete",
+                                        <>
+                                            Are you sure you want to delete the node{" "}
+                                            <b>
+                                                <i>{e.detail.item.title}</i>{" "}
+                                            </b>
+                                            and all its child nodes?
+
+
+                                            This operation cannot be undone.
+                                        </>,
+                                    )
+                                    props.setIndexesDelete({
+                                        indexes: i,
+                                        name: e.detail.item.title,
+                                    })
+                                    if (props.el && e.detail.item.title.includes(props.el.name)) {
+                                        props.setEl(undefined)
+                                        props.setParents([])
                                     }
                                 }
-                            }, 100)
-                        }}
-                        separators="Slash"
-                        style={{ paddingBottom: 10 }}
-                    >
-                        {props.parents.map((item) => {
-                            return (
-                                <BreadcrumbsItem key={item.index} id={item.index}>
-                                    {item.elem.name}
-                                </BreadcrumbsItem>
-                            )
-                        })}
-                    </Breadcrumbs>
-                    <Tree 
-                        ref={treeRef}
-                        style={{ width: '99%' }}
-                        onItemClick={function Ta() {
-                            if (mode == ListSelectionMode.Delete) {
-                                setMode(ListSelectionMode.Single)
-                            }
-                        }}
-                        onItemDelete={function Ta(e) {
-                            var i = e.detail.item?.attributes
-                                .getNamedItem("id")
-                                ?.nodeValue?.toString()
-                            if (i![i!.length - 2] == "l" || i![i!.length - 2] == "r") {
-                                props.openMessageBox(
-                                    MessageBoxType.Error,
-                                    undefined,
-                                    <>This node cannot be deleted.</>,
-                                )
-                            } else {
-                                props.openMessageBox(
-                                    MessageBoxType.Confirm,
-                                    "Delete",
-                                    <>
-                                        Are you sure you want to delete the node{" "}
-                                        <b>
-                                            <i>{e.detail.item.title}</i>{" "}
-                                        </b>
-                                        and all its child nodes?
-                                        
-
-                                        This operation cannot be undone.
-                                    </>,
-                                )
-                                props.setIndexesDelete({
-                                    indexes: i,
-                                    name: e.detail.item.title,
-                                })
-                                if (props.el && e.detail.item.title.includes(props.el.name)) {
-                                    props.setEl(undefined)
-                                    props.setParents([])
+                            }}
+                            onSelectionChange={function Ta(e) {
+                                if (mode == ListSelectionMode.Single) {
+                                    props.setSelectedTreeItem(e.detail.selectedItems[0])
+                                    changeElement(
+                                        e.detail.selectedItems[0].attributes
+                                            .getNamedItem("id")!
+                                            .nodeValue!.toString(),
+                                    )
                                 }
-                            }
-                        }}
-                        onSelectionChange={function Ta(e) {
-                            if (mode == ListSelectionMode.Single) {
-                                props.setSelectedTreeItem(e.detail.selectedItems[0])
-                                changeElement(
-                                    e.detail.selectedItems[0].attributes
-                                        .getNamedItem("id")!
-                                        .nodeValue!.toString(),
-                                )
-                            }
-                        }}
-                        selectionMode={mode}
-                    >
-                        {props.treeItemsShown && (
-                            <TreeItems
-                                items={props.treeItemsShown.elements!}
-                                id={""}
-                                searchString={props.search}
-                                scenarioVersion={props.version}
-                                sortBefore=""
-                                element={props.element}
-                                version={props.version}
-                                scenarioMixinName={props.scenarioMixinName}
-                                setUpdate={props.setUpdate}
-                            />
-                        )}
-                    </Tree>
+                            }}
+                            selectionMode={mode}
+                        >
+                            {props.treeItemsShown && (
+                                <TreeItems
+                                    items={props.treeItemsShown.elements!}
+                                    id={""}
+                                    searchString={props.search}
+                                    scenarioVersion={props.version}
+                                    sortBefore=""
+                                    element={props.element}
+                                    version={props.version}
+                                    scenarioMixinName={props.scenarioMixinName}
+                                    setUpdate={props.setUpdate}
+                                />
+                            )}
+                        </Tree>
                     </div>
                 </div>
             </SplitterElement>
             <SplitterElement>
                 {props.el && (
-                    <Page className={classes.attributes}>
+                    <Page className={classes.attributes}
+                        style={props.isReadOnly ? { pointerEvents: "none", opacity: 0.6 } : undefined}
+                    >
                         <Form
                             layout="S1 M1 L1 XL1"
                             labelSpan="S1 M2 L3 XL3"
@@ -1422,35 +1428,35 @@ React.useEffect(() => {
                             {(props.el?.type == "input" ||
                                 props.el?.type == "edit" ||
                                 props.el?.type == "autocomplete") && (
-                                <FormItem labelContent={<Label>Input Type</Label>}>
-                                    <Select
-                                        className={classes.largeInput}
-                                        onChange={function Ta(e) {
-                                            props.setNewEl({
-                                                ...props.el,
-                                                inputType:
-                                                    InputValue[
-                                                    e.detail.selectedOption.innerText!.toString() as keyof typeof InputValue
-                                                    ],
-                                            })
-                                        }}
-                                    >
-                                        {(Object.keys(InputValue) as Array<string>).map((key) => {
-                                            return (
-                                                <Option
-                                                    selected={
-                                                        props.el?.inputType?.toString() ==
-                                                        InputValue[key as keyof typeof InputValue]
-                                                    }
-                                                    key={key}
-                                                >
-                                                    {key}
-                                                </Option>
-                                            )
-                                        })}
-                                    </Select>
-                                </FormItem>
-                            )}
+                                    <FormItem labelContent={<Label>Input Type</Label>}>
+                                        <Select
+                                            className={classes.largeInput}
+                                            onChange={function Ta(e) {
+                                                props.setNewEl({
+                                                    ...props.el,
+                                                    inputType:
+                                                        InputValue[
+                                                        e.detail.selectedOption.innerText!.toString() as keyof typeof InputValue
+                                                        ],
+                                                })
+                                            }}
+                                        >
+                                            {(Object.keys(InputValue) as Array<string>).map((key) => {
+                                                return (
+                                                    <Option
+                                                        selected={
+                                                            props.el?.inputType?.toString() ==
+                                                            InputValue[key as keyof typeof InputValue]
+                                                        }
+                                                        key={key}
+                                                    >
+                                                        {key}
+                                                    </Option>
+                                                )
+                                            })}
+                                        </Select>
+                                    </FormItem>
+                                )}
 
                             {(props.el?.col || props.el?.col == "") && (
                                 <FormItem labelContent={<Label>Col</Label>}>
@@ -1747,18 +1753,18 @@ React.useEffect(() => {
                                 props.el?.type === "table" ||
                                 props.el?.type === "text"
                             ) && (
-                                <FormItem labelContent={<Label>Line break</Label>}>
-                                    <CheckBox
-                                        checked={props.el.lineBreak}
-                                        onChange={(e) => {
-                                            props.setNewEl({
-                                                ...props.el,
-                                                lineBreak: e.target.checked!,
-                                            })
-                                        }}
-                                    />
-                                </FormItem>
-                            )}
+                                    <FormItem labelContent={<Label>Line break</Label>}>
+                                        <CheckBox
+                                            checked={props.el.lineBreak}
+                                            onChange={(e) => {
+                                                props.setNewEl({
+                                                    ...props.el,
+                                                    lineBreak: e.target.checked!,
+                                                })
+                                            }}
+                                        />
+                                    </FormItem>
+                                )}
                             {props.parents.find((e) => e.elem.type == "wizard") && (
                                 <FormItem labelContent={<Label>Wizard format options</Label>}>
                                     <Form

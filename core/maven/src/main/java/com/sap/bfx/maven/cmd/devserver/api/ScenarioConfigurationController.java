@@ -60,7 +60,7 @@ public class ScenarioConfigurationController {
 
         try {
             metadataService.scanMixinMetadataWithClasspath(cfgService.getMetadataFolder(), cfgService.getProject());
-            return ResponseEntity.ok(metadataService.getMixinMetadataAsJson());
+            return ResponseEntity.ok(metadataService.getMixinMetadataAsJson(true));
         } catch (Exception e) {
             cfgService.getLog().error(e);
             return ResponseEntity.internalServerError().body(e.getLocalizedMessage());
@@ -101,7 +101,7 @@ public class ScenarioConfigurationController {
             metadataService.scanMixinMetadataWithClasspath(cfgService.getMetadataFolder(), cfgService.getProject());
 
             // send the metadata back as response
-            return ResponseEntity.ok(metadataService.getMixinMetadataAsJson());
+            return ResponseEntity.ok(metadataService.getMixinMetadataAsJson(true));
 
         } catch (Exception e) {
             cfgService.getLog().error(e);

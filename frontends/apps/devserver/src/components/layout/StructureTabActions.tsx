@@ -28,6 +28,7 @@ interface Props {
     version: number
     showDelete: boolean
     showSort: boolean
+    isReadOnly: boolean
 }
 
 const useStyles = createUseStyles({
@@ -57,7 +58,7 @@ export default function StructureTabActions(props: Props) {
 
         const scenarioIndex =
             props.scenarioMixinName === "Scenario"
-                ? elements.findIndex((el) => el.version === props.version && "defaultLanguage" in el)
+                ? elements.findIndex((el) => el.version === props.version && !("kind" in el))
                 : elements.findIndex((el) => el.version === props.version && el.name === props.scenarioMixinName)
 
         if (scenarioIndex < 0) return null
@@ -338,7 +339,9 @@ export default function StructureTabActions(props: Props) {
     const [onSortButton, setOnSortButton] = useState<boolean>(false)
 
     return (
-        <div className={classes.buttonsTree}>
+        <div className={classes.buttonsTree}
+            style={props.isReadOnly ? { pointerEvents: "none", opacity: 0.5 } : undefined}
+        >
             <Button
                 icon="add"
                 onClick={function Ta() {
@@ -396,14 +399,14 @@ export default function StructureTabActions(props: Props) {
                 style={{
                     width:
                         props.parents.length > 1 &&
-                        (props.parents[props.parents.length - 2].elem.type == "toolbar" ||
-                            (props.parents[props.parents.length - 2].elem.headerSegment !=
-                                undefined &&
-                                props.el &&
-                                props.parents[props.parents.length - 2].elem.elements.filter(
-                                    (sibling) => sibling.sort! < props.el!.sort!
-                                ).length == 0 &&
-                                props.parents[props.parents.length - 2].elem.headerSegment !=
+                            (props.parents[props.parents.length - 2].elem.type == "toolbar" ||
+                                (props.parents[props.parents.length - 2].elem.headerSegment !=
+                                    undefined &&
+                                    props.el &&
+                                    props.parents[props.parents.length - 2].elem.elements.filter(
+                                        (sibling) => sibling.sort! < props.el!.sort!
+                                    ).length == 0 &&
+                                    props.parents[props.parents.length - 2].elem.headerSegment !=
                                     props.el))
                             ? 160
                             : 10,
@@ -558,11 +561,11 @@ export default function StructureTabActions(props: Props) {
                             const grandParent = grandParentIndexPath
                                 ? getElementFromStore(grandParentIndexPath)
                                 : elements.find((el) =>
-                                      props.scenarioMixinName === "Scenario"
-                                          ? el.version === props.version && "defaultLanguage" in el
-                                          : el.version === props.version &&
-                                            el.name === props.scenarioMixinName
-                                  )
+                                    props.scenarioMixinName === "Scenario"
+                                        ? el.version === props.version && !("kind" in el)
+                                        : el.version === props.version &&
+                                        el.name === props.scenarioMixinName
+                                )
 
                             if (!currentParent || !grandParent) return
 
@@ -588,8 +591,8 @@ export default function StructureTabActions(props: Props) {
                                 elements: [
                                     ...(grandParent.elements || []).map((el: Elem) =>
                                         el.name === currentParent.name &&
-                                        el.sort === currentParent.sort &&
-                                        el.id === currentParent.id
+                                            el.sort === currentParent.sort &&
+                                            el.id === currentParent.id
                                             ? updatedParent
                                             : el
                                     ),
@@ -654,10 +657,10 @@ export default function StructureTabActions(props: Props) {
                         const minSort =
                             elBefore.elements && elBefore.elements.length > 0
                                 ? elBefore.elements.reduce(
-                                      (min: number, obj: Elem) =>
-                                          obj.sort! < min ? obj.sort! : min,
-                                      elBefore.elements[0].sort || 0
-                                  )
+                                    (min: number, obj: Elem) =>
+                                        obj.sort! < min ? obj.sort! : min,
+                                    elBefore.elements[0].sort || 0
+                                )
                                 : 0
 
                         const newEl = { ...props.el!, sort: minSort > 0 ? minSort - 10 : 5 }
@@ -709,11 +712,11 @@ export default function StructureTabActions(props: Props) {
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.parents[props.parents.length - 2].elem.type == "toolbar" &&
-                            props.element &&
-                            !["l", "r"].includes(
-                                props.element!.split("x").filter((item) => item).at(-2) ?? ""
-                            )
+                                props.parents[props.parents.length - 2].elem.type == "toolbar" &&
+                                props.element &&
+                                !["l", "r"].includes(
+                                    props.element!.split("x").filter((item) => item).at(-2) ?? ""
+                                )
                                 ? "flex"
                                 : "none",
                     }}
@@ -767,11 +770,11 @@ export default function StructureTabActions(props: Props) {
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.parents[props.parents.length - 2].elem.type == "toolbar" &&
-                            props.element &&
-                            !["l", "r"].includes(
-                                props.element!.split("x").filter((item) => item).at(-2) ?? ""
-                            )
+                                props.parents[props.parents.length - 2].elem.type == "toolbar" &&
+                                props.element &&
+                                !["l", "r"].includes(
+                                    props.element!.split("x").filter((item) => item).at(-2) ?? ""
+                                )
                                 ? "flex"
                                 : "none",
                     }}
@@ -825,13 +828,13 @@ export default function StructureTabActions(props: Props) {
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.el &&
-                            props.element &&
-                            props.parents[props.parents.length - 2].elem.elements.filter(
-                                (sibling) => sibling.sort! < props.el!.sort!
-                            ).length == 0 &&
-                            props.parents[props.parents.length - 2].elem.headerSegment != undefined &&
-                            props.parents[props.parents.length - 2].elem.headerSegment != props.el
+                                props.el &&
+                                props.element &&
+                                props.parents[props.parents.length - 2].elem.elements.filter(
+                                    (sibling) => sibling.sort! < props.el!.sort!
+                                ).length == 0 &&
+                                props.parents[props.parents.length - 2].elem.headerSegment != undefined &&
+                                props.parents[props.parents.length - 2].elem.headerSegment != props.el
                                 ? "flex"
                                 : "none",
                     }}
