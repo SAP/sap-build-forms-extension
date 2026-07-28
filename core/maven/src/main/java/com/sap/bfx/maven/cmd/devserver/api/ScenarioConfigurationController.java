@@ -47,7 +47,7 @@ public class ScenarioConfigurationController {
 
         try {
             metadataService.scanDefinitionMetadata(cfgService.getMetadataFolder());
-            return ResponseEntity.ok(metadataService.getMetadataAsJson());
+            return ResponseEntity.ok(metadataService.getMetadataAsJson(true));
         } catch (Exception e) {
             cfgService.getLog().error(e);
             return ResponseEntity.internalServerError().body(e.getLocalizedMessage());
@@ -78,7 +78,7 @@ public class ScenarioConfigurationController {
             metadataService.writeScenarioMetadataFiles(cfgService.getMetadataFolder());
 
             // send the metadata back as response
-            return ResponseEntity.ok(metadataService.getMetadataAsJson());
+            return ResponseEntity.ok(metadataService.getMetadataAsJson(true));
 
         } catch (Exception e) {
             cfgService.getLog().error(e);
@@ -86,7 +86,8 @@ public class ScenarioConfigurationController {
         }
     }
 
-    @PutMapping(value = "/mixins", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/mixins", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> updateMixins(HttpServletRequest req) {
 
         try {
@@ -108,13 +109,15 @@ public class ScenarioConfigurationController {
         }
     }
 
-    @PutMapping(value = "/check", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/check", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> check(HttpServletRequest req) {
 
         try {
             metadataService.readMetadataFromJson(req.getInputStream());
             MavenProject project = configurationService.getProject();
-            List<AbstractProcessor.ValidationMessage> messages = checkAndProcessService.checkAndProcessWithMessages(project);
+            List<AbstractProcessor.ValidationMessage> messages =
+                    checkAndProcessService.checkAndProcessWithMessages(project);
 
             ObjectMapper validationMessageResponse = new ObjectMapper();
             var module = new SimpleModule();
