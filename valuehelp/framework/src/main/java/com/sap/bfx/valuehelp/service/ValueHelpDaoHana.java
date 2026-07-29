@@ -2,8 +2,10 @@ package com.sap.bfx.valuehelp.service;
 
 import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
+import com.sap.bfx.valuehelp.model.ValueHelpType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,17 +100,25 @@ public class ValueHelpDaoHana extends AbstractValueHelpDao {
     public void addDef(ValueHelpDef vhd) {
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(
-                    "INSERT INTO forms_valuehelp.forms_vh_defs (id, ttl, adapter, config, description, languages) VALUES (?,?,?,?,?,?)");
+                    "INSERT INTO forms_valuehelp.forms_vh_defs (id, ttl, type, adapter, config, description, languages, key_key, value_keys, format_template) VALUES (?,?,?,?,?,?,?,?,?,?)");
             ps.setString(1, vhd.getId());
             ps.setLong(2, vhd.getTtl());
-            ps.setString(3, vhd.getAdapter());
-            ps.setString(4, vhd.getConfig());
-            ps.setString(5, vhd.getDescription());
+            ps.setString(3, vhd.getValueHelpType() != null ? vhd.getValueHelpType().getIdentifier() : "freestyle");
+            ps.setString(4, vhd.getAdapter());
+            ps.setString(5, vhd.getConfig());
+            ps.setString(6, vhd.getDescription());
             if (vhd.getLanguages().size() > 0) {
-                ps.setString(6, String.join(", ", vhd.getLanguages()));
+                ps.setString(7, String.join(", ", vhd.getLanguages()));
             } else {
-                ps.setString(6, "");
+                ps.setString(7, "");
             }
+            ps.setString(8, vhd.getKeyKey());
+            if (vhd.getValueKeys().size() > 0) {
+                ps.setString(9, String.join(", ", vhd.getValueKeys()));
+            } else {
+                ps.setString(9, "");
+            }
+            ps.setString(10, vhd.getFormatTemplate());
 
             return ps;
         });
@@ -119,17 +129,25 @@ public class ValueHelpDaoHana extends AbstractValueHelpDao {
     public void updateDef(ValueHelpDef vhd) {
         jdbc.update(con -> {
             PreparedStatement ps = con.prepareStatement(
-                    "UPDATE forms_valuehelp.forms_vh_defs SET ttl=?, adapter=?, config=?, description=?, languages=? where id=?");
+                    "UPDATE forms_valuehelp.forms_vh_defs SET ttl=?, type=?, adapter=?, config=?, description=?, languages=?, key_key=?, value_keys=?, format_template=? where id=?");
             ps.setLong(1, vhd.getTtl());
-            ps.setString(2, vhd.getAdapter());
-            ps.setString(3, vhd.getConfig());
-            ps.setString(4, vhd.getDescription());
+            ps.setString(2, vhd.getValueHelpType() != null ? vhd.getValueHelpType().getIdentifier() : "freestyle");
+            ps.setString(3, vhd.getAdapter());
+            ps.setString(4, vhd.getConfig());
+            ps.setString(5, vhd.getDescription());
             if (vhd.getLanguages().size() > 0) {
-                ps.setString(5, String.join(", ", vhd.getLanguages()));
+                ps.setString(6, String.join(", ", vhd.getLanguages()));
             } else {
-                ps.setString(5, "");
+                ps.setString(6, "");
             }
-            ps.setString(6, vhd.getId());
+            ps.setString(7, vhd.getKeyKey());
+            if (vhd.getValueKeys().size() > 0) {
+                ps.setString(8, String.join(", ", vhd.getValueKeys()));
+            } else {
+                ps.setString(8, "");
+            }
+            ps.setString(9, vhd.getFormatTemplate());
+            ps.setString(10, vhd.getId());
 
             return ps;
         });
@@ -260,11 +278,10 @@ public class ValueHelpDaoHana extends AbstractValueHelpDao {
     public Map<String, Long> findValuesVersion(Collection<String> ids, String locale) {
         var result = new HashMap<String, Long>();
 
+        final var params = ArrayUtils.addFirst(ids.toArray(new String[0]), locale);
         final String inSQL = String.join(",", Collections.nCopies(ids.size(), "?"));
-        jdbc.query(String.format("SELECT id,version FROM forms_valuehelp.forms_vh_values WHERE locale=? AND id IN(%s)",
-                        inSQL), (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)),
-                ArrayUtils.addFirst(ids.toArray(new String[0]), locale));
-
+        jdbc.query(String.format("SELECT id,version FROM forms_valuehelp.forms_vh_values WHERE locale=? AND id IN(%s)", inSQL),
+                (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)), params);
         return result;
     }
 
@@ -287,22 +304,4 @@ public class ValueHelpDaoHana extends AbstractValueHelpDao {
         return result;
     }
 
-    public static class ValueHelpDefinitionRowMapper implements RowMapper<ValueHelpDef> {
-        @Override
-        public ValueHelpDef mapRow(ResultSet rs, int rowNum) throws SQLException {
-            ValueHelpDef vhd = new ValueHelpDef();
-            vhd.setId(rs.getString("id"));
-            vhd.setTtl(rs.getLong("ttl"));
-            vhd.setAdapter(rs.getString("adapter"));
-            vhd.setConfig(rs.getString("config"));
-            vhd.setDescription(rs.getString("description"));
-            if (rs.getString("languages") == null || rs.getString("languages").trim().length() == 0) {
-                vhd.setLanguages(new ArrayList<>());
-
-            } else {
-                vhd.setLanguages(new ArrayList<>(Arrays.asList(rs.getString("languages").split(", "))));
-            }
-            return vhd;
-        }
-    }
 }

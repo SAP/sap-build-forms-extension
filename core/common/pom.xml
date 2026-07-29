@@ -124,8 +124,7 @@
             <groupId>com.sap.cloud.db.jdbc</groupId>
             <artifactId>ngdbc</artifactId>
             <version>${hanadb.version}</version>
-            <type>pom</type>
-            <scope>runtime</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.sap.cloud.sdk.cloudplatform</groupId>
