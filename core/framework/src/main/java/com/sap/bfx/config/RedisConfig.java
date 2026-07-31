@@ -1,5 +1,8 @@
 package com.sap.bfx.config;
 
+import com.sap.bfx.session.FormsService;
+import com.sap.bfx.session.Session;
+import com.sap.bfx.session.SessionRedisSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,10 +12,6 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import com.sap.bfx.session.FormsService;
-import com.sap.bfx.session.Session;
-import com.sap.bfx.session.SessionRedisSerializer;
 
 @Configuration
 public class RedisConfig {
@@ -54,7 +53,7 @@ public class RedisConfig {
      *
      * @return a configured RedisTemplate
      */
-    @Bean
+    @Bean("session-redis-template")
     public RedisTemplate<String, Session> redisSessionTemplate() {
         RedisTemplate<String, Session> template = new RedisTemplate<>();
         template.setConnectionFactory(jedisConnectionFactory());

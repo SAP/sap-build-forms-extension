@@ -32,6 +32,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
             <version>${spring-boot.version}</version>
         </dependency>
@@ -124,6 +129,11 @@
             <groupId>com.sap.cloud.sdk.cloudplatform</groupId>
             <artifactId>cloudplatform-connectivity</artifactId>
             <version>${sap-cloud-connectivity.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>${jedis.version}</version>
         </dependency>
         <dependency>
             <groupId>com.sap.cloud.sdk.datamodel</groupId>

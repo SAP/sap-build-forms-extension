@@ -12,6 +12,9 @@ export const api = axios.create({
   timeout: 60000,
   // @ts-ignore
   validateStatus: (status: number) => true,
+  headers: {
+    "Access-Control-Allow-Origin": "*",
+  }
 })
 if (sessionStorage["accessToken"]) {
   api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")

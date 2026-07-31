@@ -1,17 +1,24 @@
-package com.sap.bfx.security;
+package com.sap.bfx.security.oidc;
 
 import com.sap.bfx.definition.EventType;
 import com.sap.bfx.exception.NotAuthorizedException;
+import com.sap.bfx.security.AbstractGroups;
+import com.sap.bfx.security.FormsGroups;
+import com.sap.bfx.security.SecurityService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.Strings;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Service
 @Slf4j
+@Conditional(OidcEnabledCondition.class)
 public class OidcSecurityService implements SecurityService {
 
     /**
@@ -80,8 +87,7 @@ public class OidcSecurityService implements SecurityService {
         final var groups = jwt.getClaimAsStringList("groups");
         log.debug("Groups are '{}'", groups);
 
-        final var authorized = groups.stream().anyMatch(aGroup ->
-                Strings.CS.equals(group, aGroup));
+        final var authorized = groups.stream().anyMatch(aGroup -> Strings.CS.equals(group, aGroup));
         log.debug("User '{}' is {}", jwt.getClaim("user_uuid"), authorized ? "authorized" : "NOT authorized");
 
         return authorized;
@@ -101,7 +107,9 @@ public class OidcSecurityService implements SecurityService {
      * @throws NotAuthorizedException
      */
     @Override
-    public void ensureAuthorized(final AbstractAuthenticationToken token, final EventType type, final Boolean disableEnrichFormsGroups, final String sourceRowId, final String... sourceKeys) throws NotAuthorizedException {
+    public void ensureAuthorized(final AbstractAuthenticationToken token, final EventType type,
+                                 final Boolean disableEnrichFormsGroups, final String sourceRowId,
+                                 final String... sourceKeys) throws NotAuthorizedException {
         switch (type) {
             case StartProcessAuth, TaskExecutionAuth, ShowContextAuth, DownloadAttachmentAuth, FindValueHelpAuth,
                  UploadAttachmentAuth, DeleteAttachmentAuth, GetScenarioControllerAuth, PostScenarioControllerAuth ->
@@ -121,7 +129,9 @@ public class OidcSecurityService implements SecurityService {
      * @throws NotAuthorizedException
      */
     @Override
-    public void ensureAuthorized(final AbstractAuthenticationToken token, final EventType type, final Boolean disableEnrichFormsGroups, final AbstractGroups group) throws NotAuthorizedException {
+    public void ensureAuthorized(final AbstractAuthenticationToken token, final EventType type,
+                                 final Boolean disableEnrichFormsGroups, final AbstractGroups group)
+            throws NotAuthorizedException {
         List<AbstractGroups> scannableGroups = new ArrayList<>();
         if (null != group) {
             scannableGroups.add(group);
@@ -142,7 +152,8 @@ public class OidcSecurityService implements SecurityService {
      * @param groups groups that should be checked against
      * @throws NotAuthorizedException
      */
-    protected void ensureAnyAuthorized(AbstractAuthenticationToken token, String... groups) throws NotAuthorizedException {
+    protected void ensureAnyAuthorized(AbstractAuthenticationToken token, String... groups)
+            throws NotAuthorizedException {
         if (Arrays.stream(groups).noneMatch(g -> isAuthorized(token, g))) {
             var name = "";
             try {
@@ -164,7 +175,9 @@ public class OidcSecurityService implements SecurityService {
      * @throws NotAuthorizedException
      */
     @Override
-    public void ensureAnyAuthorized(final AbstractAuthenticationToken token, final EventType type, final Boolean disableEnrichFormsGroups, final AbstractGroups... groups) throws NotAuthorizedException {
+    public void ensureAnyAuthorized(final AbstractAuthenticationToken token, final EventType type,
+                                    final Boolean disableEnrichFormsGroups, final AbstractGroups... groups)
+            throws NotAuthorizedException {
         List<AbstractGroups> scannableGroups = new ArrayList<>();
         if (null != groups && 0 < groups.length) {
             scannableGroups.addAll(Arrays.stream(groups).toList());

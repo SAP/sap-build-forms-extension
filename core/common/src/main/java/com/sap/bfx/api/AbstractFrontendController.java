@@ -96,7 +96,10 @@ public abstract class AbstractFrontendController {
         log.debug("Handling resource '{}'", req.getRequestURI());
 
         // Set header to allow including the content via iframe
-        res.setHeader("Content-Security-Policy", "frame-ancestors http://localhost:* https://*.cloud.sap https://*.ondemand.com");
+        res.setHeader("Content-Security-Policy",
+                "frame-ancestors http://localhost:* https://*.cloud.sap https://*.ondemand.com");
+        // Set CORS header to allow redirected BTP pages
+//        res.setHeader("Access-Control-Allow-Origin", /*"https://*.ondemand.com"*/ "*");
 
         if (apiDocEnabled && StringUtils.equals(req.getRequestURI(), apiDocPath)) {
             log.info("API documentation is enabled, redirecting to {}", apiDocPath);
@@ -115,8 +118,7 @@ public abstract class AbstractFrontendController {
             path = m.group(1);
             log.debug("Translated path is '{}'", path);
 
-            if (StringUtils.endsWithIgnoreCase(path, ".js")
-                    || StringUtils.endsWithIgnoreCase(path, ".mjs")) {
+            if (StringUtils.endsWithIgnoreCase(path, ".js") || StringUtils.endsWithIgnoreCase(path, ".mjs")) {
                 mimeType = "text/javascript";
             } else if (StringUtils.endsWithIgnoreCase(path, "css")) {
                 mimeType = "text/css";
@@ -158,10 +160,10 @@ public abstract class AbstractFrontendController {
             var oAuth2AuthorizedClientRepository = applicationContext.getBean(OAuth2AuthorizedClientRepository.class);
             var oauth2Token = (OAuth2AuthenticationToken) principal;
             var userInfo = (DefaultOidcUser) (oauth2Token).getPrincipal();
-            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token, req))
-                    .getAccessToken().getTokenValue();
-            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token, req))
-                    .getRefreshToken().getTokenValue();
+            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
+                    req)).getAccessToken().getTokenValue();
+            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
+                    req)).getRefreshToken().getTokenValue();
             log.debug("User: '{}' logged in with ID Token: '{}'", userInfo.getName(), accessToken);
         }
 
