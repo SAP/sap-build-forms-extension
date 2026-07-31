@@ -1,4 +1,4 @@
-package com.sap.bfx.p13n.config;
+package com.sap.bfx.cockpit.config;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +12,7 @@ public class HanaJdbcConfig {
 
     @Bean
     @Primary
-    @ConditionalOnProperty(name = "forms.p13n.datasource.dbType", havingValue = "hana")
+    @ConditionalOnProperty(name = "forms.cockpit.datasource.dbType", havingValue = "hana")
     public Dialect hanaJdbcDialect() {
         return AnsiDialect.INSTANCE;
     }

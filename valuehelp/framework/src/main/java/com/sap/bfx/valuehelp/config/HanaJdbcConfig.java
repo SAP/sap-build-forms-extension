@@ -12,7 +12,7 @@ public class HanaJdbcConfig {
 
     @Bean
     @Primary
-    @ConditionalOnProperty(name = "forms.dbType", havingValue = "hana")
+    @ConditionalOnProperty(name = "forms.valuehelp.datasource.dbType", havingValue = "hana")
     public Dialect hanaJdbcDialect() {
         return AnsiDialect.INSTANCE;
     }

@@ -142,7 +142,7 @@ public class BaseHanaCockpitAdapter extends BaseCockpitAdapter {
 //            params.add(endDate);
 //        }
 
-        sql.append(" ORDER BY started_at DESC, description");
+        sql.append(" ORDER BY started_at DESC, CAST(description AS NVARCHAR(5000))");
 
         processes.addAll(jdbc.query(con -> {
             PreparedStatement ps = con.prepareStatement(sql.toString());
