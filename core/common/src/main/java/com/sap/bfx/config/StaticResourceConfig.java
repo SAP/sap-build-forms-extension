@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 
@@ -16,7 +15,7 @@ import java.io.IOException;
 @Slf4j
 public class StaticResourceConfig {
 
-    @Bean
+    //    @Bean
     public FilterRegistrationBean<StaticResourceFilter> staticResourceFilter() {
         FilterRegistrationBean<StaticResourceFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new StaticResourceFilter());
