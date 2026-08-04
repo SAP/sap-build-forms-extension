@@ -33,8 +33,9 @@ export default function (props: ControlProps) {
     iconName = toKebabCase(iconName)
 
     const icon = (
-        <Icon 
+        <Icon
             name={iconName}
+            title={def.tooltip}
             onClick={() =>
                 dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
             }

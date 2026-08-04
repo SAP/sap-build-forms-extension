@@ -25,6 +25,8 @@ import {
 import TreeItemBase from "@ui5/webcomponents/dist/TreeItemBase"
 import { ThemingParameters } from "@ui5/webcomponents-react-base"
 
+import { useIntl } from "react-intl"
+
 import { PageProvider, useMessages, Severity } from "commons"
 
 import useElementsStore from "../state/elements"
@@ -33,6 +35,7 @@ import { backendDispatch } from "../utils/backend"
 import useMessagesStore from "../state/messages"
 import { Elem, Scenario, tabs, Mixin, Parent, ElementPart } from "../utils/scenarioDefinitions"
 import { collectVariantsFromElements } from "../utils/variantUtils"
+import { toPascalCase } from "../utils/formUtils"
 import Structure from "./layout/StructureTab"
 import LanguagesTab from "./layout/LanguagesTab"
 import CopyDialog from "./layout/CopyDialog"
@@ -58,8 +61,8 @@ const useStyles = createUseStyles({
         fontSize: "medium",
     },
     dropdownContainer: {
-        gap: '1rem',
-        padding: '0.5rem 0 0.75rem 0',
+        gap: "1rem",
+        padding: "0.5rem 0 0.75rem 0",
     },
     selectVariants: {
         minWidth: 260,
@@ -75,9 +78,9 @@ export default function () {
         p.then((action: any) => {
             if (action.status == 200) {
                 const data = action.data
-                if (Object.keys(data).length > 0) {
-                    insertElements(data)
-                }
+                insertElements(data)
+                setTreeItemsShown(Object.keys(data).map((key) => data[key])[0])
+                setVersion(Object.keys(data).map((key) => data[key])[0].version)
             } else {
                 openMessageBox(
                     MessageBoxType.Error,
@@ -101,8 +104,7 @@ export default function () {
 
         Promise.all([p, p2]).then(([scenarioAction, mixinAction]: any[]) => {
             const hasScenario =
-                scenarioAction.status == 200 &&
-                Object.values(scenarioAction.data).length > 0
+                scenarioAction.status == 200 && Object.values(scenarioAction.data).length > 0
             if (hasScenario) {
                 const firstScenario = Object.values(scenarioAction.data)[0] as any
                 setVersion(firstScenario.version)
@@ -131,6 +133,7 @@ export default function () {
     const editTexts = useElementsStore((state) => state.editTexts)
     const deleteElementMessages = useMessagesStore((state) => state.deleteElementMessages)
     const { toast } = useMessages()
+    const intl = useIntl()
 
     const [scenarioMixin, setScenarioMixin] = useState("Scenario")
     const [version, setVersion] = useState<number>(-1)
@@ -143,7 +146,9 @@ export default function () {
     const [messageBoxType, setMessageBoxType] = useState<MessageBoxType>()
     const [messageBoxAction, setMessageBoxAction] = useState<"Delete" | undefined>(undefined)
     const [messageBoxText, setMessageBoxText] = useState<JSX.Element>(<></>)
-    const [messageBoxOnConfirm, setMessageBoxOnConfirm] = useState<{ fn: () => void } | undefined>(undefined);
+    const [messageBoxOnConfirm, setMessageBoxOnConfirm] = useState<{ fn: () => void } | undefined>(
+        undefined,
+    )
     const [addElementDialogOpen, setAddElementDialogOpen] = useState<boolean>(false)
     const [copyDialogOpen, setCopyDialogOpen] = useState<boolean>(false)
     const [indexesDelete, setIndexesDelete] = useState<{ indexes: string; name: string }>()
@@ -183,8 +188,7 @@ export default function () {
         const treeItems1 = treeItems.filter(
             (item: any) =>
                 item.version == version &&
-                (item.name == scenarioMixin ||
-                    (scenarioMixin == "Scenario" && !("kind" in item))),
+                (item.name == scenarioMixin || (scenarioMixin == "Scenario" && !("kind" in item))),
         )
         if (treeItems1.length > 0) {
             setTreeItemsShown(treeItems1[0])
@@ -225,7 +229,7 @@ export default function () {
     function setNewEl(newEl: Elem) {
         // Clear error messages for changed fields
         if (el && newEl.name) {
-            const elementId = newEl.name.charAt(0).toUpperCase() + newEl.name.slice(1)
+            const elementId = toPascalCase(newEl.name)
 
             // Check which fields changed and clear their specific error messages
             if (el.name !== newEl.name) {
@@ -253,7 +257,7 @@ export default function () {
         mBoxType: MessageBoxType,
         mBoxAction: "Delete" | undefined,
         mBoxText: JSX.Element,
-        onConfirm?: () => void
+        onConfirm?: () => void,
     ) {
         setMessageBoxType(mBoxType)
         setMessageBoxAction(mBoxAction)
@@ -298,42 +302,64 @@ export default function () {
                                             p.then((action: any) => {
                                                 if (action.status == 200) {
                                                     useMessagesStore.getState().deleteMessages()
-                                                    useMessagesStore.getState().insertMessages(action.data)
+                                                    useMessagesStore
+                                                        .getState()
+                                                        .insertMessages(action.data)
                                                     setUpdate(update + 1)
                                                     setRenderTable((prev) => prev + 1)
 
                                                     const messages = Array.isArray(action.data)
                                                         ? action.data
-                                                        : Object.keys(action.data).map((k) => action.data[k])
+                                                        : Object.keys(action.data).map(
+                                                              (k) => action.data[k],
+                                                          )
 
-                                                    const hasErrors = messages.some((msg: any) =>
-                                                        msg.severity === "e" || msg.severity === "w"
+                                                    const hasErrors = messages.some(
+                                                        (msg: any) =>
+                                                            msg.severity === "e" ||
+                                                            msg.severity === "w",
                                                     )
 
                                                     if (hasErrors) {
                                                         openMessageBox(
                                                             MessageBoxType.Warning,
                                                             undefined,
-                                                            <>Check completed with errors or warnings.</>,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "editor_check_errors_warnings",
+                                                                })}
+                                                            </>,
                                                         )
                                                     } else if (messages.length > 0) {
                                                         openMessageBox(
                                                             MessageBoxType.Information,
                                                             undefined,
-                                                            <>Check completed with information messages.</>,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "editor_check_info_messages",
+                                                                })}
+                                                            </>,
                                                         )
                                                     } else {
                                                         openMessageBox(
                                                             MessageBoxType.Success,
                                                             undefined,
-                                                            <>Check completed successfully.</>,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "editor_check_success",
+                                                                })}
+                                                            </>,
                                                         )
                                                     }
                                                 } else {
                                                     openMessageBox(
                                                         MessageBoxType.Error,
                                                         undefined,
-                                                        <>An error occurred while checking.</>,
+                                                        <>
+                                                            {intl.formatMessage({
+                                                                id: "editor_check_error",
+                                                            })}
+                                                        </>,
                                                     )
                                                 }
                                             })
@@ -341,15 +367,16 @@ export default function () {
                                         className={classes.button}
                                         design="Default"
                                     >
-                                        Check
+                                        {intl.formatMessage({ id: "editor_button_check" })}
                                     </Button>
                                     <Button
                                         icon="save"
                                         onClick={function Ta() {
                                             flushPendingNameCommitRef.current?.()
-                                                ; (document.activeElement as HTMLElement | null)?.blur()
+                                            ;(document.activeElement as HTMLElement | null)?.blur()
 
-                                            const latestTreeItems = useElementsStore.getState().elements
+                                            const latestTreeItems =
+                                                useElementsStore.getState().elements
 
                                             var newItems1: any
                                             var newItems2: any
@@ -373,8 +400,7 @@ export default function () {
                                                         Object.assign(
                                                             {},
                                                             latestTreeItems.filter(
-                                                                (item: any) =>
-                                                                    "kind" in item,
+                                                                (item: any) => "kind" in item,
                                                             ),
                                                         ),
                                                     )
@@ -384,8 +410,9 @@ export default function () {
                                                                 MessageBoxType.Success,
                                                                 undefined,
                                                                 <>
-                                                                    Data has been saved
-                                                                    successfully.
+                                                                    {intl.formatMessage({
+                                                                        id: "editor_save_success",
+                                                                    })}
                                                                 </>,
                                                             )
                                                             newItems2 = action.data
@@ -399,8 +426,9 @@ export default function () {
                                                                 MessageBoxType.Error,
                                                                 undefined,
                                                                 <>
-                                                                    An error occurred while saving
-                                                                    mixins.
+                                                                    {intl.formatMessage({
+                                                                        id: "editor_save_mixin_error",
+                                                                    })}
                                                                 </>,
                                                             )
                                                         }
@@ -410,7 +438,9 @@ export default function () {
                                                         MessageBoxType.Error,
                                                         undefined,
                                                         <>
-                                                            An error occurred while saving scenario.
+                                                            {intl.formatMessage({
+                                                                id: "editor_save_scenario_error",
+                                                            })}
                                                         </>,
                                                     )
                                                 }
@@ -419,7 +449,7 @@ export default function () {
                                         className={classes.button}
                                         design="Positive"
                                     >
-                                        Save
+                                        {intl.formatMessage({ id: "editor_button_save" })}
                                     </Button>
                                 </>
                             }
@@ -435,7 +465,9 @@ export default function () {
                         >
                             <Select
                                 onChange={function Ta(e) {
-                                    setScenarioMixin(e.detail.selectedOption.textContent!.toString())
+                                    setScenarioMixin(
+                                        e.detail.selectedOption.textContent!.toString(),
+                                    )
                                 }}
                                 className={classes.selectScenarioMixin}
                             >
@@ -445,9 +477,7 @@ export default function () {
                                         : []),
                                     ...new Set(
                                         treeItems
-                                            .filter(
-                                                (t1: Scenario | Mixin) => "kind" in t1,
-                                            )
+                                            .filter((t1: Scenario | Mixin) => "kind" in t1)
                                             .map((t: Scenario | Mixin) => t.name),
                                     ),
                                 ].map((item: any) => {
@@ -455,16 +485,20 @@ export default function () {
                                         return (
                                             <Option
                                                 key={item}
+                                                value={item}
                                                 icon="document"
                                                 selected={scenarioMixin == item}
                                             >
-                                                {item}
+                                                {intl.formatMessage({
+                                                    id: "editor_scenario_label",
+                                                })}
                                             </Option>
                                         )
                                     } else {
                                         return (
                                             <Option
                                                 key={item}
+                                                value={item}
                                                 icon="add-document"
                                                 selected={scenarioMixin == item}
                                             >
@@ -477,13 +511,7 @@ export default function () {
 
                             <Select
                                 onChange={function Ta(e) {
-                                    setVersion(
-                                        Number(
-                                            e.detail.selectedOption
-                                                .textContent!.toString()
-                                                .substring(8),
-                                        ).valueOf(),
-                                    )
+                                    setVersion(Number(e.detail.selectedOption.value).valueOf())
                                 }}
                                 className={classes.selectVersion}
                             >
@@ -495,19 +523,28 @@ export default function () {
                                                     item.name == scenarioMixin ||
                                                     (scenarioMixin == "Scenario" &&
                                                         !("kind" in item)),
-                                                    )
+                                            )
                                             .map((obj: Scenario | Mixin) => obj.version),
                                     ),
                                 ]
                                     .sort()
                                     .map((item: any) => {
-                                        return <Option key={item}>Version {item}</Option>
+                                        return (
+                                            <Option key={item} value={item.toString()}>
+                                                {intl.formatMessage(
+                                                    { id: "editor_version_prefix" },
+                                                    { version: item },
+                                                )}
+                                            </Option>
+                                        )
                                     })}
                             </Select>
 
                             <MultiComboBox
                                 className={classes.selectVariants}
-                                placeholder="Select variants"
+                                placeholder={intl.formatMessage({
+                                    id: "editor_select_variants_placeholder",
+                                })}
                                 onSelectionChange={(e: any) => {
                                     const selected = Array.from(e.target.items || [])
                                         .filter((item: any) => item.selected)
@@ -526,21 +563,28 @@ export default function () {
                         </FlexBox>
 
                         <Panel
-                            headerText="General Information"
+                            headerText={intl.formatMessage({
+                                id: "editor_header_general_information",
+                            })}
                             headerLevel="H6"
                             collapsed={panelCollapsed}
-                            onToggle={(e) => setPanelCollapsed(e.detail.collapsed)}
+                            onToggle={(e) => e.detail && setPanelCollapsed(e.detail.collapsed)}
                         >
                             <Form
                                 layout="S1 M1 L2 XL2"
                                 labelSpan="S10 M4 L4 XL2"
                                 className={classes.generalDataForm}
                             >
-                                <FormItem labelContent={<Label>Name</Label>}>
+                                <FormItem
+                                    labelContent={
+                                        <Label>
+                                            {intl.formatMessage({ id: "editor_label_name" })}
+                                        </Label>
+                                    }
+                                >
                                     <Input
                                         placeholder={treeItemsShown?.name}
                                         value={treeItemsShown?.name}
-                                        disabled={isReadOnly}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,
@@ -558,7 +602,13 @@ export default function () {
                                     />
                                 </FormItem>
                                 {treeItemsShown && "active" in treeItemsShown && (
-                                    <FormItem labelContent={<Label>Active</Label>}>
+                                    <FormItem
+                                        labelContent={
+                                            <Label>
+                                                {intl.formatMessage({ id: "editor_label_active" })}
+                                            </Label>
+                                        }
+                                    >
                                         <Switch
                                             onChange={(e) => {
                                                 editBaseData({
@@ -571,7 +621,15 @@ export default function () {
                                         />
                                     </FormItem>
                                 )}
-                                <FormItem labelContent={<Label>Access Object</Label>}>
+                                <FormItem
+                                    labelContent={
+                                        <Label>
+                                            {intl.formatMessage({
+                                                id: "editor_label_access_object",
+                                            })}
+                                        </Label>
+                                    }
+                                >
                                     <Input
                                         placeholder={treeItemsShown?.accessObject}
                                         value={treeItemsShown?.accessObject}
@@ -588,7 +646,15 @@ export default function () {
                                         }}
                                     />
                                 </FormItem>
-                                <FormItem labelContent={<Label>Base Package</Label>}>
+                                <FormItem
+                                    labelContent={
+                                        <Label>
+                                            {intl.formatMessage({
+                                                id: "editor_label_base_package",
+                                            })}
+                                        </Label>
+                                    }
+                                >
                                     <Input
                                         placeholder={treeItemsShown?.basePackage}
                                         value={treeItemsShown?.basePackage}
@@ -606,7 +672,15 @@ export default function () {
                                     />
                                 </FormItem>
                                 {treeItemsShown && !("kind" in treeItemsShown) && (
-                                    <FormItem labelContent={<Label>Default Language</Label>}>
+                                    <FormItem
+                                        labelContent={
+                                            <Label>
+                                                {intl.formatMessage({
+                                                    id: "editor_label_default_language",
+                                                })}
+                                            </Label>
+                                        }
+                                    >
                                         <Select
                                             onChange={function Ta(e) {
                                                 editBaseData({
@@ -620,7 +694,9 @@ export default function () {
                                         >
                                             {treeItemsShown.defaultLanguage &&
                                                 !(
-                                                    Object.keys(treeItemsShown.texts!) as Array<string>
+                                                    Object.keys(
+                                                        treeItemsShown.texts!,
+                                                    ) as Array<string>
                                                 ).includes(treeItemsShown.defaultLanguage) && (
                                                     <Option
                                                         selected={true}
@@ -635,7 +711,8 @@ export default function () {
                                                     return (
                                                         <Option
                                                             selected={
-                                                                key == treeItemsShown?.defaultLanguage
+                                                                key ==
+                                                                treeItemsShown?.defaultLanguage
                                                             }
                                                             key={key}
                                                         >
@@ -662,7 +739,9 @@ export default function () {
                                     <Tab
                                         icon={t.icon}
                                         selected={tab == t.text}
-                                        text={t.text}
+                                        text={intl.formatMessage({
+                                            id: `tab_${t.text.toLowerCase()}`,
+                                        })}
                                         key={t.text}
                                         id={t.text}
                                     />
@@ -748,16 +827,16 @@ export default function () {
                 languages={
                     treeItemsShown && treeItemsShown.texts
                         ? Object.keys(treeItemsShown.texts).concat(
-                            !("kind" in treeItemsShown) &&
-                                !Object.keys(treeItemsShown.texts).includes(
-                                    (treeItemsShown as Scenario).defaultLanguage!,
-                                )
-                                ? [(treeItemsShown as Scenario).defaultLanguage!]
-                                : [],
-                        )
+                              !("kind" in treeItemsShown) &&
+                                  !Object.keys(treeItemsShown.texts).includes(
+                                      (treeItemsShown as Scenario).defaultLanguage!,
+                                  )
+                                  ? [(treeItemsShown as Scenario).defaultLanguage!]
+                                  : [],
+                          )
                         : treeItemsShown && !("kind" in treeItemsShown)
-                            ? [(treeItemsShown as Scenario).defaultLanguage!]
-                            : []
+                          ? [(treeItemsShown as Scenario).defaultLanguage!]
+                          : []
                 }
                 language={language}
                 treeItemsShown={treeItemsShown}
@@ -765,7 +844,7 @@ export default function () {
                 scenarioMixinName={scenarioMixin}
                 update={update}
                 setDialogAddLanguageOpen={setDialogAddLanguageOpen}
-                setLanguages={() => { }}
+                setLanguages={() => {}}
                 setLanguage={setLanguage}
                 setUpdate={setUpdate}
             />
@@ -799,7 +878,7 @@ export default function () {
                                 })
 
                                 var texts: any = JSON.parse(JSON.stringify(treeItemsShown?.texts!))
-                                var oldName = indexesDelete!.name
+                                var oldName = toPascalCase(indexesDelete!.name)
 
                                 Object.keys(texts).forEach((key) => {
                                     if (texts![key][`${oldName}.short` as any] != undefined) {
@@ -824,9 +903,8 @@ export default function () {
                                 toast(Severity.None, "element_deleted")
 
                                 setUpdate(update + 1)
-
                             } else if (messageBoxOnConfirm) {
-                                messageBoxOnConfirm.fn();
+                                messageBoxOnConfirm.fn()
                             }
                         }
                     }

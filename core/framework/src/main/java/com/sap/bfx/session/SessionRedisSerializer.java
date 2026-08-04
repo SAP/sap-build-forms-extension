@@ -1,14 +1,5 @@
 package com.sap.bfx.session;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Locale;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.data.redis.serializer.SerializationException;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
@@ -26,6 +17,15 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sap.bfx.p13n.Settings;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.SerializationException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
 
 public class SessionRedisSerializer implements RedisSerializer<Session> {
 
@@ -35,7 +35,7 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
     /**
      * Constructor
      *
-     * @param definitionService definition service
+     * @param formsService Reference to FormsService
      */
     public SessionRedisSerializer(final FormsService formsService) {
         om = JsonMapper.builder().addModule(new JavaTimeModule()).build();
@@ -84,8 +84,7 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
         }
 
         @Override
-        public void serialize(Session value, JsonGenerator gen, SerializerProvider provider)
-                throws IOException {
+        public void serialize(Session value, JsonGenerator gen, SerializerProvider provider) throws IOException {
 
             gen.writeStartObject();
 
@@ -111,6 +110,7 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
                 gen.writeNullField(FormUtils.NM_FORM_SCENARIO_NAME);
             }
             gen.writeNumberField(FormUtils.NM_FORM_SCENARIO_VERSION, value.getForm().getScenarioVersion());
+            gen.writeObjectField(FormUtils.NM_ADD_DATA, value.getAdditionalData());
 
             gen.writeArrayFieldStart(FormUtils.NM_PERSONALIZATIONS);
             if (value.getSettings() != null) {
@@ -151,9 +151,9 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
 
             result.setForm(formsService.readForm(node.get(FormUtils.NM_FORM)));
             result.setUserName(node.get(FormUtils.NM_USERNAME).asText());
-            result.setTaskInstanceId((!node.get(FormUtils.NM_TASK_INSTANCE_ID).isNull())
-                    ? node.get(FormUtils.NM_TASK_INSTANCE_ID).asText()
-                    : null);
+            result.setTaskInstanceId((!node.get(FormUtils.NM_TASK_INSTANCE_ID).isNull()) ?
+                    node.get(FormUtils.NM_TASK_INSTANCE_ID).asText() : null);
+            result.setAdditionalData(ctx.readTreeAsValue(node.get(FormUtils.NM_ADD_DATA), HashMap.class));
 
             var settings = node.get(FormUtils.NM_PERSONALIZATIONS);
             var personalizations = new ArrayList<Settings>();
@@ -161,8 +161,7 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
                 Iterator<JsonNode> elements = settings.elements();
                 while (elements.hasNext()) {
                     JsonNode elementNode = elements.next();
-                    personalizations.add(new Settings(
-                            elementNode.get(FormUtils.NM_PERSONALIZATIONS_ID).asText(),
+                    personalizations.add(new Settings(elementNode.get(FormUtils.NM_PERSONALIZATIONS_ID).asText(),
                             elementNode.get(FormUtils.NM_PERSONALIZATIONS_USER).asText(),
                             elementNode.get(FormUtils.NM_PERSONALIZATIONS_KEY).asText(),
                             elementNode.get(FormUtils.NM_PERSONALIZATIONS_APP).asText(),

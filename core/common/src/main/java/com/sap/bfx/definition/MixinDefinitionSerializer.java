@@ -86,6 +86,9 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
+                if (((ButtonElementDefinition) ed).getTooltip() != null && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
+                }
                 break;
             case Currency:
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
@@ -110,6 +113,12 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
                 this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(), gen,
                         provider);
+                break;
+            case Icon:
+                gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
+                if (((IconElementDefinition) ed).getTooltip() != null && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) ed).getTooltip());
+                }
                 break;
             case Image:
                 if (((DialogElementDefinition) ed).getSize() != null) {

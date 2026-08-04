@@ -14,11 +14,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-@Component
+/**
+ * Service for handling callbacks within the framework.
+ */
+@Service
 @Slf4j
 public class CallbackService {
 
@@ -46,9 +49,8 @@ public class CallbackService {
         if (optDefinition.isEmpty()) {
             throw new FormsCoreException("cannot find active scenario definition, please check your configuration!");
         }
-        final var version = ctx.getScenarioDefinition() != null
-                ? ctx.getScenarioDefinition().getVersion()
-                : optDefinition.get().getVersion();
+        final var version = ctx.getScenarioDefinition() != null ? ctx.getScenarioDefinition().getVersion() :
+                optDefinition.get().getVersion();
 
         var result = (previous == null) ? new CallbackResult() : previous;
         var hm = hookMap.get(version);
@@ -101,8 +103,8 @@ public class CallbackService {
                 validate(ctx);
             }
         } catch (NotAuthorizedException e) {
-            log.error("Not authorized to execute callback for app='{}', roles='{}' by user='{}'",
-                    e.getAppName(), e.getRoles(), e.getUser());
+            log.error("Not authorized to execute callback for app='{}', roles='{}' by user='{}'", e.getAppName(),
+                    e.getRoles(), e.getUser());
             throw ExceptionUtils.from(e);
         } catch (Throwable t) {
             throw ExceptionUtils.from("Error during lifecycle-hook-call for type '" + type + "'", t);
@@ -128,9 +130,8 @@ public class CallbackService {
 
         log.debug("CallbackService.callEvent: started for {}", sourceKey);
 
-        final var version = ctx.getScenarioDefinition() != null
-                ? ctx.getScenarioDefinition().getVersion()
-                : VersionSelector.IGNORE;
+        final var version =
+                ctx.getScenarioDefinition() != null ? ctx.getScenarioDefinition().getVersion() : VersionSelector.IGNORE;
 
         var result = (previous == null) ? new CallbackResult() : previous;
         var ehm = eventHandlerMap.get(version);
@@ -205,8 +206,8 @@ public class CallbackService {
                 final var element = FormUtils.findElementByRowAndKey(session.getForm(), sourceRowId, sourceKey);
                 session.getJournal().addUpdated(sourceRowId, element, ChangePropertyType.Value, element.getValue());
             } else {
-                throw new FormsCoreException(String.format("No handlers found for '%s' of '%s' in version '%d'",
-                        type, sourceKey, version));
+                throw new FormsCoreException(
+                        String.format("No handlers found for '%s' of '%s' in version '%d'", type, sourceKey, version));
             }
         }
 
@@ -248,21 +249,21 @@ public class CallbackService {
         if (!handlers.isEmpty()) {
             log.info("found event handlers:");
             eventHandlerMap.clear();
-            handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(it -> {
-                it.getKeys().forEach(key -> {
-                    log.debug("  Event handler candidate: " + it.getClass().getName() + " for key=" + key);
+            handlers.values().stream().sorted((a, b) -> a.order().getOrder() - b.order().getOrder()).forEach(evt -> {
+                evt.getKeys().forEach(key -> {
+                    log.debug("  Event handler candidate: " + evt.getClass().getName() + " for key=" + key);
                     for (var version : versions) {
                         final var sd = scenarioService.findDefinitionByVersion(version).get();
                         final var ed = sd.findElementByKey((String) key);
-                        if ((ed != null && it.match(ed.getKey(), it.getType(), version))
-                                || it.getType().equals(EventType.TriggerEvent)) {
+                        if ((ed != null && evt.match(ed.getKey(), evt.getType(), version)) ||
+                                evt.getType().equals(EventType.TriggerEvent)) {
                             // this event handler matches for the given version. Storing it in the
                             // event-handler-map
                             var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
                             var eventInfo = ehm.computeIfAbsent((String) key, k -> new EventHandlerInfo(version, ed));
-                            eventInfo.add(it);
-                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", it.getType(), key, version,
-                                    it.getClass().getName());
+                            eventInfo.add(evt);
+                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", evt.getType(), key, version,
+                                    evt.getClass().getName());
                         }
                     }
                 });
@@ -303,12 +304,16 @@ public class CallbackService {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);
                     }
                 } else if (dt == Table.class) {
-                    final var rows = ((Table) api.getValue(rowId, ed.getKey())).getRows();
-                    if (rows.isEmpty()) {
+                    // For required tables we only validate that at least one row exists.
+                    if (api.getRows(rowId, () -> ed.getKey()).isEmpty()) {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);
                     }
-                } else if (dt == Attachment.class) {
-                    // TODO(ML) Write Attachement infos
+                } else if (dt == Attachments.class) {
+                    // For required attachments we only validate that at least one attachment exists.
+                    final var optVal = api.getOptVal(rowId, ed.getKey());
+                    if (optVal.isEmpty() || ((Attachments) optVal.get()).isEmpty()) {
+                        optMessage = Optional.of(Message.REQUIRED_ERROR);
+                    }
                 } else {
                     if (api.getOptVal(rowId, ed.getKey()).isEmpty()) {
                         optMessage = Optional.of(Message.REQUIRED_ERROR);

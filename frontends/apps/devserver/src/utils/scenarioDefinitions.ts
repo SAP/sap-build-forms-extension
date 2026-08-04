@@ -163,6 +163,7 @@ export enum InputValue {
     Password = "password",
     Numeric = "numeric",
     Email = "email",
+    Telephone = "telephone",
 }
 
 export const tabs: Tab[] = [
@@ -232,6 +233,7 @@ export enum TextPostfix {
     long = ".long",
     title = ".title",
     doc = ".doc",
+    placeholder = ".placeholder",
 }
 
 export type WizardFormatOptions = {

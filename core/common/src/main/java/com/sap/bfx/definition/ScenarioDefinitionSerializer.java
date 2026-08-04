@@ -161,8 +161,12 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
-                if (((ButtonElementDefinition) ed).getLinkHRef() != null &&
-                        !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
+                if (((ButtonElementDefinition) ed).getTooltip() != null
+                        && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
+                }
+                if (((ButtonElementDefinition) ed).getLinkHRef() != null
+                        && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
                     gen.writeStringField(NM_LINK_HREF, ((ButtonElementDefinition) ed).getLinkHRef());
                 }
                 break;
@@ -201,6 +205,10 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 break;
             case Icon:
                 gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
+                if (((IconElementDefinition) ed).getTooltip() != null
+                        && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) ed).getTooltip());
+                }
                 break;
             case Image:
                 if (((ImageElementDefinition) ed).getSize() != null) {

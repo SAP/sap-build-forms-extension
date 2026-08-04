@@ -11,6 +11,7 @@ import {
     Dialog,
     Icon,
     Input,
+    Label,
     SegmentedButton,
     SegmentedButtonDomRef,
     SegmentedButtonItem,
@@ -40,9 +41,10 @@ import { update } from "../../features/sessions/sessionSlice"
 import { loadIntoCache } from "../../features/valuehelps/valuehelpsSlice"
 import { deleteRow, triggerEvent } from "../../features/sessions/sessionActions"
 
-import { ControlProps, getLabel, handleBrowseTable, handleChangeTablePageSize } from "./Control"
+import { ControlProps, getLabel, getPlaceholder, handleBrowseTable, handleChangeTablePageSize } from "./Control"
 import Control from "./Control"
 import ControlGridContainer from "./ControlGridContainer"
+import { elementInfo2ValueState } from "./utils"
 
 // Constants for different page sizes
 const PAGE_SIZES = [5, 10, 15, 20, 25]
@@ -225,7 +227,7 @@ function formatSelected(element?: Element) {
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, texts, rowId } = props
+    const { def, texts, rowId, asTableCell } = props
     const dispatch = useAppDispatch()
     const intl = useIntl()
     const messages = useMessages()
@@ -448,10 +450,13 @@ export default function (props: ControlProps) {
             if (!d.showAsColumn) {
                 continue
             }
+            const colMaxWidth = d.columnOptions?.maxColumnWidth || def.columnOptions?.maxColumnWidth || undefined
+            const colMinWidth = d.columnOptions?.minColumnWidth || def.columnOptions?.minColumnWidth || "10rem"
             columns.push(
                 <TableHeaderCell
                     key={d.key}
-                    minWidth="10rem"
+                    minWidth={colMinWidth}
+                    width={colMaxWidth}
                     style={{ display: "flex", alignContent: "center", justifyContent: "center" }}
                 >
                     <Text style={{ marginRight: ".5rem" }}>{getLabel(texts, d)}</Text>
@@ -542,6 +547,7 @@ export default function (props: ControlProps) {
     const lastPage = Math.max(Math.ceil(table.s / table.ps), 1)
     const currPage = Math.floor(table.p / table.ps) + 1
     const tableRenderKey = `${rowId ?? "_"}-${def.key}-${table.p}-${table.ps}-${table.s}-${(table.r ?? []).join("|")}`
+    const hasTableError = elementInfo2ValueState(element?.msg) === "Negative"
 
     const handleToolbarActionCompleted = async () => {
         setLoading(true)
@@ -577,6 +583,16 @@ export default function (props: ControlProps) {
 
     return (
         <div>
+            {!asTableCell && (
+                <Label
+                    id={"l" + def.key}
+                    for={def.key}
+                    required={element?.rq}
+                    style={def.showLabel === false ? { visibility: "hidden" } : undefined}
+                >
+                    {def.showLabel !== false ? getLabel(texts, def) : ""}
+                </Label>
+            )}
             {def.toolbar && (
                 <Control
                     {...props}
@@ -588,8 +604,13 @@ export default function (props: ControlProps) {
             <Table
                 key={tableRenderKey}
                 headerRow={<TableHeaderRow sticky>{columns}</TableHeaderRow>}
-                style={{ width: "100%" }}
-                noDataText={intl.formatMessage({ id: "common_no_data" })}
+                style={{
+                    width: "100%",
+                    border: hasTableError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasTableError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasTableError ? "0.25rem" : undefined,
+                }}
+                noDataText={getPlaceholder(texts, def) ?? intl.formatMessage({ id: "common_no_data" })}
                 overflowMode="Scroll"
                 rowActionCount={calculateActionCount()}
                 loading={loading}

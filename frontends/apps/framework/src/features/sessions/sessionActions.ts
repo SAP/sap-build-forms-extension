@@ -23,7 +23,9 @@ export interface CreateSessionRequest {
 }
 
 /**
- *
+ *  This interface describes the response from the backend when a session is created or updated. It contains 
+ *  information about the session, including its definition, header title, ID, journal, locale, page title, values, 
+ *  and messages. The dvhs property is optional and may contain dynamic value helps.
  */
 export interface SessionResponse {
     def?: FormDefinition
@@ -35,6 +37,7 @@ export interface SessionResponse {
     values?: ElementMap
     vhs: Record<string, number>
     msg: Message[]
+    dvhs?: Record<string, Record<string, string>>
 }
 
 /**
@@ -276,7 +279,7 @@ export const deleteRow = createAsyncThunk(
 )
 
 /**
- *
+ *  
  * @param state
  * @param action
  */
@@ -323,25 +326,34 @@ export function handleSessionResponse(
         // frontend journal needs to be fresh, all data to be resetted
         JournalService.init(state.journal)
 
+        // handling of page title and header title
         if (data.pageTitle) {
             state.pageTitle = data.pageTitle
         }
         if (data.headerTitle) {
             state.headerTitle = data.headerTitle
         }
+
+        // handling of messages from backend
         if (data.msg && data.msg.length > 0) {
-            console.log("Message found in server return")
+            // console.log("Message found in server return")
             switch (data.msg[0].style) {
                 case "Toast":
                     // console.log("Toast found in server return")
                     action.meta.arg.messages.toast(data.msg[0].severity, data.msg[0].key, data.msg[0].params)
                     break
                 case "Dialog":
-                    console.log("Dialog found in server return")
+                    // console.log("Dialog found in server return")
                     action.meta.arg.messages.dialog(data.msg[0].severity, data.msg[0].key, data.msg[0].params)
+                    break
                 default:
                     console.warn(`Unsupported message style ${data.msg[0].style}`)
             }
+        }
+
+        // handling of dynamic value-helps
+        if (data.dvhs) {
+            state.dvhs = data.dvhs
         }
     }
 }

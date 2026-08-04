@@ -493,6 +493,7 @@ export default function StructureTabTable(props: Props) {
                                             TextPostfix.long,
                                             TextPostfix.title,
                                             TextPostfix.doc,
+                                            TextPostfix.placeholder,
                                         ]
 
                                         Object.keys(texts).forEach((language) => {
@@ -721,7 +722,9 @@ export default function StructureTabTable(props: Props) {
                                             }
                                         }}
                                     >
-                                        {(Object.keys(DataTypeValue) as Array<string>).map((key) => {
+                                        {(Object.keys(DataTypeValue) as Array<string>).filter(
+                                            (key) => !(getElemByIndex(instance.row.original.index)?.type === "input" && key === "Auto")
+                                        ).map((key) => {
                                             return (
                                                 <Option
                                                     selected={
@@ -1252,6 +1255,36 @@ export default function StructureTabTable(props: Props) {
                         <FlexBox style={{ width: "100%" }}>
                             <StructureTabTextsInput
                                 postfix={TextPostfix.doc}
+                                texts={treeItemsRef.current?.texts}
+                                defaultLanguage={props.defaultLanguage}
+                                currentName={getElemByIndex(instance.row.original.index)?.name}
+                                scenarioMixinName={props.scenarioMixinName}
+                                version={props.version}
+                                setUpdate={scheduleRefresh}
+                            />
+                        </FlexBox>
+                    )
+                },
+            },
+            {
+                Header: "Texts placeholder",
+                accessor: (originalRow: Record<string, any>) => {
+                    return (
+                        treeItemsRef.current?.texts![
+                        props.defaultLanguage
+                            ? props.defaultLanguage!
+                            : (Object.keys(treeItemsRef.current?.texts!).sort()[0] as any)
+                        ]?.[
+                        `${getElemByIndex(originalRow.index)?.name}${TextPostfix.placeholder}` as any
+                        ] ?? ""
+                    )
+                },
+                width: 180,
+                Cell: (instance: any) => {
+                    return (
+                        <FlexBox style={{ width: "100%" }}>
+                            <StructureTabTextsInput
+                                postfix={TextPostfix.placeholder}
                                 texts={treeItemsRef.current?.texts}
                                 defaultLanguage={props.defaultLanguage}
                                 currentName={getElemByIndex(instance.row.original.index)?.name}
@@ -1995,7 +2028,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {getElemByIndex(instance.row.original.index)?.type! == "button" && (
+                            {["button", "icon"].includes(getElemByIndex(instance.row.original.index)?.type!) && (
                                 <Input
                                     value={getElemByIndex(instance.row.original.index)?.tooltip}
                                     placeholder={instance.row.original.tooltip}

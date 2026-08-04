@@ -24,7 +24,8 @@ import {
 } from "../../utils/messages"
 
 /**
- *
+ * Context for displaying messages (dialogs, toasts, blocking screen, fatal errors).
+ * The context provides functions to open different types of messages and handles the display and user interaction.
  */
 const Context = createContext<MessageIntf>({
     // @ts-ignore
@@ -40,9 +41,10 @@ const Context = createContext<MessageIntf>({
 })
 
 /**
+ * Maps the severity of a message to the corresponding MessageBox type.
  *
- * @param severity
- * @returns
+ * @param severity The severity of the message (Error, Warning, Info, Success).
+ * @returns The corresponding MessageBox type ("Error", "Warning", "Information", "Success") or undefined if the severity is not recognized.
  */
 function severity2MessageBoxType(
     severity: Severity,
@@ -62,9 +64,10 @@ function severity2MessageBoxType(
 }
 
 /**
+ * Maps the severity of a message to the corresponding title for the MessageBox.
  *
- * @param severity
- * @returns
+ * @param severity The severity of the message (Error, Warning, Info, Success).
+ * @returns The corresponding title for the MessageBox.
  */
 function severity2MessageBoxTitle(severity: Severity): string {
     switch (severity) {
@@ -82,9 +85,10 @@ function severity2MessageBoxTitle(severity: Severity): string {
 }
 
 /**
+ *  Formats the severity of a message to match the naming convention used in CSS variables for styling.
  *
- * @param severity
- * @returns
+ * @param severity  The severity of the message (Error, Warning, Info, Success).
+ * @returns  The formatted severity name ("Error", "Warning", "Information", "Success") to be used in CSS variable names.
  */
 function severityFormatName(severity: Severity): "Warning" | "Information" | "Error" | "Success" {
     switch (severity) {
@@ -102,7 +106,12 @@ function severityFormatName(severity: Severity): "Warning" | "Information" | "Er
 }
 
 /**
+ *  Provider component that manages the state and display of messages (dialogs, toasts, blocking screen, fatal errors)
+ *  in the application. It uses React context to provide functions for displaying messages to the rest of
+ *  the application.
  *
+ * @param props The props for the MessagesProvider component, including children elements.
+ * @returns The MessagesProvider component.
  */
 function MessagesProvider(props: { children: ReactNode }) {
     const intl = useIntl()
@@ -113,9 +122,11 @@ function MessagesProvider(props: { children: ReactNode }) {
     const [opts, setOpts] = useState<MessageOption[]>([])
 
     /**
+     * Displays a fatal error message in a dialog. This type of message is used for critical errors that require immediate
+     * attention and typically block further interaction with the application until the user acknowledges the message.
      *
-     * @param key
-     * @param values
+     * @param key The key for the message to be displayed, which is used to retrieve the localized message text.
+     * @param values Optional parameters to be passed to the message for formatting purposes.
      */
     const fatal = (key: string, values?: Record<string, PrimitiveType>) => {
         setType("fatal")
@@ -123,10 +134,13 @@ function MessagesProvider(props: { children: ReactNode }) {
     }
 
     /**
+     * Displays a message in a dialog with specified severity and options. This function returns a promise that resolves with
+     * the user's action (e.g., which button they clicked) when the dialog is closed.
      *
-     * @param severity
-     * @param key
-     * @param values
+     * @param severity The severity of the message (Error, Warning, Info, Success).
+     * @param key The key for the message to be displayed, which is used to retrieve the localized message text.
+     * @param values Optional parameters to be passed to the message for formatting purposes.
+     * @param options Optional array of message options (e.g., buttons) to be displayed in the dialog.
      */
     const dialog = (
         severity: Severity,
@@ -146,10 +160,12 @@ function MessagesProvider(props: { children: ReactNode }) {
     }
 
     /**
+     * Displays a message as a toast notification. This type of message is typically used for non-critical information that
+     * does not require immediate attention and allows the user to continue interacting with the application.
      *
-     * @param severity
-     * @param key
-     * @param values
+     * @param severity The severity of the message (Error, Warning, Info, Success).
+     * @param key The key for the message to be displayed, which is used to retrieve the localized message text.
+     * @param values Optional parameters to be passed to the message for formatting purposes.
      */
     const toast = (severity: Severity, key: string, params?: Record<string, PrimitiveType>) => {
         setType("toast")
@@ -157,15 +173,22 @@ function MessagesProvider(props: { children: ReactNode }) {
     }
 
     /**
+     * Displays or hides a blocking overlay on the screen. This is typically used to indicate that a background process is
+     * running and the user should wait before interacting with the application.
      *
+     * @param show A boolean value indicating whether to show or hide the blocking overlay.
      */
     const block = (show: boolean) => {
         setType(show ? "block" : undefined)
     }
 
     /**
+     * Handles the closing of the message box. This function is called when the user interacts with the message box,
+     * such as clicking a button or pressing the escape key. It resolves the promise returned by the dialog function
+     * with the user's action.
      *
-     * @param event
+     * @param action The action taken by the user (e.g., which button they clicked).
+     * @param escPressed A boolean value indicating whether the escape key was pressed.
      */
     // @ts-ignore
     const handleClose = (action?: string, escPressed?: true) => {
@@ -184,6 +207,9 @@ function MessagesProvider(props: { children: ReactNode }) {
             case MessageBoxAction.No:
                 result = MessageOption.No
                 break
+            case MessageBoxAction.Cancel:
+                result = MessageOption.Cancel
+                break
             default:
                 if (escPressed) {
                     result = MessageOption.Cancel
@@ -193,7 +219,7 @@ function MessagesProvider(props: { children: ReactNode }) {
                     return
                 }
         }
-        if (resolverRef.current && result) {
+        if (resolverRef.current && result !== undefined) {
             resolverRef.current(result)
         }
         setType(undefined)
@@ -214,6 +240,9 @@ function MessagesProvider(props: { children: ReactNode }) {
                     break
                 case MessageOption.No:
                     actions.push(MessageBoxAction.No)
+                    break
+                case MessageOption.Cancel:
+                    actions.push(MessageBoxAction.Cancel)
                     break
                 default:
                     actions.push(opt)

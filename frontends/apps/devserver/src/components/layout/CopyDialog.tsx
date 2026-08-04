@@ -1,6 +1,7 @@
 import { Bar, Button, Dialog, Form, FormItem, Input, Label, Title } from "@ui5/webcomponents-react"
 import { createUseStyles } from "react-jss"
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import useElementsStore from "../../state/elements"
 import { changeName } from "../../utils/formUtils"
 import { Elem, Scenario } from "../../utils/scenarioDefinitions"
@@ -30,6 +31,7 @@ const useStyles = createUseStyles({
 
 export default function CopyDialog(props: Props) {
     const classes = useStyles()
+    const intl = useIntl()
     const addElement = useElementsStore((state) => state.addElement)
     const [prefix, setPrefix] = useState("")
     const [postfix, setPostfix] = useState("")
@@ -39,7 +41,7 @@ export default function CopyDialog(props: Props) {
         <Dialog
             header={
                 <Bar>
-                    <Title>New Name</Title>
+                    <Title>{intl.formatMessage({ id: "copy_dialog_title" })}</Title>
                 </Bar>
             }
             footer={
@@ -122,7 +124,7 @@ export default function CopyDialog(props: Props) {
                                 }
                             }}
                         >
-                            Paste
+                            {intl.formatMessage({ id: "copy_dialog_button_paste" })}
                         </Button>
                     }
                     startContent={
@@ -133,12 +135,11 @@ export default function CopyDialog(props: Props) {
                                 props.setDialogOpen(false)
                             }}
                         >
-                            Close
+                            {intl.formatMessage({ id: "copy_dialog_button_close" })}
                         </Button>
                     }
                 ></Bar>
             }
-            headerText="Dialog Header"
             onBeforeOpen={function Ta() {
                 setPrefix("")
                 setPostfix(`${(Math.random() + 1).toString(36).substring(7)}`)
@@ -150,7 +151,7 @@ export default function CopyDialog(props: Props) {
             style={{ padding: 3, margin: 3, minWidth: 400, width: "20%" }}
         >
             <Form layout="S1 M1 L1 XL1" labelSpan="S1 M1 L1 XL1">
-                <FormItem labelContent={<Label>Prefix</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "copy_dialog_label_prefix" })}</Label>}>
                     <Input
                         value={prefix}
                         onInput={(e) => {
@@ -158,7 +159,7 @@ export default function CopyDialog(props: Props) {
                         }}
                     />
                 </FormItem>
-                <FormItem labelContent={<Label>Postfix</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "copy_dialog_label_postfix" })}</Label>}>
                     <Input
                         value={postfix}
                         valueState={
@@ -166,7 +167,7 @@ export default function CopyDialog(props: Props) {
                                 ? "Negative"
                                 : "None"
                         }
-                        valueStateMessage={<span>Insert at least one prefix or postfix</span>}
+                        valueStateMessage={<span>{intl.formatMessage({ id: "copy_dialog_prefix_postfix_required" })}</span>}
                         onInput={(e) => {
                             setPostfix(e.target.attributes.getNamedItem("value")!.nodeValue!)
                         }}

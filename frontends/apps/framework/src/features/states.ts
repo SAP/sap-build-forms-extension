@@ -19,6 +19,7 @@ export interface SessionState {
     locale: string
     pageTitle: string
     vhs: Record<string, number>
+    dvhs: Record<string, Record<string, string>>
     ignore: boolean
 }
 

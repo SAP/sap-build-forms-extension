@@ -22,14 +22,14 @@ import java.util.stream.Collectors;
 @Service @Slf4j public class PersonalizationService {
 
     private final Map<String, PersonalizationAdapter> adapterMap = new HashMap<>();
-    private final CoreDao dao;
+    private final P13NDao dao;
 
     /**
      * Constructor for PersonalizationService.
      *
      * @param dao
      */
-    @Autowired public PersonalizationService(final CoreDao dao) {
+    @Autowired public PersonalizationService(final P13NDao dao) {
         this.dao = dao;
     }
 

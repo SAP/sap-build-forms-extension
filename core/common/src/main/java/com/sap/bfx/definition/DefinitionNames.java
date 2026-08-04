@@ -79,4 +79,5 @@ public class DefinitionNames {
     public final static String PF_DOC = ".doc";
     public final static String PF_LONG = ".long";
     public final static String PF_TITLE = ".title";
+        public final static String PF_PLACEHOLDER = ".placeholder";
 }

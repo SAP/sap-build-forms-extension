@@ -22,10 +22,11 @@ import {
 } from "../../utils/scenarioDefinitions"
 import { createUseStyles } from "react-jss"
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import useElementsStore from "../../state/elements"
 import TreeItemBase from "@ui5/webcomponents/dist/TreeItemBase"
 import ElementTypeSelect from "./ElementTypeSelect"
-import { generateUniqueId } from "../../utils/formUtils"
+import { generateUniqueId, toPascalCase } from "../../utils/formUtils"
 import { useMessages, Severity } from "commons"
 
 interface Props {
@@ -54,6 +55,7 @@ const useStyles = createUseStyles({
 
 export default function AddElementDialog(props: Props) {
     const classes = useStyles()
+    const intl = useIntl()
     const addElement = useElementsStore((state) => state.addElement)
     const editDetailData = useElementsStore((state) => state.editDetailData)
     const editTexts = useElementsStore((state) => state.editTexts)
@@ -66,7 +68,7 @@ export default function AddElementDialog(props: Props) {
             <Dialog
                 header={
                     <Bar>
-                        <Title>Add element</Title>
+                        <Title>{intl.formatMessage({ id: "add_element_dialog_title" })}</Title>
                     </Bar>
                 }
                 footer={
@@ -76,7 +78,7 @@ export default function AddElementDialog(props: Props) {
                             <Button
                                 design="Positive"
                                 className={classes.button}
-                                tooltip="Add"
+                                tooltip={intl.formatMessage({ id: "add_element_dialog_tooltip_add" })}
                                 onClick={function Ta() {
                                     if (props.element) {
                                         var indexes = props
@@ -385,11 +387,12 @@ export default function AddElementDialog(props: Props) {
                                     var texts: any = JSON.parse(
                                         JSON.stringify(props.treeItemsShown?.texts!),
                                     )
+                                    const pascalName = toPascalCase(newEl.name)
                                     Object.keys(texts).forEach((key) => {
-                                        texts![key][`${newEl.name}.short`] = ""
-                                        texts[key]![`${newEl.name}.long`] = ""
-                                        texts![key][`${newEl.name}.title`] = ""
-                                        texts[key][`${newEl.name}.doc`] = ""
+                                        texts![key][`${pascalName}.short`] = ""
+                                        texts[key]![`${pascalName}.long`] = ""
+                                        texts![key][`${pascalName}.title`] = ""
+                                        texts[key][`${pascalName}.doc`] = ""
                                     })
                                     editTexts({
                                         version: props.version,
@@ -405,19 +408,19 @@ export default function AddElementDialog(props: Props) {
                                     props.setDialogOpen(false)
                                 }}
                             >
-                                Add
+                                {intl.formatMessage({ id: "add_element_dialog_button_add" })}
                             </Button>
                         }
                         startContent={
                             <Button
                                 design="Negative"
                                 className={classes.button}
-                                tooltip="Close"
+                                tooltip={intl.formatMessage({ id: "add_element_dialog_tooltip_close" })}
                                 onClick={function Ta() {
                                     props.setDialogOpen(false)
                                 }}
                             >
-                                Close
+                                {intl.formatMessage({ id: "add_element_dialog_button_close" })}
                             </Button>
                         }
                     >
@@ -425,7 +428,7 @@ export default function AddElementDialog(props: Props) {
                             props.el?.footer == undefined && (
                                 <Button
                                     className={classes.button}
-                                    tooltip="Add footer"
+                                    tooltip={intl.formatMessage({ id: "add_element_dialog_tooltip_add_footer" })}
                                     onClick={function Ta() {
                                         var newFooter: Elem = {
                                             name: props.el!.name + "Footer",
@@ -465,13 +468,13 @@ export default function AddElementDialog(props: Props) {
                                         props.setDialogOpen(false)
                                     }}
                                 >
-                                    Add footer
+                                    {intl.formatMessage({ id: "add_element_dialog_button_add_footer" })}
                                 </Button>
                             )}
                         {props.el?.type == "table" && props.el?.toolbar == undefined && (
                             <Button
                                 className={classes.button}
-                                tooltip="Add toolbar"
+                                tooltip={intl.formatMessage({ id: "add_element_dialog_tooltip_add_toolbar" })}
                                 onClick={function Ta() {
                                     var newToolbar: Elem = {
                                         name: props.el!.name + "Toolbar",
@@ -511,13 +514,13 @@ export default function AddElementDialog(props: Props) {
                                     props.setDialogOpen(false)
                                 }}
                             >
-                                Add toolbar
+                                {intl.formatMessage({ id: "add_element_dialog_button_add_toolbar" })}
                             </Button>
                         )}
                         {props.el?.type == "form" && props.el?.headerSegment == undefined && (
                             <Button
                                 className={classes.button}
-                                tooltip="Add header segment"
+                                tooltip={intl.formatMessage({ id: "add_element_dialog_tooltip_add_header_segment" })}
                                 onClick={function Ta() {
                                     var newHeaderSegment: Elem = {
                                         name: props.el!.name + "HeaderSegment",
@@ -555,12 +558,11 @@ export default function AddElementDialog(props: Props) {
                                     props.setDialogOpen(false)
                                 }}
                             >
-                                Add header segment
+                                {intl.formatMessage({ id: "add_element_dialog_button_add_header_segment" })}
                             </Button>
                         )}
                     </Bar>
                 }
-                headerText="Dialog Header"
                 onBeforeOpen={function Ta() {
                     setNewNodeName(`newItem${(Math.random() + 1).toString(36).substring(7)}`)
                     if (props.el) {
@@ -599,52 +601,29 @@ export default function AddElementDialog(props: Props) {
             >
                 {props.el && (
                     <Text>
-                        {
-                            <>
-                                Insert a new node under the node{" "}
-                                <i>
-                                    <b>{props.el?.name}.</b>
-                                </i>
-                            </>
-                        }
+                        {intl.formatMessage({ id: "add_element_dialog_text_insert_under" })}{" "}
+                        <i><b>{props.el?.name}.</b></i>
                     </Text>
                 )}
                 {!props.el && props.element && (
                     <Text>
-                        {
-                            <>
-                                Insert a new node to{" "}
-                                <i>
-                                    <b>
-                                        {props.element[props.element.length - 2] == "l"
-                                            ? "left"
-                                            : "right"}{" "}
-                                        elements
-                                    </b>
-                                </i>{" "}
-                                of node{" "}
-                                <i>
-                                    <b>{props.parentEl?.name}.</b>
-                                </i>
-                            </>
-                        }
+                        {intl.formatMessage(
+                            { id: "add_element_dialog_text_insert_left" },
+                            {
+                                side: props.element[props.element.length - 2] == "l"
+                                    ? intl.formatMessage({ id: "add_element_dialog_text_side_left" })
+                                    : intl.formatMessage({ id: "add_element_dialog_text_side_right" }),
+                            },
+                        )}{" "}
+                        <i><b>{props.parentEl?.name}.</b></i>
                     </Text>
                 )}
                 {!props.el && !props.element && (
-                    <Text>
-                        {
-                            <>
-                                Insert a new node{" "}
-                                <i>
-                                    <b>on top of the tree.</b>
-                                </i>
-                            </>
-                        }
-                    </Text>
+                    <Text>{intl.formatMessage({ id: "add_element_dialog_text_insert_top" })}</Text>
                 )}
 
                 <Form layout="S1 M1 L1 XL1" labelSpan="S2 M2 L3 XL3">
-                    <FormItem labelContent={<Label>Name</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "add_element_dialog_label_name" })}</Label>}>
                         {" "}
                         <Input
                             value={newNodeName}
@@ -655,7 +634,7 @@ export default function AddElementDialog(props: Props) {
                             }}
                         />
                     </FormItem>
-                    <FormItem labelContent={<Label>Element type</Label>}>
+                    <FormItem labelContent={<Label>{intl.formatMessage({ id: "add_element_dialog_label_type" })}</Label>}>
                         <ElementTypeSelect
                             type={newNodeType}
                             className=""

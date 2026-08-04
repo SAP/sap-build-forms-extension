@@ -10,6 +10,7 @@ import { useMessages } from "commons"
 import {
     ControlProps,
     getLabel,
+    getPlaceholder,
     handleAction,
     handleChange,
     handleEnterFocus,
@@ -84,7 +85,8 @@ function SearchDialog(props: DetailDialogProps) {
                         />
                     }
                     onClose={() => setVisible(false)}
-                    stretch
+                    stretch={!def.size?.height && !def.size?.width}
+                    style={def.size?.height || def.size?.width ? { height: def.size?.height, width: def.size?.width } : undefined}
                 >
                     <ControlGridContainer {...props} asTableCell={false} />
                 </Dialog>,
@@ -95,7 +97,7 @@ function SearchDialog(props: DetailDialogProps) {
 }
 
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const intl = useIntl()
@@ -118,6 +120,7 @@ export default function (props: ControlProps) {
             <Input
                 id={def.key}
                 value={(element?.va as string) ?? ""}
+                placeholder={getPlaceholder(texts, def)}
                 onChange={(e) => handleChange(dispatch, def, rowId, messages, e.target.value ?? "")}
                 onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                 onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
