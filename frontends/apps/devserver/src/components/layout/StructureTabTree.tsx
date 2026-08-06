@@ -38,6 +38,7 @@ import {
     Parent,
     Scenario,
     SelectValue,
+    ShortcutValue,
     StyleValue,
     TextPostfix,
     UploadType,
@@ -806,6 +807,31 @@ export default function StructureTabTree(props: Props) {
                                         >
                                             {"Attention"}
                                         </Option>
+                                    </Select>
+                                </FormItem>
+                            )}
+
+                            {props.el?.type == "button" && (
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_shortcut" })}</Label>}>
+                                    <Select
+                                        className={classes.largeInput}
+                                        onChange={(e) => {
+                                            const text = e.detail.selectedOption.innerText?.toString()
+                                            const val = ShortcutValue[text as keyof typeof ShortcutValue]
+                                            props.setNewEl({ ...props.el, shortcut: val })
+                                        }}
+                                    >
+                                        <Option selected={!props.el?.shortcut}>
+                                            {"—"}
+                                        </Option>
+                                        {(Object.keys(ShortcutValue) as Array<keyof typeof ShortcutValue>).map((key) => (
+                                            <Option
+                                                selected={props.el?.shortcut === ShortcutValue[key]}
+                                                key={key}
+                                            >
+                                                {key}
+                                            </Option>
+                                        ))}
                                     </Select>
                                 </FormItem>
                             )}

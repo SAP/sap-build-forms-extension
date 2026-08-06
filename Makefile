@@ -17,3 +17,6 @@ copy_frontends:
 
 build_install_framework:
 	mvn clean install
+
+release_version:
+	mvn build-helper:parse-version versions:set -DnewVersion=${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}

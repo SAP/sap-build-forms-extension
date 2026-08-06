@@ -86,6 +86,7 @@ export default {
     element_label_icon: "Icon",
     element_label_icon_preview: "Vorschau:",
     element_label_tooltip: "Tooltip",
+    element_label_shortcut: "Tastenkürzel",
     element_label_path: "Pfad",
     element_label_mixin_name: "Mixin-Name",
     element_label_version: "Version",
