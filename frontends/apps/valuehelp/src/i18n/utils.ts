@@ -9,7 +9,8 @@ import en from "./en"
  * @returns
  */
 export function getMessages(language: string): Record<string, string> {
-    switch (language) {
+    const lang = language.split("-")[0]
+    switch (lang) {
         case "de":
             return messages.getMessages("de", de)
         default:

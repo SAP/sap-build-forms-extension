@@ -5,7 +5,6 @@ import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.utils.EnumUtils;
 import com.sap.bfx.utils.JdbcUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
@@ -16,18 +15,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Base implementation of the cockpit database adapter for PostgreSQL
  */
 public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
-    private final JdbcTemplate jdbc;
 
     /**
      * Constructor
      *
-     * @param ds
+     * @param ds Datatsource to be used
      */
     protected BasePostgresqlCockpitAdapter(final DataSource ds) {
-        this.jdbc = new JdbcTemplate(ds);
+        super(ds);
     }
 
     /**
@@ -146,15 +144,13 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
 
         sql.append(" ORDER BY started_at DESC, description");
 
-        processes.addAll(jdbc.query(
-                con -> {
-                    PreparedStatement ps = con.prepareStatement(sql.toString());
-                    for (int i = 0; i < params.size(); i++) {
-                        ps.setObject(i + 1, params.get(i));
-                    }
-                    return ps;
-                },
-                new FormRowMapper()));
+        processes.addAll(jdbc.query(con -> {
+            PreparedStatement ps = con.prepareStatement(sql.toString());
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
+            return ps;
+        }, new FormRowMapper()));
     }
 
     /**

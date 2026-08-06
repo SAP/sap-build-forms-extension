@@ -1,14 +1,41 @@
 export default {
     app_title: "FORMS",
 
-    session_error_creation: "Fehler beim Erzeugen des Formulars!",
-    session_error_timed_out:
-        "Session ging verloren. Bitte laden Sie die Seite neu und starten neu!",
-    session_error_generic: "Allgemeiner Fehler bei der Kommunikation mit dem Backend! Fehler-ID ist {guid}",
+    common_error_title: "Fehler",
+    common_fatal_title: "Schwerwiegender Fehler",
+    common_fatal_subtitle:
+        "Versuchen Sie es bitte noch einmal. Tritt der Fehler weiterhin auf, wenden Sie sich bitte an Ihren Administrator!",
+    common_error_unkown: "Ein unbekannter Fehler ist aufgetreten!",
+    common_error_not_found: "Nicht gefunden!",
+    common_error_required: "Feld {name} ist ein Pflichtfeld!",
+    common_info_title: "Information",
+    common_message_child: "Es gibt Meldungen an Kinderfeldern!",
+    commom_toast_error: "Fehler",
+    common_toast_warn: "Warnung",
+    common_toast_info: "Information",
+    common_toast_success: "Erfolg",
+    common_toast_undefined: "",
+    common_unkown_title: "Meldung",
+    common_warn_title: "Warnung",
+    common_success_title: "Erfolg",
 
-    create_title: "Erzeuge Formular",
-    detail_dialog_title: "Anzeige/Bearbeiten einer Tabellenzeile",
-    upload_dialog_title: "Hochladen mit zusätzlichen Informationen",
+    common_ok: "Ok",
+    common_yes: "Ja",
+    common_no: "Nein",
+    common_retry: "Wiederholen",
+    common_unkown: "Unbekannt?",
+    common_no_data: "Keine Daten",
+    common_close: "Schließen",
+    common_add: "Hinzufügen",
+    common_show: "Anzeigen",
+    common_delete: "Löschen",
+    common_edit: "Bearbeiten",
+    common_table_add: "Tabellenzeile hinzufügen",
+    common_text: "{text}",
+    common_upload: "Hochladen",
+    common_select_files: "Dateien auswählen",
+    common_wizard_prev: "Zurück",
+    common_wizard_next: "Weiter",
 
     attachment_drag_drop_hint: "Dateien hierher ziehen und ablegen",
     attachment_or_click_add: 'oder "Hinzufügen"-Schaltfläche oben klicken',
@@ -24,6 +51,15 @@ export default {
     attachment_field_required: "Dies ist ein Pflichtfeld.",
     attachment_description_maxlength: "Maximale Länge beträgt 250 Zeichen.",
 
+    session_error_creation: "Fehler beim Erzeugen des Formulars!",
+    session_error_timed_out:
+        "Session ging verloren. Bitte laden Sie die Seite neu und starten neu!",
+    session_error_generic: "Allgemeiner Fehler bei der Kommunikation mit dem Backend! Fehler-ID ist {guid}",
+
+    create_title: "Erzeuge Formular",
+    detail_dialog_title: "Anzeige/Bearbeiten einer Tabellenzeile",
+    upload_dialog_title: "Hochladen mit zusätzlichen Informationen",
+
     sh_dialog_title: "Suchhilfe für {name}",
     sh_dialog_select: "Auswählen",
     sh_dialog_close: "Schließen",
@@ -33,4 +69,10 @@ export default {
     currency_col_digits: "Nachkommastellen",
     currency_col_name: "Name",
     currency_empty_selection: "(keine Währung)",
+
+    button_shortcut_triggered: "''{label}'' ausgeführt",
+
+    "default.msg.validation.required": "Feld ist ein Pflichtfeld",
+    "default.msg.validation.min": "Wert liegt unter dem Minimum",
+    "default.msg.text": "{text}",
 }

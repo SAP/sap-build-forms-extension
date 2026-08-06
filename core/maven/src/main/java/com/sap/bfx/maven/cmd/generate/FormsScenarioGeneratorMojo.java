@@ -12,6 +12,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.fusesource.jansi.AnsiConsole;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +20,8 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
-@Mojo(name = "scenario-generate", defaultPhase = LifecyclePhase.GENERATE_SOURCES) @Configuration
+@Mojo(name = "scenario-generate", defaultPhase = LifecyclePhase.GENERATE_SOURCES,
+        requiresDependencyResolution = ResolutionScope.COMPILE) @Configuration
 public class FormsScenarioGeneratorMojo extends AbstractFormsMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true) MavenProject project;

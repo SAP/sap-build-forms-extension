@@ -4,7 +4,6 @@ import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
 import com.sap.bfx.valuehelp.security.ValueHelpGroups;
-import com.sap.bfx.valuehelp.security.ValueHelpGroups;
 import com.sap.bfx.valuehelp.service.ValueHelpService;
 import jakarta.validation.Valid;
 import jakarta.xml.bind.JAXBException;
@@ -33,15 +32,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/v1/valuehelpdefs")
 @Slf4j
-//@CrossOrigin(origins = "http://localhost:3000")
 public class ValueHelpDefsController {
 
-    private final ValueHelpService service;
+    private final ValueHelpService valueHelpService;
     private final SecurityService securityService;
 
     @Autowired
-    public ValueHelpDefsController(final ValueHelpService service, final SecurityService securityService) {
-        this.service = service;
+    public ValueHelpDefsController(final ValueHelpService valueHelpService, final SecurityService securityService) {
+        this.valueHelpService = valueHelpService;
         this.securityService = securityService;
     }
 
@@ -51,8 +49,9 @@ public class ValueHelpDefsController {
     public Collection<ValueHelpDef> findAll(@RequestParam(required = false) String search,
                                             @RequestParam(required = false) String[] adapter,
                                             AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
-        return service.findAllDefs(search, adapter);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay,
+                ValueHelpGroups.SBFX_ValueHelpEdit);
+        return valueHelpService.findAllDefs(search, adapter);
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -62,37 +61,37 @@ public class ValueHelpDefsController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
-        var resultOpt = service.findDefById(id);
-        if (resultOpt.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"
-                    + id + "'");
-        }
-        return resultOpt.get();
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay,
+                ValueHelpGroups.SBFX_ValueHelpEdit);
+        return valueHelpService.findDefById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                "cannot find value-help-definition with id '" + id + "'"));
     }
 
     @GetMapping(value = "/adapter", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllAdapter(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
-        return service.findAllAdapter();
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay,
+                ValueHelpGroups.SBFX_ValueHelpEdit);
+        return valueHelpService.findAllAdapter();
     }
 
     @GetMapping(value = "/definedAdapter", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllDefinedAdapter(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
-        return service.findAllDefinedAdapter();
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay,
+                ValueHelpGroups.SBFX_ValueHelpEdit);
+        return valueHelpService.findAllDefinedAdapter();
     }
 
     @GetMapping(value = "/locales", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public String[] getLocales(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay, ValueHelpGroups.SBFX_ValueHelpEdit);
-        return service.findAllDefinedLocales();
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpDisplay,
+                ValueHelpGroups.SBFX_ValueHelpEdit);
+        return valueHelpService.findAllDefinedLocales();
     }
 
     @GetMapping(value = "/export", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -106,15 +105,15 @@ public class ValueHelpDefsController {
 
         byte[] xmlByteArray;
         if (search != null && search.length() > 0 && adapter != null && adapter.length > 0) {
-            xmlByteArray = service.exportDefs(search, adapter);
+            xmlByteArray = valueHelpService.exportDefs(search, adapter);
         } else if (search != null && search.length() > 0) {
-            xmlByteArray = service.exportDefs(search);
+            xmlByteArray = valueHelpService.exportDefs(search);
         } else if (adapter != null && adapter.length > 0) {
-            xmlByteArray = service.exportDefs(adapter);
+            xmlByteArray = valueHelpService.exportDefs(adapter);
         } else if (ids != null && ids.length > 0) {
-            xmlByteArray = service.exportDefsByIds(ids);
+            xmlByteArray = valueHelpService.exportDefsByIds(ids);
         } else {
-            xmlByteArray = service.exportDefs();
+            xmlByteArray = valueHelpService.exportDefs();
         }
 
         return ResponseEntity.ok()
@@ -134,13 +133,14 @@ public class ValueHelpDefsController {
         }
         securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         if (!id.equals(valueHelpDef.getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided ID in URL does not match ID in request body");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Provided ID in URL does not match ID in request body");
         }
-        var resultOpt = service.findDefById(id);
+        var resultOpt = valueHelpService.findDefById(id);
         if (resultOpt.isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Entity with id " + id + " already exists.");
         }
-        service.addDef(valueHelpDef);
+        valueHelpService.addDef(valueHelpDef);
         return valueHelpDef;
     }
 
@@ -154,21 +154,18 @@ public class ValueHelpDefsController {
         securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         String msg;
         if (file.isEmpty()) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("No file provided");
+            return ResponseEntity.badRequest().body("No file provided");
         }
         try {
-            msg = service.importXmlFile(file, override);
+            msg = valueHelpService.importXmlFile(file, override);
         } catch (JAXBException | IOException e) {
             log.debug("Exception during import of xml file.");
             try {
-                msg = service.importAbpmXmlFile(file, override, useTechnicalName);
+                msg = valueHelpService.importAbpmXmlFile(file, override, useTechnicalName);
             } catch (JAXBException | IOException e1) {
                 log.error("Exception during import of abpm xml file.");
-                return ResponseEntity
-                        .internalServerError()
-                        .body("Error uploading file. Please check file and try again.");
+                return ResponseEntity.internalServerError()
+                                     .body("Error uploading file. Please check file and try again.");
             }
         }
         if (msg != null) {
@@ -187,55 +184,53 @@ public class ValueHelpDefsController {
         }
         securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         if (!id.equals(valueHelpDef.getId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Provided ID in URL does not match ID in request body");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Provided ID in URL does not match ID in request body");
         }
-        var resultOpt = service.findDefById(id);
+        var resultOpt = valueHelpService.findDefById(id);
         if (resultOpt.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"
-                    + id + "'");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "cannot find value-help-definition with id '" + id + "'");
         }
-        service.updateDef(valueHelpDef);
+        valueHelpService.updateDef(valueHelpDef);
         return valueHelpDef;
     }
 
     @DeleteMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@RequestParam(required = true) String[] ids,
-                       AbstractAuthenticationToken token) {
+    public void delete(@RequestParam(required = true) String[] ids, AbstractAuthenticationToken token) {
         if (Arrays.stream(ids).anyMatch(StringUtils::isBlank)) {
             throw new BadRequestException("Missing value for ids");
         }
         securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
         for (String id : ids) {
-            var resultOpt = service.findDefById(id);
+            var resultOpt = valueHelpService.findDefById(id);
             if (resultOpt.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"
-                        + id + "'");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "cannot find value-help-definition with id '" + id + "'");
             }
-            service.deleteDef(id);
+            valueHelpService.deleteDef(id);
         }
     }
 
     @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable String id,
-                       AbstractAuthenticationToken token) {
+    public void delete(@PathVariable String id, AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
         securityService.ensureAuthorized(token, null, Boolean.TRUE, ValueHelpGroups.SBFX_ValueHelpEdit);
-        var resultOpt = service.findDefById(id);
+        var resultOpt = valueHelpService.findDefById(id);
         if (resultOpt.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "cannot find value-help-definition with id '"
-                    + id + "'");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "cannot find value-help-definition with id '" + id + "'");
         }
-        service.deleteDef(id);
+        valueHelpService.deleteDef(id);
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Map<String, String> handleValidationExceptions(
-            MethodArgumentNotValidException ex) {
+    public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();

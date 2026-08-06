@@ -83,7 +83,7 @@ public class MixinService extends AbstractProcessor {
      */
     private void handleScenario(final ServiceParameters params, final ExtendedScenarioDefinition sd) {
 
-        sd.setRootElementName(IdentifierUtils.camelCase(sd.getRootElementName()));
+        sd.setRootElementName(IdentifierUtils.toPascalCase(sd.getRootElementName()));
 
         final var processingInfo = new ProcessingInfo(params, sd);
 

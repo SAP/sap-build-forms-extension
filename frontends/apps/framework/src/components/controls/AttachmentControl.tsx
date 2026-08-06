@@ -36,7 +36,7 @@ import { FileUploaderChangeEventDetail } from "@ui5/webcomponents/dist/FileUploa
 
 import { useMessages } from "commons"
 
-import { ControlProps, getLabel } from "./Control"
+import { ControlProps, getLabel, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import { Attachment, FormService } from "../../features/sessions/forms"
@@ -44,6 +44,8 @@ import { downloadAttachment } from "../../features/sessions/sessionSlice"
 import { Definition } from "../../features/sessions/definitions"
 import { ValueName, ValuehelpsService } from "../../features/valuehelps/logic"
 import { deleteAttachment, uploadAttachment } from "../../features/sessions/attachmentActions"
+import { loadValueHelp } from "../../features/valuehelps/valuehelpsSlice"
+import { elementInfo2ValueState } from "./utils"
 
 /**
  * Convert selection mode from string to UI5 component format
@@ -67,9 +69,76 @@ function getselect(mode?: string): "None" | "Single" | "Multiple" {
 interface PendingFile {
     file: File
     description: string
-    category: string
+    categoryValues: Record<string, string>
     progress: number
     id: string
+}
+
+/**
+ * Loads VH options for every CategoryOption that has hvOpt.name set.
+ * Dispatches loadValueHelp for missing VHs and repopulates from localstore
+ * whenever the Redux vhs map changes.
+ */
+function useCategoryVhOptions(
+    categories: Definition["categories"],
+): Record<string, ValueName[]> {
+    const dispatch = useAppDispatch()
+    const vhs = useAppSelector((state) => state.valuehelps.vhs)
+    const locale = useAppSelector((state) => state.session.locale)
+    const sessionId = useAppSelector((state) => state.session.id)
+    const [vhOptions, setVhOptions] = useState<Record<string, ValueName[]>>({})
+
+    useEffect(() => {
+        if (!categories || !sessionId) return
+        for (const cat of categories) {
+            const name = cat.hvOpt?.name
+            if (name && !vhs[name]) {
+                dispatch(loadValueHelp({ name, sessionId, locale }))
+            }
+        }
+    }, [categories, sessionId, locale])
+
+    useEffect(() => {
+        if (!categories) return
+        const load = async () => {
+            const opts: Record<string, ValueName[]> = {}
+            for (const cat of categories) {
+                const name = cat.hvOpt?.name
+                if (!name || !vhs[name]) continue
+                const values = await ValuehelpsService.loadFormLocalstore(name, locale)
+                opts[name] = ValuehelpsService.createVHOptions(values, {
+                    name,
+                    validate: cat.hvOpt.validate,
+                    emptySelection: cat.hvOpt.emptySelection,
+                    displayFormat: cat.hvOpt.displayFormat,
+                })
+            }
+            setVhOptions(opts)
+        }
+        load()
+    }, [vhs, locale, categories])
+
+    return vhOptions
+}
+
+/**
+ * Parses att.c — either a JSON-encoded Record<label, key> (multi-category) or a
+ * plain string (single-category, backward-compatible) — into an array of
+ * { label, key } pairs for tag rendering.
+ */
+function parseCategoryValue(c?: string): Array<{ label: string; key: string }> {
+    if (!c) return []
+    try {
+        const parsed = JSON.parse(c)
+        if (typeof parsed === "object" && parsed !== null) {
+            return Object.entries(parsed as Record<string, string>)
+                .filter(([, key]) => key.length > 0)
+                .map(([label, key]) => ({ label, key }))
+        }
+    } catch {
+        // not JSON
+    }
+    return c.length > 0 ? [{ label: "", key: c }] : []
 }
 
 /**
@@ -93,7 +162,7 @@ function FilesControl(props: {
     showDelete: boolean
     registerFilesRef: React.MutableRefObject<((fileList: FileList | null) => void) | undefined>
     uploadRef: React.MutableRefObject<
-        ((description?: string, category?: string) => void) | undefined
+        ((description?: string, categoryValues?: Record<string, string>) => void) | undefined
     >
     onProcessing: (status: boolean) => void
     setShowDialog: (value: boolean) => void
@@ -122,7 +191,11 @@ function FilesControl(props: {
         }
     }, [])
 
-    uploadRef.current = useCallback((description?: string, category?: string) => {
+    uploadRef.current = useCallback((description?: string, categoryValues?: Record<string, string>) => {
+        const category =
+            categoryValues && Object.keys(categoryValues).length > 0
+                ? JSON.stringify(categoryValues)
+                : undefined
         const onProgress = (e: AxiosProgressEvent) => {
             const idx = uploadIdxRef.current
             setFiles((prev) =>
@@ -215,7 +288,6 @@ function FilesControl(props: {
 interface UploadFormData {
     files: FileList
     description: string
-    category: string
 }
 
 /**
@@ -235,31 +307,42 @@ interface ExtendedUploadDialogProps extends ControlProps {
 function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
     const { def, rowId, setShowDialog } = props
     const intl = useIntl()
-    const vhs = useAppSelector((state) => state.valuehelps.vhs)
-    const locale = useAppSelector((state) => state.session.locale)
-    const { control, formState, trigger, getValues, setValue } = useForm<UploadFormData>()
-    const uploadRef = useRef<(description?: string, category?: string) => void>(undefined)
+    const { control, formState, trigger, getValues } = useForm<UploadFormData>()
+    const uploadRef = useRef<
+        ((description?: string, categoryValues?: Record<string, string>) => void) | undefined
+    >(undefined)
     const [processing, setProcessing] = useState<boolean>(false)
     const registerFilesRef = useRef<(fileList: FileList | null) => void>(undefined)
-    const [options, setOptions] = useState<ValueName[]>([])
-    const [elementDisabled, setElementDisabled] = useState<boolean>(true)
-    const messages = useMessages()
     const allowedExtensionsDialog = parseFileTypes(def.fileTypes)
     const [setRejected, rejectedStrip] = useRejectedFilesMessage()
 
+    const vhOptions = useCategoryVhOptions(def.categories)
+    const [categoryValues, setCategoryValues] = useState<Record<string, string>>(
+        () => Object.fromEntries((def.categories ?? []).map((c) => [c.label, ""])),
+    )
+    const [validateCats, setValidateCats] = useState(false)
+
+    // Seed default selection from first option for required categories once VH options load
     useEffect(() => {
-        if (def.vh && vhs[def.vh.name]) {
-            const p = ValuehelpsService.loadFormLocalstore(def.vh.name, locale)
-            p.then((values) => {
-                const opts = ValuehelpsService.createVHOptions(values, def.vh)
-                setOptions(opts)
-                if (opts.length > 0) {
-                    setValue("category", opts[0].value)
+        if (!def.categories) return
+        setCategoryValues((prev) => {
+            const updated = { ...prev }
+            for (const cat of def.categories ?? []) {
+                const opts = cat.hvOpt?.name ? vhOptions[cat.hvOpt.name] : undefined
+                if (!opts || opts.length === 0) continue
+                if (!cat.hvOpt.emptySelection && (updated[cat.label] ?? "") === "") {
+                    updated[cat.label] = opts[0].value
                 }
-                setElementDisabled(false)
-            })
-        }
-    }, [vhs, def.vh, locale, setValue])
+            }
+            return updated
+        })
+    }, [vhOptions, def.categories])
+
+    const areCatsValid = () =>
+        (def.categories ?? []).every((cat) => {
+            const opts = cat.hvOpt?.name ? vhOptions[cat.hvOpt.name] : undefined
+            return !opts || cat.hvOpt.emptySelection || (categoryValues[cat.label] ?? "").length > 0
+        })
 
     return (
         <>
@@ -276,25 +359,23 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
                                         icon="upload"
                                         disabled={processing}
                                         onClick={() => {
+                                            setValidateCats(true)
                                             trigger().then((valid: boolean) => {
-                                                if (valid) {
+                                                if (valid && areCatsValid()) {
                                                     const values = getValues()
-                                                        ; (
-                                                            uploadRef.current as (
-                                                                description?: string,
-                                                                category?: string,
-                                                            ) => void
-                                                        )(values.description, values.category)
+                                                    uploadRef.current!(
+                                                        values.description,
+                                                        Object.keys(categoryValues).length > 0
+                                                            ? categoryValues
+                                                            : undefined,
+                                                    )
                                                 }
                                             })
                                         }}
                                     >
                                         {intl.formatMessage({ id: "common_upload" })}
                                     </Button>
-                                    <Button
-                                        disabled={processing}
-                                        onClick={() => setShowDialog(false)}
-                                    >
+                                    <Button disabled={processing} onClick={() => setShowDialog(false)}>
                                         {intl.formatMessage({ id: "common_close" })}
                                     </Button>
                                 </>
@@ -311,11 +392,10 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
                                     control={control}
                                     name="files"
                                     rules={{
-                                        validate: (files): string | undefined => {
-                                            return files && files.length > 0
+                                        validate: (files): string | undefined =>
+                                            files && files.length > 0
                                                 ? undefined
-                                                : intl.formatMessage({ id: "attachment_file_required" })
-                                        },
+                                                : intl.formatMessage({ id: "attachment_file_required" }),
                                     }}
                                     render={({ field }) => (
                                         <FlexBox
@@ -361,9 +441,7 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
                                                             : "Default"
                                                     }
                                                 >
-                                                    {intl.formatMessage({
-                                                        id: "common_select_files",
-                                                    })}
+                                                    {intl.formatMessage({ id: "common_select_files" })}
                                                 </Button>
                                             </FileUploader>
                                             {rejectedStrip}
@@ -371,9 +449,7 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
                                                 rowId={rowId}
                                                 def={def}
                                                 showDelete={true}
-                                                onProcessing={(status: boolean) => {
-                                                    setProcessing(status)
-                                                }}
+                                                onProcessing={(status: boolean) => setProcessing(status)}
                                                 registerFilesRef={registerFilesRef}
                                                 uploadRef={uploadRef}
                                                 setShowDialog={setShowDialog}
@@ -384,47 +460,57 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
                             </FormItem>
                         </FormGroup>
                         <FormGroup headerText={intl.formatMessage({ id: "attachment_desc_group" })}>
-                            {typeof def.vh?.name === "string" && def.vh?.name.length > 0 && (
-                                <FormItem labelContent={<Label required>{intl.formatMessage({ id: "attachment_category" })}</Label>}>
-                                    <Controller
-                                        control={control}
-                                        name="category"
-                                        rules={{ required: intl.formatMessage({ id: "attachment_field_required" }) }}
-                                        render={({ field }) => (
-                                            <Select
-                                                style={{ width: "100%" }}
-                                                disabled={processing || elementDisabled}
-                                                required
-                                                valueState={
-                                                    formState.errors?.[field.name]?.message
-                                                        ? "Negative"
-                                                        : "None"
-                                                }
-                                                valueStateMessage={
+                            {(def.categories ?? []).map((cat, idx) => {
+                                const opts = cat.hvOpt?.name ? vhOptions[cat.hvOpt.name] : undefined
+                                if (!opts) return null
+                                const value = categoryValues[cat.label] ?? ""
+                                const invalid =
+                                    validateCats && !cat.hvOpt.emptySelection && value.length === 0
+                                return (
+                                    <FormItem
+                                        key={idx}
+                                        labelContent={
+                                            <Label>
+                                                {cat.label}
+                                            </Label>
+                                        }
+                                    >
+                                        <Select
+                                            style={{ width: "100%" }}
+                                            disabled={processing}
+                                            valueState={invalid ? "Negative" : "None"}
+                                            valueStateMessage={
+                                                invalid ? (
                                                     <span>
-                                                        {formState.errors?.[field.name]?.message}
+                                                        {intl.formatMessage({
+                                                            id: "attachment_field_required",
+                                                        })}
                                                     </span>
-                                                }
-                                                onChange={(e) =>
-                                                    field.onChange(e.detail.selectedOption.value)
-                                                }
-                                                onBlur={() => trigger()}
-                                            >
-                                                {" "}
-                                                {options.map((it, i) => (
-                                                    <Option
-                                                        key={"s" + i}
-                                                        selected={it.value == field.value}
-                                                        value={it.value}
-                                                    >
-                                                        <Text>{it.name}</Text>
-                                                    </Option>
-                                                ))}
-                                            </Select>
-                                        )}
-                                    />
-                                </FormItem>
-                            )}
+                                                ) : undefined
+                                            }
+                                            onChange={(e) =>
+                                                setCategoryValues((prev) => ({
+                                                    ...prev,
+                                                    [cat.label]: e.detail.selectedOption.value,
+                                                } as Record<string, string>))
+                                            }
+                                        >
+                                            {cat.hvOpt.emptySelection && (
+                                                <Option value="" selected={value === ""} />
+                                            )}
+                                            {opts.map((opt, i) => (
+                                                <Option
+                                                    key={i}
+                                                    value={opt.value}
+                                                    selected={opt.value === value}
+                                                >
+                                                    <Text>{opt.name}</Text>
+                                                </Option>
+                                            ))}
+                                        </Select>
+                                    </FormItem>
+                                )
+                            })}
                             {typeof def.hasDescription === "boolean" && def.hasDescription && (
                                 <FormItem labelContent={<Label required>{intl.formatMessage({ id: "attachment_description" })}</Label>}>
                                     <Controller
@@ -473,7 +559,7 @@ function ExtendedUploadDialog(props: ExtendedUploadDialogProps) {
 interface ProgressUploadDialogProps extends ExtendedUploadDialogProps {
     registerFilesRef: React.MutableRefObject<((fileList: FileList | null) => void) | undefined>
     uploadRef: React.MutableRefObject<
-        ((description?: string, category?: string) => void) | undefined
+        ((description?: string, categoryValues?: Record<string, string>) => void) | undefined
     >
 }
 
@@ -637,10 +723,11 @@ function FileUploaderControl(props: ControlProps) {
     const [showExtendedDialog, setShowExtendedDialog] = useState<boolean>(false)
     const [showProgressDialog, setShowProgressDialog] = useState<boolean>(false)
     const registerFilesRef = useRef<(fileList: FileList | null) => void>(undefined)
-    const uploadRef = useRef<(description?: string, category?: string) => void>(undefined)
+    const uploadRef = useRef<((description?: string, categoryValues?: Record<string, string>) => void) | undefined>(undefined)
     // Holds the FileList that should trigger an upload once the dialog has mounted
     const [pendingUploadFiles, setPendingUploadFiles] = useState<FileList | null>(null)
     const [setRejectedFU, rejectedStripFU] = useRejectedFilesMessage()
+    const hasAttachmentError = elementInfo2ValueState(element?.msg) === "Negative"
 
     // Start the upload once the progress dialog is open and refs are wired up
     useEffect(() => {
@@ -664,8 +751,7 @@ function FileUploaderControl(props: ControlProps) {
     }
 
     const labelText = getLabel(texts, def)
-    const isDialogUpload =
-        def.hasDescription || (typeof def.vh?.name === "string" && def.vh?.name.length > 0)
+    const isDialogUpload = def.hasDescription || (def.categories?.length ?? 0) > 0
     // TODO: get existing attachments from backend for the case site is saved and reloaded.
     const existingAttachmentsFU = (element?.va as Attachment[]) || []
     const isSingleFU = def.type !== "multiple"
@@ -716,11 +802,15 @@ function FileUploaderControl(props: ControlProps) {
                 }
                 style={{
                     marginTop: "3px",
+                    border: hasAttachmentError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasAttachmentError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasAttachmentError ? "0.25rem" : undefined,
                 }}
             >
 
                 <List
                     selectionMode={existingAttachmentsFU.length > 0 ? getselect(def.select) : "None"}
+                    noDataText={getPlaceholder(texts, def)}
                 >
                     {(element?.va as Attachment[]).map((att, i) => (
                         <ListItemCustom key={i}>
@@ -743,18 +833,16 @@ function FileUploaderControl(props: ControlProps) {
 
                                 <FlexBox direction="Column" style={{ width: "100%" }}>
                                     <div>
-                                        <Text style={{ fontWeight: "bold" }}>
-                                            {typeof att["c"] === "string" && att.c.length > 0 && (
-                                                <Tag hideStateIcon colorScheme="6">
-                                                    {att.c}
-                                                </Tag>
-                                            )}{" "}
-                                            {att.n}
-                                        </Text>
+                                        <Text style={{ fontWeight: "bold" }}>{att.n}</Text>
                                     </div>
-                                    <div style={{ paddingTop: "5px" }}>
-                                        <Text>{att.d}</Text>
-                                    </div>
+                                    <FlexBox alignItems="Center" style={{ paddingTop: "5px", gap: "0.5rem", flexWrap: "wrap" }}>
+                                        {parseCategoryValue(att.c).map(({ label, key }, i) => (
+                                            <Tag key={i} hideStateIcon colorScheme="6">
+                                                {label ? `${label}: ${key}` : key}
+                                            </Tag>
+                                        ))}
+                                        {att.d && <Text>{att.d}</Text>}
+                                    </FlexBox>
                                 </FlexBox>
                                 <FlexBox
                                     style={{ marginTop: ".5rem", marginBottom: ".5rem" }}
@@ -826,51 +914,54 @@ function UploadCollectionControl(props: ControlProps) {
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
-    const vhs = useAppSelector((state) => state.valuehelps.vhs)
-    const locale = useAppSelector((state) => state.session.locale)
+
+    const vhOptions = useCategoryVhOptions(def.categories)
 
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([])
-    const [categoryOptions, setCategoryOptions] = useState<ValueName[]>([])
     const [dragOver, setDragOver] = useState(false)
     const [uploadAttempted, setUploadAttempted] = useState(false)
     const [stripDismissed, setStripDismissed] = useState(false)
     const dragCounterRef = useRef(0)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [setRejectedUC, rejectedStripUC] = useRejectedFilesMessage()
+    const hasAttachmentError = elementInfo2ValueState(element?.msg) === "Negative"
 
-    // TODO: Get existing attachments from backend
     const existingAttachments = (element?.va as Attachment[]) || []
     const isSingle = def.type !== "multiple"
     const atCapacity = isSingle && (existingAttachments.length > 0 || pendingFiles.length > 0)
 
-    // Reset dismissed state whenever capacity is freed so the message reappears next time
     useEffect(() => {
         if (!atCapacity) setStripDismissed(false)
     }, [atCapacity])
 
-    // Load category options if value help is configured
+    // Backfill default selections for pending files that were added before VH options loaded
     useEffect(() => {
-        if (def.vh && vhs[def.vh.name]) {
-            const p = ValuehelpsService.loadFormLocalstore(def.vh.name, locale)
-            p.then((values) => {
-                const opts = ValuehelpsService.createVHOptions(values, def.vh)
-                setCategoryOptions(opts)
-            })
-        }
-    }, [vhs, def.vh, locale])
+        if (!def.categories || pendingFiles.length === 0) return
+        setPendingFiles((prev) =>
+            prev.map((pf) => {
+                const updated = { ...pf.categoryValues }
+                let changed = false
+                for (const cat of def.categories ?? []) {
+                    const opts = cat.hvOpt?.name ? vhOptions[cat.hvOpt.name] : undefined
+                    if (!opts || opts.length === 0) continue
+                    if (!cat.hvOpt.emptySelection && (updated[cat.label] ?? "") === "") {
+                        updated[cat.label] = opts[0].value
+                        changed = true
+                    }
+                }
+                return changed ? { ...pf, categoryValues: updated } : pf
+            }),
+        )
+    }, [vhOptions])
 
-    // Handle file drop
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
         dragCounterRef.current = 0
         setDragOver(false)
-
-        const files = Array.from(e.dataTransfer.files)
-        addPendingFiles(files)
+        addPendingFiles(Array.from(e.dataTransfer.files))
     }
 
-    // Introduces a counter to track drag enter/leave events and avoid flickering when dragging over child elements
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -894,7 +985,6 @@ function UploadCollectionControl(props: ControlProps) {
         }
     }
 
-    // Add files to pending list
     const addPendingFiles = (files: File[]) => {
         if (atCapacity || !element?.ed || !globalEd) return
         const allowedExtensions = parseFileTypes(def.fileTypes)
@@ -904,49 +994,52 @@ function UploadCollectionControl(props: ControlProps) {
             setRejectedUC(rejected.map((f) => f.name).join(", "), def.fileTypes ?? "")
         }
         if (accepted.length === 0) return
-        // Single cardinality: only one file
         const filesToAdd = isSingle ? accepted.slice(0, 1) : accepted
-        const newPending = filesToAdd.map(file => ({
+        const newPending = filesToAdd.map((file) => ({
             file,
             description: "",
-            category: categoryOptions.length > 0 ? categoryOptions[0].value : "",
+            categoryValues: Object.fromEntries(
+                (def.categories ?? []).map((c) => {
+                    const opts = c.hvOpt?.name ? vhOptions[c.hvOpt.name] : undefined
+                    const defaultValue =
+                        !c.hvOpt.emptySelection && opts && opts.length > 0 ? opts[0].value : ""
+                    return [c.label, defaultValue]
+                }),
+            ),
             progress: 0,
             id: `${Date.now()}-${Math.random()}`,
         }))
-        setPendingFiles(prev => isSingle ? newPending : [...prev, ...newPending])
+        setPendingFiles((prev) => (isSingle ? newPending : [...prev, ...newPending]))
         setUploadAttempted(false)
     }
 
-    // Handle file selection from button
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             addPendingFiles(Array.from(e.target.files))
-            e.target.value = "" 
+            e.target.value = ""
         }
     }
 
-    // Update pending file metadata
     const updatePendingFile = (id: string, updates: Partial<PendingFile>) => {
-        setPendingFiles(prev =>
-            prev.map(pf => pf.id === id ? { ...pf, ...updates } : pf)
-        )
+        setPendingFiles((prev) => prev.map((pf) => (pf.id === id ? { ...pf, ...updates } : pf)))
     }
 
-    // Remove pending file
     const removePendingFile = (id: string) => {
-        setPendingFiles(prev => prev.filter(pf => pf.id !== id))
+        setPendingFiles((prev) => prev.filter((pf) => pf.id !== id))
     }
 
-    // Validate that a document that needs a description has one before upload
     const isValid = () => {
         if (pendingFiles.length === 0) return false
-        if (def.hasDescription) {
-            return pendingFiles.every((pf) => pf.description.trim().length > 0)
-        }
-        return true
+        return pendingFiles.every((pf) => {
+            if (def.hasDescription && pf.description.trim().length === 0) return false
+            for (const cat of def.categories ?? []) {
+                if (!cat.hvOpt.emptySelection && !(pf.categoryValues[cat.label]?.length > 0))
+                    return false
+            }
+            return true
+        })
     }
 
-    // Handle upload button click
     const handleUploadClick = async () => {
         setUploadAttempted(true)
         if (!isValid()) return
@@ -956,6 +1049,10 @@ function UploadCollectionControl(props: ControlProps) {
             const onProgress = (e: AxiosProgressEvent) => {
                 updatePendingFile(pending.id, { progress: e.progress ? e.progress * 100 : 0 })
             }
+            const category =
+                Object.keys(pending.categoryValues).length > 0
+                    ? JSON.stringify(pending.categoryValues)
+                    : undefined
             try {
                 await dispatch(
                     uploadAttachment({
@@ -964,7 +1061,7 @@ function UploadCollectionControl(props: ControlProps) {
                         key: def.key,
                         onProgress,
                         description: pending.description,
-                        category: pending.category,
+                        category,
                         messages,
                     }),
                 ).unwrap()
@@ -1026,7 +1123,12 @@ function UploadCollectionControl(props: ControlProps) {
 
                 <UploadCollection
                     hideDragOverlay
-                    noDataText={intl.formatMessage({ id: "attachment_drag_drop_hint" })}
+                    style={{
+                    border: hasAttachmentError ? "0.125rem solid var(--sapField_InvalidColor)" : undefined,
+                    backgroundColor: hasAttachmentError ? "var(--sapField_InvalidBackground)" : undefined,
+                    borderRadius: hasAttachmentError ? "0.25rem" : undefined,
+                }}
+                    noDataText={getPlaceholder(texts, def) ?? intl.formatMessage({ id: "attachment_drag_drop_hint" })}
                     noDataDescription={intl.formatMessage({ id: "attachment_or_click_add" })}
                     selectionMode={existingAttachments.length > 0 || pendingFiles.length > 0 ? getselect(def.select) : "None"}
                     header={
@@ -1102,20 +1204,18 @@ function UploadCollectionControl(props: ControlProps) {
                                 </>
                             }
                         >
-                            {/* Description shown right below the file name */}
-                            {att.d && (
-                                <Text style={{ color: "var(--sapContent_LabelColor)", fontSize: "0.875rem" }}>
-                                    {att.d}
-                                </Text>
-                            )}
-                            {/* Category tag + metadata row */}
-                            <FlexBox alignItems="Center" style={{ gap: "1rem", marginTop: att.d ? "0.25rem" : undefined }}>
-                                {typeof att.c === "string" && att.c.length > 0 && (
-                                    <Tag hideStateIcon colorScheme="6" style={{ flexShrink: 0 }}>
-                                        {att.c}
+                            {/* Category tags and description on the same line */}
+                            <FlexBox alignItems="Center" style={{ gap: "0.5rem", flexWrap: "wrap" }}>
+                                {parseCategoryValue(att.c).map(({ label, key }, i) => (
+                                    <Tag key={i} hideStateIcon colorScheme="6" style={{ flexShrink: 0 }}>
+                                        {label ? `${label}: ${key}` : key}
                                     </Tag>
+                                ))}
+                                {att.d && (
+                                    <Text style={{ color: "var(--sapContent_LabelColor)", fontSize: "0.875rem" }}>
+                                        {att.d}
+                                    </Text>
                                 )}
-                                
                             </FlexBox>
                         </UploadCollectionItem>
                     ))}
@@ -1125,7 +1225,6 @@ function UploadCollectionControl(props: ControlProps) {
                         const isUploading = pending.progress > 0
                         const descriptionInvalid =
                             uploadAttempted && def.hasDescription && pending.description.trim().length === 0
-                        const hasVh = typeof def.vh?.name === "string" && def.vh.name.length > 0
                         return (
                             <UploadCollectionItem
                                 key={pending.id}
@@ -1138,37 +1237,43 @@ function UploadCollectionControl(props: ControlProps) {
                                 hideRetryButton
                                 hideDeleteButton
                             >
-                                {/* Single row: status tag | file size | category | description | delete */}
-                                <FlexBox alignItems="Center" style={{ width: "100%", gap: "0.5rem" }}>
-                                    <Tag
-                                        hideStateIcon
-                                        colorScheme="2"
-                                        style={{ flexShrink: 0 }}
-                                    >
+                                <FlexBox alignItems="Center" style={{ width: "100%", gap: "0.5rem", flexWrap: "wrap" }}>
+                                    <Tag hideStateIcon colorScheme="2" style={{ flexShrink: 0 }}>
                                         {intl.formatMessage({ id: "attachment_not_uploaded" })}
                                     </Tag>
 
-                                    {hasVh && (
-                                        <Select
-                                            style={{ flex: "1 1 8rem", minWidth: 0 }}
-                                            disabled={isUploading}
-                                            onChange={(e) =>
-                                                updatePendingFile(pending.id, {
-                                                    category: e.detail.selectedOption.value,
-                                                })
-                                            }
-                                        >
-                                            {categoryOptions.map((opt, i) => (
-                                                <Option
-                                                    key={i}
-                                                    value={opt.value}
-                                                    selected={opt.value === pending.category}
-                                                >
-                                                    {opt.name}
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    )}
+                                    {(def.categories ?? []).map((cat, idx) => {
+                                        const opts = cat.hvOpt?.name ? vhOptions[cat.hvOpt.name] : undefined
+                                        if (!opts) return null
+                                        const value = pending.categoryValues[cat.label] ?? ""
+                                        const catInvalid =
+                                            uploadAttempted && !cat.hvOpt.emptySelection && value.length === 0
+                                        return (
+                                            <Select
+                                                key={idx}
+                                                style={{ flex: "1 1 8rem", minWidth: 0 }}
+                                                disabled={isUploading}
+                                                valueState={catInvalid ? "Negative" : "None"}
+                                                onChange={(e) =>
+                                                    updatePendingFile(pending.id, {
+                                                        categoryValues: {
+                                                            ...pending.categoryValues,
+                                                            [cat.label]: e.detail.selectedOption.value,
+                                                        } as Record<string, string>,
+                                                    })
+                                                }
+                                            >
+                                                {cat.hvOpt.emptySelection && (
+                                                    <Option value="" selected={value === ""} />
+                                                )}
+                                                {opts.map((opt, i) => (
+                                                    <Option key={i} value={opt.value} selected={opt.value === value}>
+                                                        {opt.name}
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        )
+                                    })}
 
                                     {typeof def.hasDescription === "boolean" && def.hasDescription && (
                                         <Input
@@ -1192,7 +1297,7 @@ function UploadCollectionControl(props: ControlProps) {
                                         />
                                     )}
 
-                                    {!hasVh && !(typeof def.hasDescription === "boolean" && def.hasDescription) && (
+                                    {!(def.categories?.length) && !(typeof def.hasDescription === "boolean" && def.hasDescription) && (
                                         <div style={{ flex: 1 }} />
                                     )}
 

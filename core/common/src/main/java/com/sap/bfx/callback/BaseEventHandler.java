@@ -121,14 +121,14 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * event handler, for example pre-populating fields or enforcing preconditions.
      * </p>
      *
-     * @param ctx      the event context providing access to form data, APIs, and user information
-     * @param previous the {@link CallbackResult} produced by the preceding handler in the chain,
-     *                 or the initial result if this is the first handler
+     * @param ctx    the event context providing access to form data, APIs, and user information
+     * @param result the {@link CallbackResult} produced by the preceding handler in the chain,
+     *               or the initial result if this is the first handler
      * @return the (possibly modified) {@link CallbackResult} to pass to the next handler
      */
     @Override
-    public CallbackResult before(final Context<AC> ctx, final CallbackResult previous) {
-        return previous;
+    public CallbackResult before(final Context<AC> ctx, final CallbackResult result) {
+        return result;
     }
 
     /**
@@ -139,14 +139,14 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * has finished, for example auditing, cleanup, or appending additional messages to the result.
      * </p>
      *
-     * @param ctx      the event context providing access to form data, APIs, and user information
-     * @param previous the {@link CallbackResult} produced by the preceding handler in the chain,
-     *                 typically the result returned by the {@code on} phase
+     * @param ctx    the event context providing access to form data, APIs, and user information
+     * @param result the {@link CallbackResult} produced by the preceding handler in the chain,
+     *               typically the result returned by the {@code on} phase
      * @return the (possibly modified) {@link CallbackResult} to pass to the next handler
      */
     @Override
-    public CallbackResult after(final Context<AC> ctx, final CallbackResult previous) {
-        return previous;
+    public CallbackResult after(final Context<AC> ctx, final CallbackResult result) {
+        return result;
     }
 
     /**

@@ -62,9 +62,12 @@ class DeserializationHelper {
                 setMappedProp(node, element, NM_DESIGN, ButtonElementDefinition::mapDesignType);
                 setStringProp(node, element, NM_ICON, "");
                 setStringProp(node, element, NM_LINK_HREF, "");
+                setStringProp(node, element, NM_TOOLTIP, "");
+                setStringProp(node, element, NM_SHORTCUT, "");
                 break;
             case Icon:
                 setStringProp(node, element, NM_ICON, "");
+                setStringProp(node, element, NM_TOOLTIP, "");
                 break;
             case Currency:
                 readValueHelpOptions(node, element);

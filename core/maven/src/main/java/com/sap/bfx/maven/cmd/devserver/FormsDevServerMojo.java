@@ -6,6 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.DispatcherServlet;
 import javax.servlet.Servlet;
 import java.io.InputStreamReader;
 
-@Mojo(name = "serve")
+@Mojo(name = "serve", requiresDependencyResolution = ResolutionScope.COMPILE)
 public class FormsDevServerMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}", required = true, readonly = true)

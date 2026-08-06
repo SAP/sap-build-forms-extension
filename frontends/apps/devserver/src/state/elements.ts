@@ -55,7 +55,7 @@ const useElementsStore = create<State & Action>()(
                                 element.name === array[i].name && element.version === array[i].version,
                         )
                     ) {
-                        state.elements.push(array[i])
+                        state.elements.push({ ...array[i] } as Scenario)
                     }
                 }
             })
@@ -74,7 +74,7 @@ const useElementsStore = create<State & Action>()(
                                     element.version === innerArray[j].version,
                             )
                         ) {
-                            state.elements.push(innerArray[j])
+                            state.elements.push({ ...innerArray[j] } as Mixin)
                         }
                     }
                 }
@@ -88,7 +88,7 @@ const useElementsStore = create<State & Action>()(
                 scenarioIndex = state.elements.findIndex(
                     (element) =>
                         element.version === payload.version &&
-                        "defaultLanguage" in element,
+                        !("kind" in element),
                 )
             } else {
                 scenarioIndex = state.elements.findIndex(
@@ -103,7 +103,7 @@ const useElementsStore = create<State & Action>()(
             const indexes = payload.indexes.split("x").filter((item: any) => item)
             let current: any = state.elements[scenarioIndex]
             let x = 0
-            
+
             while (x < indexes.length - 2) {
                 if (indexes[x + 1] == "f") {
                     if (indexes[x + 2] == "l") {
@@ -181,7 +181,7 @@ const useElementsStore = create<State & Action>()(
                 scenarioIndex = state.elements.findIndex(
                     (element) =>
                         element.version === payload.version &&
-                        "defaultLanguage" in element,
+                        !("kind" in element),
                 )
             } else {
                 scenarioIndex = state.elements.findIndex(
@@ -259,7 +259,7 @@ const useElementsStore = create<State & Action>()(
             if (payload.scenarioMixinName == "Scenario") {
                 i = state.elements.findIndex(
                     (element) =>
-                        element.version === payload.version && "defaultLanguage" in element,
+                        element.version === payload.version && !("kind" in element),
                 )
             } else {
                 i = state.elements.findIndex(
@@ -268,10 +268,10 @@ const useElementsStore = create<State & Action>()(
                         element.name === payload.scenarioMixinName,
                 )
             }
-            
+
             if (i < 0) return
 
-            if ("defaultLanguage" in state.elements[i]) {
+            if (!("kind" in state.elements[i])) {
                 if (payload.name !== undefined) state.elements[i].name = payload.name
                 if (payload.accessObject !== undefined) state.elements[i].accessObject = payload.accessObject
                 if (payload.basePackage !== undefined) state.elements[i].basePackage = payload.basePackage
@@ -293,7 +293,7 @@ const useElementsStore = create<State & Action>()(
                 scenarioIndex = state.elements.findIndex(
                     (element) =>
                         element.version === payload.version &&
-                        "defaultLanguage" in element,
+                        !("kind" in element),
                 )
             } else {
                 scenarioIndex = state.elements.findIndex(
@@ -412,7 +412,7 @@ const useElementsStore = create<State & Action>()(
             if (payload.scenarioMixinName == "Scenario") {
                 i = state.elements.findIndex(
                     (element) =>
-                        element.version === payload.version && "defaultLanguage" in element,
+                        element.version === payload.version && !("kind" in element),
                 )
             } else {
                 i = state.elements.findIndex(

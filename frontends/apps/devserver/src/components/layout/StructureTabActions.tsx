@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useIntl } from "react-intl"
 import { Elem, leafNodes, Parent, Scenario } from "../../utils/scenarioDefinitions"
 import { ActionSheet, Button } from "@ui5/webcomponents-react"
 import ListSelectionMode from "@ui5/webcomponents/dist/types/ListSelectionMode"
@@ -28,6 +29,7 @@ interface Props {
     version: number
     showDelete: boolean
     showSort: boolean
+    isReadOnly: boolean
 }
 
 const useStyles = createUseStyles({
@@ -45,6 +47,7 @@ const useStyles = createUseStyles({
 
 export default function StructureTabActions(props: Props) {
     const classes = useStyles()
+    const intl = useIntl()
     const addElement = useElementsStore((state) => state.addElement)
     const removeElement = useElementsStore((state) => state.removeElement)
     const editDetailData = useElementsStore((state) => state.editDetailData)
@@ -57,7 +60,7 @@ export default function StructureTabActions(props: Props) {
 
         const scenarioIndex =
             props.scenarioMixinName === "Scenario"
-                ? elements.findIndex((el) => el.version === props.version && "defaultLanguage" in el)
+                ? elements.findIndex((el) => el.version === props.version && !("kind" in el))
                 : elements.findIndex((el) => el.version === props.version && el.name === props.scenarioMixinName)
 
         if (scenarioIndex < 0) return null
@@ -338,7 +341,9 @@ export default function StructureTabActions(props: Props) {
     const [onSortButton, setOnSortButton] = useState<boolean>(false)
 
     return (
-        <div className={classes.buttonsTree}>
+        <div className={classes.buttonsTree}
+            style={props.isReadOnly ? { pointerEvents: "none", opacity: 0.5 } : undefined}
+        >
             <Button
                 icon="add"
                 onClick={function Ta() {
@@ -396,14 +401,14 @@ export default function StructureTabActions(props: Props) {
                 style={{
                     width:
                         props.parents.length > 1 &&
-                        (props.parents[props.parents.length - 2].elem.type == "toolbar" ||
-                            (props.parents[props.parents.length - 2].elem.headerSegment !=
-                                undefined &&
-                                props.el &&
-                                props.parents[props.parents.length - 2].elem.elements.filter(
-                                    (sibling) => sibling.sort! < props.el!.sort!
-                                ).length == 0 &&
-                                props.parents[props.parents.length - 2].elem.headerSegment !=
+                            (props.parents[props.parents.length - 2].elem.type == "toolbar" ||
+                                (props.parents[props.parents.length - 2].elem.headerSegment !=
+                                    undefined &&
+                                    props.el &&
+                                    props.parents[props.parents.length - 2].elem.elements.filter(
+                                        (sibling) => sibling.sort! < props.el!.sort!
+                                    ).length == 0 &&
+                                    props.parents[props.parents.length - 2].elem.headerSegment !=
                                     props.el))
                             ? 160
                             : 10,
@@ -411,6 +416,7 @@ export default function StructureTabActions(props: Props) {
             >
                 <Button
                     icon="slim-arrow-up"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_up" })}
                     disabled={!canMoveUp()}
                     onClick={() => {
                         if (isInLeftOrRightElements()) {
@@ -472,10 +478,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Up
+                    {intl.formatMessage({ id: "action_button_move_up" })}
                 </Button>
                 <Button
                     icon="slim-arrow-down"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_down" })}
                     disabled={!canMoveDown()}
                     onClick={() => {
                         if (isInLeftOrRightElements()) {
@@ -537,10 +544,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Down
+                    {intl.formatMessage({ id: "action_button_move_down" })}
                 </Button>
                 <Button
                     icon="slim-arrow-left"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_left" })}
                     disabled={props.parents.length < 2 || !props.element}
                     onClick={() => {
                         // Check if element is in leftElements or rightElements
@@ -558,11 +566,11 @@ export default function StructureTabActions(props: Props) {
                             const grandParent = grandParentIndexPath
                                 ? getElementFromStore(grandParentIndexPath)
                                 : elements.find((el) =>
-                                      props.scenarioMixinName === "Scenario"
-                                          ? el.version === props.version && "defaultLanguage" in el
-                                          : el.version === props.version &&
-                                            el.name === props.scenarioMixinName
-                                  )
+                                    props.scenarioMixinName === "Scenario"
+                                        ? el.version === props.version && !("kind" in el)
+                                        : el.version === props.version &&
+                                        el.name === props.scenarioMixinName
+                                )
 
                             if (!currentParent || !grandParent) return
 
@@ -588,8 +596,8 @@ export default function StructureTabActions(props: Props) {
                                 elements: [
                                     ...(grandParent.elements || []).map((el: Elem) =>
                                         el.name === currentParent.name &&
-                                        el.sort === currentParent.sort &&
-                                        el.id === currentParent.id
+                                            el.sort === currentParent.sort &&
+                                            el.id === currentParent.id
                                             ? updatedParent
                                             : el
                                     ),
@@ -618,10 +626,11 @@ export default function StructureTabActions(props: Props) {
                         }
                     }}
                 >
-                    Left
+                    {intl.formatMessage({ id: "action_button_move_left" })}
                 </Button>
                 <Button
                     icon="slim-arrow-right"
+                    tooltip={intl.formatMessage({ id: "action_tooltip_move_right" })}
                     disabled={
                         props.parents[props.parents.length - 2] == undefined ||
                         props.parents[props.parents.length - 2].elem.elements.filter(
@@ -654,10 +663,10 @@ export default function StructureTabActions(props: Props) {
                         const minSort =
                             elBefore.elements && elBefore.elements.length > 0
                                 ? elBefore.elements.reduce(
-                                      (min: number, obj: Elem) =>
-                                          obj.sort! < min ? obj.sort! : min,
-                                      elBefore.elements[0].sort || 0
-                                  )
+                                    (min: number, obj: Elem) =>
+                                        obj.sort! < min ? obj.sort! : min,
+                                    elBefore.elements[0].sort || 0
+                                )
                                 : 0
 
                         const newEl = { ...props.el!, sort: minSort > 0 ? minSort - 10 : 5 }
@@ -702,18 +711,18 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Right
+                    {intl.formatMessage({ id: "action_button_move_right" })}
                 </Button>
                 <Button
                     icon="slim-arrow-left"
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.parents[props.parents.length - 2].elem.type == "toolbar" &&
-                            props.element &&
-                            !["l", "r"].includes(
-                                props.element!.split("x").filter((item) => item).at(-2) ?? ""
-                            )
+                                props.parents[props.parents.length - 2].elem.type == "toolbar" &&
+                                props.element &&
+                                !["l", "r"].includes(
+                                    props.element!.split("x").filter((item) => item).at(-2) ?? ""
+                                )
                                 ? "flex"
                                 : "none",
                     }}
@@ -760,18 +769,18 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Left Elements
+                    {intl.formatMessage({ id: "action_button_move_left_elements" })}
                 </Button>
                 <Button
                     icon="slim-arrow-right"
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.parents[props.parents.length - 2].elem.type == "toolbar" &&
-                            props.element &&
-                            !["l", "r"].includes(
-                                props.element!.split("x").filter((item) => item).at(-2) ?? ""
-                            )
+                                props.parents[props.parents.length - 2].elem.type == "toolbar" &&
+                                props.element &&
+                                !["l", "r"].includes(
+                                    props.element!.split("x").filter((item) => item).at(-2) ?? ""
+                                )
                                 ? "flex"
                                 : "none",
                     }}
@@ -818,20 +827,20 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Right Elements
+                    {intl.formatMessage({ id: "action_button_move_right_elements" })}
                 </Button>
                 <Button
                     icon="slim-arrow-up"
                     style={{
                         display:
                             props.parents.length > 1 &&
-                            props.el &&
-                            props.element &&
-                            props.parents[props.parents.length - 2].elem.elements.filter(
-                                (sibling) => sibling.sort! < props.el!.sort!
-                            ).length == 0 &&
-                            props.parents[props.parents.length - 2].elem.headerSegment != undefined &&
-                            props.parents[props.parents.length - 2].elem.headerSegment != props.el
+                                props.el &&
+                                props.element &&
+                                props.parents[props.parents.length - 2].elem.elements.filter(
+                                    (sibling) => sibling.sort! < props.el!.sort!
+                                ).length == 0 &&
+                                props.parents[props.parents.length - 2].elem.headerSegment != undefined &&
+                                props.parents[props.parents.length - 2].elem.headerSegment != props.el
                                 ? "flex"
                                 : "none",
                     }}
@@ -878,13 +887,13 @@ export default function StructureTabActions(props: Props) {
                         props.setUpdate(props.update + 1)
                     }}
                 >
-                    Header
+                    {intl.formatMessage({ id: "action_button_move_header" })}
                 </Button>
             </ActionSheet>
             <Button
                 icon="copy"
                 disabled={props.mode == ListSelectionMode.Delete || !props.el}
-                tooltip="Copy"
+                tooltip={intl.formatMessage({ id: "action_tooltip_copy" })}
                 className={classes.buttonTree}
                 onClick={() => {
                     props.setCopiedEl(props.el)
@@ -903,7 +912,7 @@ export default function StructureTabActions(props: Props) {
                         props.element!.split("x").filter((item) => item).at(-1)
                     )
                 }
-                tooltip="Paste"
+                tooltip={intl.formatMessage({ id: "action_tooltip_paste" })}
                 className={classes.buttonTree}
                 onClick={() => {
                     props.setCopyDialogOpen(true)

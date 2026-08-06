@@ -6,18 +6,27 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 
 import static com.sap.bfx.definition.DefinitionNames.*;
 
 public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
     private boolean includeKeys = false;
     private boolean includeTexts = false;
+    private boolean toFrontend = false;
+    private Set<String> classpathMixinNames = Set.of();
 
     public MixinDefinitionSerializer(final boolean includeKeys, final boolean includeTexts) {
         super(MixinDefinition.class);
-
         this.includeKeys = includeKeys;
         this.includeTexts = includeTexts;
+    }
+
+    public MixinDefinitionSerializer(final boolean includeKeys, final boolean includeTexts,
+                                     final boolean toFrontend, final Set<String> classpathMixinNames) {
+        this(includeKeys, includeTexts);
+        this.toFrontend = toFrontend;
+        this.classpathMixinNames = classpathMixinNames;
     }
 
     @Override
@@ -27,6 +36,9 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
         gen.writeNumberField(NM_VERSION, sd.getVersion());
         gen.writeStringField(NM_ACCESS_OBJECT, sd.getAccessObjectName());
         gen.writeStringField(NM_BASE_PACKAGE, sd.getBasePackage());
+        if (this.toFrontend) {
+            gen.writeStringField(NM_KIND, classpathMixinNames.contains(sd.getName()) ? "cp" : "f");
+        }
         // write data of elements (this will be recursively)
         this.serializeElements(sd.getElements(), gen, provider);
         // write data of text elements (if configured)
@@ -74,6 +86,12 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
+                if (((ButtonElementDefinition) ed).getTooltip() != null && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
+                }
+                if (((ButtonElementDefinition) ed).getShortcut() != null && !((ButtonElementDefinition) ed).getShortcut().isEmpty()) {
+                    gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) ed).getShortcut());
+                }
                 break;
             case Currency:
                 gen.writeObjectFieldStart(NM_VALUE_HELP);
@@ -98,6 +116,12 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
                 this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(), gen,
                         provider);
+                break;
+            case Icon:
+                gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
+                if (((IconElementDefinition) ed).getTooltip() != null && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) ed).getTooltip());
+                }
                 break;
             case Image:
                 if (((DialogElementDefinition) ed).getSize() != null) {
@@ -153,6 +177,9 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeStringField(NM_MIXIN_NAME, ((MetaFileElementDefinition) ed).getMixinName());
                 gen.writeStringField(NM_PATH, ((MetaFileElementDefinition) ed).getPath());
                 gen.writeNumberField(NM_VERSION, ((MetaFileElementDefinition) ed).getVersion());
+                if (this.toFrontend) {
+                    gen.writeStringField(NM_KIND, ((MetaFileElementDefinition) ed).getKindCode());
+                }
                 break;
             case Table:
                 gen.writeStringField(NM_SELECT, ((TableElementDefinition) ed).getSelect().getIdentifier());

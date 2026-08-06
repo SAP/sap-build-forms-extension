@@ -11,6 +11,10 @@ export interface ValueHelpDef {
     config: string
     description: string
     languages: string[]
+    formatTemplate?: string
+    keyKey: string
+    type: string
+    valueKeys?: string[]
 }
 
 /**
@@ -22,6 +26,5 @@ export interface ValueHelpValue {
     id: string
     version: number
     locale: string
-    validUntil: string
-    values: any
+    values: Record<string, string>[]
 }

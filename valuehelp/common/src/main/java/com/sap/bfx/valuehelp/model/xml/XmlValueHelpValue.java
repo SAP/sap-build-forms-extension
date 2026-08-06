@@ -13,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public class XmlValueHelpValue {
     private Date validUntil;
 
     @XmlElement
+    @XmlJavaTypeAdapter(ValuesAdapter.class)
     @NotNull(message = "Values cannot be null")
-    private Map<String, String> values;
+    private List<Map<String, String>> values;
 }

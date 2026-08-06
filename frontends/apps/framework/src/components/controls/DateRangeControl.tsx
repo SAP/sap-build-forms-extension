@@ -6,7 +6,7 @@ import { DateRangePicker, DateRangePickerDomRef } from "@ui5/webcomponents-react
 
 import { getLanguage, useMessages } from "commons"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import { DateRange, FormService } from "../../features/sessions/forms"
@@ -47,7 +47,7 @@ function parseValue(
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const intl = useIntl()
@@ -63,6 +63,7 @@ export default function (props: ControlProps) {
                 value={formatValue(element?.va as DateRange | undefined)}
                 displayFormat="short"
                 valueFormat="short"
+                placeholder={getPlaceholder(texts, def)}
                 readonly={!element?.ed || !globalEd}
                 required={element?.rq}
                 onChange={(e) => handleChange(dispatch, def, rowId, messages, parseValue(ref as React.RefObject<DateRangePickerDomRef | undefined>))}

@@ -6,11 +6,19 @@ import { Option, Select, Text } from "@ui5/webcomponents-react"
 
 import { useMessages } from "commons"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import {
+    ControlProps,
+    handleChange,
+    handleEnterFocus,
+    handleLeaveFocus,
+    getPlaceholder,
+    handleDynamicValueHelp,
+    handleValueHelp,
+} from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
-import { ValueName, ValuehelpsService } from "../../features/valuehelps/logic"
+import { ValueName } from "../../features/valuehelps/logic"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
 
 /**
@@ -19,10 +27,11 @@ import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const vhs = useAppSelector((state) => state.valuehelps.vhs)
+    const dvhs = useAppSelector((state) => state.session.dvhs)
     const locale = useAppSelector((state) => state.session.locale)
     const intl = useIntl()
     const [options, setOptions] = useState<ValueName[]>([])
@@ -31,15 +40,12 @@ export default function (props: ControlProps) {
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
     const emptySelection = def.vh?.emptySelection ?? false
 
+    // the following useEffects handle "static" and "dynamic" value-helps.
     useEffect(() => {
-        // console.log(`SelectControl: def=${def.id} with vh=${def.vh?.name} and locale=${locale}`)
-        if (def.vh && vhs[def.vh.name]) {
-            const p = ValuehelpsService.loadFormLocalstore(def.vh.name, locale)
-            p.then((values) => {
-                setOptions(ValuehelpsService.createVHOptions(values, def.vh))
-                setElementDisabled(false)
-            })
-        }
+        handleDynamicValueHelp(def, dvhs, setOptions, setElementDisabled)
+    }, [dvhs])
+    useEffect(() => {
+        handleValueHelp(def, vhs, locale, setOptions, setElementDisabled)
     }, [vhs])
 
     useEffect(() => {
@@ -48,7 +54,17 @@ export default function (props: ControlProps) {
             return
         }
         void handleChange(dispatch, def, rowId, messages, options[0].value)
-    }, [dispatch, def, rowId, messages, options, emptySelection, element?.va, element?.ed, globalEd])
+    }, [
+        dispatch,
+        def,
+        rowId,
+        messages,
+        options,
+        emptySelection,
+        element?.va,
+        element?.ed,
+        globalEd,
+    ])
 
     // console.log(`Element ${def.id} has value-help ${def.vh}`)
 
@@ -78,7 +94,10 @@ export default function (props: ControlProps) {
                 {emptySelection && (
                     <Option
                         selected={typeof element?.va !== "string" || element.va === ""}
-                    ></Option>
+                        data-id=""
+                    >
+                        {getPlaceholder(texts, def) ?? ""}
+                    </Option>
                 )}
                 {options.map((it, i) => (
                     <Option key={"s" + i} selected={it.value == element?.va} data-id={it.value}>

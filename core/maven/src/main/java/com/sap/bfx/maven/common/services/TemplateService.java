@@ -392,8 +392,8 @@ public class TemplateService extends AbstractProcessor {
 
                 for (var it : sd.getMixins().values()) {
                     for (var mixinInfo : it) {
-                        final var name = "Mixin" + StringUtils.capitalize(IdentifierUtils.camelCase(
-                                ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName())) + sd.getVersion() +
+                        final var name = "Mixin" + IdentifierUtils.toPascalCase(
+                                ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) + sd.getVersion() +
                                 "Fields";
 
                         if (!params.containsKey(name)) {
@@ -435,7 +435,7 @@ public class TemplateService extends AbstractProcessor {
                 final var m = new HashMap<String, Object>();
 
                 m.put(NM_CLASS,
-                        "Mixin" + IdentifierUtils.camelCase(sd.getAccessObjectName()) + sd.getVersion() + "Mapping");
+                        "Mixin" + IdentifierUtils.toPascalCase(sd.getAccessObjectName()) + sd.getVersion() + "Mapping");
                 m.put(NM_BASE_PACKAGE, sd.getBasePackage());
 
                 // Elements map contains an item for each mixin found in the definition (even recursive elements)
@@ -449,8 +449,8 @@ public class TemplateService extends AbstractProcessor {
                         final var l = new ArrayList<Pair<String, String>>();
                         em.put(key + "Fields." + mixinInfo.getMixin().getName(), l);
                         mixinInfo.getElements().forEach(e -> {
-                            final var mixinName = "Mixin" + StringUtils.capitalize(IdentifierUtils.camelCase(
-                                    ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName())) +
+                            final var mixinName = "Mixin" + IdentifierUtils.toPascalCase(
+                                    ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) +
                                     sd.getVersion() + "Fields." + StringUtils.substring(e.getName(),
                                     StringUtils.length(mixinInfo.getMixin().getName()));
 

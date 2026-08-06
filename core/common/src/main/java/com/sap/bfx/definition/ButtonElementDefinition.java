@@ -10,6 +10,8 @@ public class ButtonElementDefinition extends ElementDefinition {
     private ButtonDesignType design = ButtonDesignType.Default;
     private String icon;
     private String linkHRef;
+    private String tooltip;
+    private String shortcut;
 
     public ButtonElementDefinition() {
         super(UIElementType.Button);

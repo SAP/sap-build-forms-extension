@@ -10,7 +10,7 @@ export const DEFAULT_LOCALE = "en"
  */
 export function getLanguage(): string {
     const language = (window.navigator as any).userLanguage || window.navigator.language
-    return language
+    return language.split("-")[0]
 }
 
 /**

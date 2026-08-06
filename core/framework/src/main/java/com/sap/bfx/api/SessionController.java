@@ -334,7 +334,7 @@ public class SessionController {
         response.setValues(session.getForm().getElements());
         response.setLocale(context.getLocale());
         response.setCallbackService(this.callbackService);
-        response.setValueHelps(vhVersions.get());
+        response.setValueHelpVersions(vhVersions.get());
         var jsonResponse = utils.createSessionResult(response);
 
         // wait until session is stored...

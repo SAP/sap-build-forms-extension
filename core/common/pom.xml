@@ -126,6 +126,12 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>com.sap.cloud.db.jdbc</groupId>
+            <artifactId>ngdbc</artifactId>
+            <version>${hanadb.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.sap.cloud.sdk.cloudplatform</groupId>
             <artifactId>cloudplatform-connectivity</artifactId>
             <version>${sap-cloud-connectivity.version}</version>

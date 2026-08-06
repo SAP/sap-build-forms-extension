@@ -1,3 +1,7 @@
+import { useEffect, useState } from "react"
+
+import { useIntl } from "react-intl"
+
 import {
     Button,
     FlexBox,
@@ -15,19 +19,23 @@ import {
     TableHeaderRow,
     TableRow,
 } from "@ui5/webcomponents-react"
-import { useEffect, useState } from "react"
-import { Scenario } from "../../utils/scenarioDefinitions"
-import TextEdit from "./TextEdit"
-import useElementsStore from "../../state/elements"
+
 import { Severity, useMessages } from "commons"
+
+import { Mixin, Scenario } from "../../utils/scenarioDefinitions"
+import TextEdit from "./TextEdit"
+import { toPascalCase } from "../../utils/formUtils"
+import useElementsStore from "../../state/elements"
+
 
 interface Props {
     defaultLanguage: string | undefined
-    treeItemsShown: Scenario | null
+    treeItemsShown: Scenario | Mixin | null
     update: number
     language: string
     version: number
     scenarioMixinName: string
+    isReadOnly: boolean
     setUpdate: (e: any) => void
     setDialogAddLanguageOpen: (o: boolean) => void
     setLanguage: (e: any) => void
@@ -39,6 +47,7 @@ export default function LanguagesTab(props: Props) {
     const editTexts = useElementsStore((state) => state.editTexts)
     const [searchValue, setSearchValue] = useState<string>("")
     const { toast } = useMessages()
+    const intl = useIntl()
 
     useEffect(() => {
         if (props.defaultLanguage) {
@@ -55,8 +64,8 @@ export default function LanguagesTab(props: Props) {
                 labelSpan="S12 M12 L12 XL12"
                 style={{ paddingBottom: "1rem" }}
             >
-                <FormItem labelContent={<Label>Language Management</Label>}>
-                    <FlexBox direction="Row" style={{ gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "languages_tab_label_management" })}</Label>}>
+                    <FlexBox direction="Row" style={{ gap: "0.5rem", alignItems: "center", flexWrap: "wrap", ...(props.isReadOnly ? { pointerEvents: "none", opacity: 0.6 } : {}) }}>
                         <Select
                             onChange={function Ta(e) {
                                 props.setLanguage(e.detail.selectedOption.textContent!.toString())
@@ -100,15 +109,12 @@ export default function LanguagesTab(props: Props) {
                             onClick={() => {
                                 props.openMessageBox(
                                     MessageBoxType.Confirm,
-                                    "Remove Language",
+                                    intl.formatMessage({ id: "languages_tab_confirm_remove_title" }),
                                     <>
-                                        Are you sure you want to remove the language{" "}
-                                        <b>
-                                            <i>{props.language}</i>
-                                        </b>
-                                        ?
-                                        <br />
-                                        This will delete all texts in this language and cannot be undone.
+                                        {intl.formatMessage(
+                                            { id: "languages_tab_confirm_remove_text" },
+                                            { language: <b><i>{props.language}</i></b> },
+                                        )}
                                     </>,
                                     () => {
                                         var texts: any = JSON.parse(
@@ -166,7 +172,7 @@ export default function LanguagesTab(props: Props) {
                                 )
                             }}
                         >
-                            Remove language
+                            {intl.formatMessage({ id: "languages_tab_button_remove_language" })}
                         </Button>
 
                         <Button
@@ -175,12 +181,12 @@ export default function LanguagesTab(props: Props) {
                                 props.setDialogAddLanguageOpen(true)
                             }}
                         >
-                            Add language
+                            {intl.formatMessage({ id: "languages_tab_button_add_language" })}
                         </Button>
                     </FlexBox>
                 </FormItem>
 
-                <FormItem labelContent={<Label>Search for key</Label>}>
+                <FormItem labelContent={<Label>{intl.formatMessage({ id: "languages_tab_label_search" })}</Label>}>
                     <Input
                         style={{ width: "100%" }}
                         icon={<Icon name="search" />}
@@ -200,10 +206,10 @@ export default function LanguagesTab(props: Props) {
                 headerRow={
                     <TableHeaderRow>
                         <TableHeaderCell width="20rem">
-                            <span>Key</span>
+                            <span>{intl.formatMessage({ id: "languages_tab_col_key" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell>
-                            <span>Value</span>
+                            <span>{intl.formatMessage({ id: "languages_tab_col_value" })}</span>
                         </TableHeaderCell>
                         <TableHeaderCell>
                             <span></span>
@@ -219,7 +225,10 @@ export default function LanguagesTab(props: Props) {
                         Object.keys(props?.treeItemsShown?.texts![props.language as any])
                             .filter((v) => {
                                 if (searchValue.trim().length > 0) {
-                                    return v.toLowerCase().includes(searchValue.toLowerCase())
+                                    return (
+                                        v.toLowerCase().includes(searchValue.toLowerCase()) ||
+                                        v.toLowerCase().includes(toPascalCase(searchValue).toLowerCase())
+                                    )
                                 } else {
                                     return true
                                 }
