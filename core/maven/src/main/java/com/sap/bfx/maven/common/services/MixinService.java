@@ -34,13 +34,23 @@ public class MixinService extends AbstractProcessor {
     @Autowired
     CheckAndProcessService checkAndProcessService;
 
+    /**
+     * Executes the mixin service for the given type and parameters. This method is the main entry point for handling
+     * mixins in scenario definitions and for handling standalone mixin metadata files. It first clears all existing
+     * messages, then computes the fields and executes checks for the given type (scenario definition or library).
+     * Finally, it processes the messages and logs the results.
+     *
+     * @param type   The type of mixin service to execute (scenario definition or library).
+     * @param params The parameters for the service, including project, metadata folder, target folder, and mixin paths.
+     * @throws Exception If an error occurs during processing.
+     */
     public void execute(final MixinServiceType type, final ServiceParameters params) throws Exception {
         // Just to be sure, clear all existing messages
         clearMessages();
 
         // after this, compute the fields and execute checks
         if (type == MixinServiceType.ScenarioDefinition) {
-            metadataService.getScenarioDefinitions().forEach(it -> this.handleScenario(params, it));
+            metadataService.getScenarioDefinitions().forEach(sd -> this.handleScenario(params, sd));
         } else {
             handleLibrary(params);
         }
@@ -78,8 +88,13 @@ public class MixinService extends AbstractProcessor {
     }
 
     /**
-     * @param params
-     * @param sd
+     * Handles mixins in scenario definitions. This method is called for each scenario definition and processes all
+     * elements in the definition to resolve any mixins. It uses a queue to traverse the elements and their children,
+     * and it repeatedly checks for mixins until no more are found. The method also normalizes the root element name
+     * and creates a processing context for the scenario definition.
+     *
+     * @param params The parameters for the service, including project, metadata folder, target folder, and mixin paths.
+     * @param sd     The extended scenario definition to process.
      */
     private void handleScenario(final ServiceParameters params, final ExtendedScenarioDefinition sd) {
 
@@ -164,12 +179,16 @@ public class MixinService extends AbstractProcessor {
     }
 
     /**
+     * Resolves a mixin element by loading its definition, modifying its properties, and replacing it with its child
+     * elements in the parent list. This method also evaluates any SpEL expressions for visibility, editability,
+     * and required status, and it normalizes the names and keys of the elements. Finally, it adds the mixin to the
+     * scenario definition's mixin map and merges any texts from the mixin definition into the scenario definition.
      *
-     * @param processingInfo
-     * @param mixin
-     * @param parentElements
-     * @return
-     * @throws Exception
+     * @param processingInfo The processing context for the scenario definition.
+     * @param mixin          The mixin element to resolve.
+     * @param parentElements The list of parent elements containing the mixin.
+     * @return true if the mixin was resolved and replaced; false otherwise.
+     * @throws Exception If an error occurs during processing.
      */
     private boolean resolveMixin(final ProcessingInfo processingInfo, final ElementDefinition mixin,
                                  final List<ElementDefinition> parentElements) throws Exception {
@@ -229,6 +248,8 @@ public class MixinService extends AbstractProcessor {
                         it.setRequired(requiredExp.eval(
                                 new EvaluationContext(processingInfo.getScenarioDefinition(), mixin, it)));
                     }
+                    // beside visual properties we also "override" some other parameters
+                    it.setShowAsColumn(mixin.isShowAsColumn());
                 }
             }
             rootLevel = false;
