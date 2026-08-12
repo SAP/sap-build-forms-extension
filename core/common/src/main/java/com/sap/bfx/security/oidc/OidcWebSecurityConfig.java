@@ -63,7 +63,9 @@ public class OidcWebSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // CSRF: disabled for stateless token-based API
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()))
+//                        .disable())
                 // Authorization rules
                 .authorizeHttpRequests(
                         authz -> authz

@@ -12,9 +12,6 @@ export const api = axios.create({
   timeout: 60000,
   // @ts-ignore
   validateStatus: (status: number) => true,
-  headers: {
-    "Access-Control-Allow-Origin": "*",
-  }
 })
 if (sessionStorage["accessToken"]) {
   api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")
@@ -42,10 +39,7 @@ export function apiOk(status: number) {
  * @returns
  */
 export function apiCsrfToken(): string {
-  const csrfToken = document.cookie.replace(
-    /(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/,
-    "$1",
-  )
+  const csrfToken = document.cookie.replace(/(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/, '$1')
   // console.log(`CSRF-Token is ${csrfToken}`)
   return csrfToken
 }
@@ -121,6 +115,10 @@ export class Backend<TResponse> {
     }
     // extract the first element of the queue
     const request = this.requestQueue.shift()
+    if (!request) {
+      console.error("Request is undefined in executeQueued")
+      return
+    }
 
     // repare data
     let data: any = request?.data ?? {}
@@ -128,6 +126,16 @@ export class Backend<TResponse> {
     if (this.preSendProcessor) {
       this.preSendProcessor(data, request!)
     }
+
+    // set xsrf token
+    request.config ??= {}
+    request.config.headers ??= {}
+    const csrfToken = apiCsrfToken()
+    if (csrfToken) {
+      request.config.headers["X-XSRF-TOKEN"] = csrfToken
+    }
+    // set CORS handler to allow all origins (for development purposes)
+    // request.config.headers["Access-Control-Allow-Origin"] = "*"
 
     try {
       this.waitCount++
