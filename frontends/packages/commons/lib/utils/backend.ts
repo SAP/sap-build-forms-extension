@@ -13,9 +13,9 @@ export const api = axios.create({
   // @ts-ignore
   validateStatus: (status: number) => true,
 })
-if (sessionStorage["accessToken"]) {
-  api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")
-}
+// if (sessionStorage["accessToken"]) {
+//   api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")
+// }
 
 /**
  *

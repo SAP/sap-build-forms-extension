@@ -10,6 +10,7 @@ import com.sap.bfx.p13n.model.Value;
 import com.sap.bfx.p13n.security.P13NGroups;
 import com.sap.bfx.p13n.service.PersonalizationService;
 import com.sap.bfx.security.SecurityService;
+import com.sap.bfx.security.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -43,8 +44,10 @@ public class PersonalizationController {
     @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<Personalization> findAll(@RequestParam(required = false) String user, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+    public Collection<Personalization> findAll(@RequestParam(required = false) String user,
+                                               AbstractAuthenticationToken token) {
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findAllPersonalizations(user);
     }
 
@@ -55,7 +58,8 @@ public class PersonalizationController {
         if (null == id) {
             throw new BadRequestException("Missing id");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         var resultOpt = service.findPersonalizationById(id);
         if (resultOpt.isEmpty()) {
             throw new NotFoundException("Cannot find personalization with id '" + id + "'");
@@ -67,7 +71,8 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Map<String, ?> findAllValues(@RequestParam Locale locale, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         try {
             return service.getValuesForStaticPersonalizations(locale);
         } catch (NullPointerException e) {
@@ -80,8 +85,10 @@ public class PersonalizationController {
     @GetMapping(value = "/values/keys", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<String> findAllValueKeys(@RequestParam(required = false) String search, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+    public Collection<String> findAllValueKeys(@RequestParam(required = false) String search,
+                                               AbstractAuthenticationToken token) {
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findValueKeys(search);
     }
 
@@ -92,7 +99,8 @@ public class PersonalizationController {
         if (StringUtils.isBlank(key)) {
             throw new BadRequestException("Missing key");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findValuesForKey(key);
     }
 
@@ -100,14 +108,16 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<String> findAllApps(AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findApps();
     }
 
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @ResponseBody
-    public Personalization create(@Valid @RequestBody Personalization personalization, AbstractAuthenticationToken token) {
+    public Personalization create(@Valid @RequestBody Personalization personalization,
+                                  AbstractAuthenticationToken token) {
         if (null == personalization) {
             throw new BadRequestException("Missing personalization");
         }
@@ -115,7 +125,8 @@ public class PersonalizationController {
             throw new BadRequestException("Key must not begin with '_'.");
         }
         //TODO OB: Check on more?
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NEdit, P13NGroups.SBFX_P13NEnduser);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NEdit,
+                P13NGroups.SBFX_P13NEnduser);
         if (service.isPersonalizationExistent(personalization)) {
             // TODO OB: Own exception?
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Personalization already exists.");
@@ -130,7 +141,8 @@ public class PersonalizationController {
     @GetMapping(value = "/user/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<Personalization> findPersonalizationsByUserNameForUser(@PathVariable String username, AbstractAuthenticationToken token) {
+    public Collection<Personalization> findPersonalizationsByUserNameForUser(@PathVariable String username,
+                                                                             AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
@@ -143,9 +155,7 @@ public class PersonalizationController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public Collection<Personalization> findPersonalizationsByUserNameAndApplicationForUser(
-            @PathVariable String username,
-            @PathVariable String application,
-            AbstractAuthenticationToken token) {
+            @PathVariable String username, @PathVariable String application, AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
@@ -178,17 +188,15 @@ public class PersonalizationController {
             var resultOpt = service.findPersonalizationById(personalization.getId());
             if (resultOpt.isEmpty()) {
                 //get last suitable personalization
-                Personalization lastSuitablePersonalization = service.findPersonalizationByKeyUserAndApp(
-                        personalization.getKey(),
-                        personalization.getUser(),
-                        personalization.getApp());
+                Personalization lastSuitablePersonalization =
+                        service.findPersonalizationByKeyUserAndApp(personalization.getKey(), personalization.getUser(),
+                                personalization.getApp());
 
                 //if personalization is existent at different id --> continue
                 if (lastSuitablePersonalization != null &&
-                        Objects.equals(lastSuitablePersonalization.getKey(), personalization.getKey())
-                        && Objects.equals(lastSuitablePersonalization.getUser(), personalization.getUser())
-                        && Objects.equals(lastSuitablePersonalization.getApp(),
-                        personalization.getApp())) {
+                        Objects.equals(lastSuitablePersonalization.getKey(), personalization.getKey()) &&
+                        Objects.equals(lastSuitablePersonalization.getUser(), personalization.getUser()) &&
+                        Objects.equals(lastSuitablePersonalization.getApp(), personalization.getApp())) {
                     continue;
                 }
                 //create personalization
@@ -205,9 +213,8 @@ public class PersonalizationController {
                     service.addPersonalization(personalization);
                 }
                 // update personalization
-            } else if (resultOpt.get() != personalization
-                    && resultOpt.get().isEditable()
-                    && resultOpt.get().isVisible()) {
+            } else if (resultOpt.get() != personalization && resultOpt.get().isEditable() &&
+                    resultOpt.get().isVisible()) {
                 service.updatePersonalizationUser(personalization);
             }
         }
@@ -221,8 +228,7 @@ public class PersonalizationController {
 
     @DeleteMapping(value = "/user/{username}/{application}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteForUser(@PathVariable String username,
-                              @PathVariable String application,
+    public void deleteForUser(@PathVariable String username, @PathVariable String application,
                               AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
@@ -242,14 +248,19 @@ public class PersonalizationController {
         service.deleteUserForUser(username, application);
     }
 
-    private String getTokenUsername(AbstractAuthenticationToken token) {
-        return token.getName().substring((-1 != token.getName().lastIndexOf("/")) ? token.getName().lastIndexOf("/") + 1 : 0);
-    }
-
+    /**
+     * Checks if the username in the request matches the username in the authentication token.
+     * If they do not match, a NotAuthorizedException is thrown.
+     *
+     * @param token           the authentication token containing the user's credentials
+     * @param requestUsername the username provided in the request path
+     * @throws NotAuthorizedException if the usernames do not match
+     */
     private void checkOnYourOwnUsername(AbstractAuthenticationToken token, String requestUsername) {
-        String tokenUsername = getTokenUsername(token);
+        String tokenUsername = SecurityUtils.getUsername(token);
         if (!requestUsername.matches(tokenUsername)) {
-            throw new NotAuthorizedException(null, new String[]{"Not authorized to modify users other than your own"}, tokenUsername);
+            throw new NotAuthorizedException(null, new String[]{"Not authorized to modify users other than your own"},
+                    tokenUsername);
         }
     }
 
@@ -258,36 +269,40 @@ public class PersonalizationController {
     @GetMapping(value = "/admin/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<String> findAllUser(@RequestParam(required = false) String search, AbstractAuthenticationToken token) {
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+    public Collection<String> findAllUser(@RequestParam(required = false) String search,
+                                          AbstractAuthenticationToken token) {
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findUsers(search);
     }
 
     @GetMapping(value = "/admin/user/{username}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<Personalization> findPersonalizationsByUserName(@PathVariable String username, AbstractAuthenticationToken token) {
+    public Collection<Personalization> findPersonalizationsByUserName(@PathVariable String username,
+                                                                      AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findPersonalizationsByUserForAdmin(username);
     }
 
     @GetMapping(value = "/admin/user/{username}/{application}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<Personalization> findPersonalizationsByUserNameAndApplication(
-            @PathVariable String username,
-            @PathVariable String application,
-            AbstractAuthenticationToken token) {
+    public Collection<Personalization> findPersonalizationsByUserNameAndApplication(@PathVariable String username,
+                                                                                    @PathVariable String application,
+                                                                                    AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
         if (StringUtils.isBlank(application)) {
             throw new BadRequestException("Missing application");
         }
-        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay, P13NGroups.SBFX_P13NEdit);
+        securityService.ensureAnyAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NDisplay,
+                P13NGroups.SBFX_P13NEdit);
         return service.findPersonalizationsByUserAndAppForAdmin(username, application);
     }
 
@@ -311,12 +326,11 @@ public class PersonalizationController {
             var resultOpt = service.findPersonalizationById(personalization.getId());
             if (resultOpt.isEmpty()) {
                 //get last suitable personalization
-                Personalization lastSuitablePersonalization = service.findPersonalizationByKeyUserAndApp(
-                        personalization.getKey(),
-                        personalization.getUser(),
-                        personalization.getApp());
-                if (lastSuitablePersonalization == null || (lastSuitablePersonalization.isEditable()
-                        && (lastSuitablePersonalization.isVisible() || !personalization.isVisible()))) {
+                Personalization lastSuitablePersonalization =
+                        service.findPersonalizationByKeyUserAndApp(personalization.getKey(), personalization.getUser(),
+                                personalization.getApp());
+                if (lastSuitablePersonalization == null || (lastSuitablePersonalization.isEditable() &&
+                        (lastSuitablePersonalization.isVisible() || !personalization.isVisible()))) {
                     personalization.setId(UUID.randomUUID());
                     service.addPersonalization(personalization);
                 }
@@ -351,7 +365,8 @@ public class PersonalizationController {
 
     @DeleteMapping(value = "/admin/user/{username}/{application}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteForAdmin(@PathVariable String username, @PathVariable String application, @RequestParam(required = false) UUID[] ids, AbstractAuthenticationToken token) {
+    public void deleteForAdmin(@PathVariable String username, @PathVariable String application,
+                               @RequestParam(required = false) UUID[] ids, AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
@@ -379,8 +394,10 @@ public class PersonalizationController {
                 if (p_present.getKey().startsWith("_")) {
                     throw new BadRequestException("Personalizations beginning with '_' cannot be deleted");
                 }
-                if (!Objects.equals(p_present.getUser(), username) || !Objects.equals(p_present.getApp(), application)) {
-                    throw new BadRequestException("Personalization with id " + id + " does not match provided username and app");
+                if (!Objects.equals(p_present.getUser(), username) ||
+                        !Objects.equals(p_present.getApp(), application)) {
+                    throw new BadRequestException(
+                            "Personalization with id " + id + " does not match provided username and app");
                 }
             }
             for (var id : ids) {
@@ -392,8 +409,7 @@ public class PersonalizationController {
     @PutMapping(value = "/admin/values/{value_name}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
-    public Collection<Value> updateValues(@PathVariable String value_name,
-                                          @Valid @RequestBody ArrayList<Value> values,
+    public Collection<Value> updateValues(@PathVariable String value_name, @Valid @RequestBody ArrayList<Value> values,
                                           AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(value_name)) {
             throw new BadRequestException("Missing value_name");
@@ -407,18 +423,13 @@ public class PersonalizationController {
         securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NGroups.SBFX_P13NEdit);
         //test for consistency
         if (!values.isEmpty()) {
-            Set<String> keys = values
-                    .get(0)
-                    .getValues()
-                    .stream()
-                    .map(str -> {
-                        if (str.contains("(") && str.contains(")")) {
-                            return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
-                        } else {
-                            return "";
-                        }
-                    })
-                    .collect(Collectors.toSet());
+            Set<String> keys = values.get(0).getValues().stream().map(str -> {
+                if (str.contains("(") && str.contains(")")) {
+                    return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
+                } else {
+                    return "";
+                }
+            }).collect(Collectors.toSet());
 
             //all values changed must be of same key
             if (!values.stream().allMatch(x -> x.getId().equals(value_name))) {
@@ -431,42 +442,36 @@ public class PersonalizationController {
                 }
 
                 //check that each locale has same number of key entries
-                Set<String> newKeys = value.getValues()
-                        .stream()
-                        .map(str -> {
-                            if (str.contains("(") && str.contains(")")) {
-                                return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
-                            } else {
-                                return "";
-                            }
-                        })
-                        .collect(Collectors.toSet());
+                Set<String> newKeys = value.getValues().stream().map(str -> {
+                    if (str.contains("(") && str.contains(")")) {
+                        return str.substring(str.indexOf("(") + 1, str.indexOf(")"));
+                    } else {
+                        return "";
+                    }
+                }).collect(Collectors.toSet());
                 if (!Objects.equals(keys, newKeys)) {
                     throw new BadRequestException("Values not valid");
                 }
 
                 //check that String either has key or no '(' or ')'
-                var isInvalid = value.getValues()
-                        .stream()
-                        .anyMatch(str -> {
-                            if (str.contains("(") && str.contains(")")) {
-                                return !(str.chars().filter(ch -> ch == '(').count() == 1
-                                        && str.chars().filter(ch -> ch == ')').count() == 1);
-                            } else {
-                                return str.contains("(") || str.contains(")");
-                            }
-                        });
+                var isInvalid = value.getValues().stream().anyMatch(str -> {
+                    if (str.contains("(") && str.contains(")")) {
+                        return !(str.chars().filter(ch -> ch == '(').count() == 1 &&
+                                str.chars().filter(ch -> ch == ')').count() == 1);
+                    } else {
+                        return str.contains("(") || str.contains(")");
+                    }
+                });
                 if (isInvalid) {
                     throw new BadRequestException("Values not valid");
                 }
             }
 
             //delete locales
-            Set<Locale> differentLocales = service.findValuesForKey(value_name)
-                    .stream()
-                    .map(Value::getLocale)
-                    .filter(locale -> values.stream().noneMatch(val -> val.getLocale().equals(locale)))
-                    .collect(Collectors.toSet());
+            Set<Locale> differentLocales = service.findValuesForKey(value_name).stream().map(Value::getLocale)
+                                                  .filter(locale -> values.stream().noneMatch(
+                                                          val -> val.getLocale().equals(locale)))
+                                                  .collect(Collectors.toSet());
             for (Locale locale : differentLocales) {
                 service.deleteValue(locale, value_name);
             }
@@ -477,13 +482,14 @@ public class PersonalizationController {
                     if (value.getValues().isEmpty()) {
                         service.deleteValue(value.getLocale(), value.getId());
                     } else {
-                        Optional<Value> existing_value = service.findValueByKeyAndLocale(value.getId(), value.getLocale());
+                        Optional<Value> existing_value =
+                                service.findValueByKeyAndLocale(value.getId(), value.getLocale());
                         if (existing_value.isPresent()) {
                             if (!existing_value.get().getValues().equals(value.getValues())) {
                                 service.updateValue(value);
                             }
-                        } else if (service.findValueByKeyAndLocale(value.getId(), new Locale("_")).isPresent()
-                                || value.getLocale().equals(new Locale("_"))) {
+                        } else if (service.findValueByKeyAndLocale(value.getId(), new Locale("_")).isPresent() ||
+                                value.getLocale().equals(new Locale("_"))) {
                             service.addValue(value);
                         } else {
                             throw new BadRequestException("Values not valid");

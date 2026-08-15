@@ -1,5 +1,5 @@
 import { AxiosResponse } from "axios"
-import { api } from "../features/store"
+import { api } from "commons"
 
 /**
  *

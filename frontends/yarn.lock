@@ -4105,6 +4105,7 @@ __metadata:
     "@ui5/webcomponents-react": "npm:^2.13.1"
     "@vitejs/plugin-react": "npm:^5.0.2"
     axios: "npm:^1.11.0"
+    commons: "workspace:^"
     date-fns: "npm:^4.1.0"
     dexie: "npm:^4.2.0"
     react: "npm:^19.1.1"
