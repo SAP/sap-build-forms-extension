@@ -10,7 +10,7 @@
     <parent>
         <groupId>com.sap.build-forms-extension</groupId>
         <artifactId>core</artifactId>
-        <version>0.2.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <dependencies>
@@ -121,6 +121,12 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
+            <groupId>com.sap.cloud.db.jdbc</groupId>
+            <artifactId>ngdbc</artifactId>
+            <version>${hanadb.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>com.sap.cloud.sdk.cloudplatform</groupId>
             <artifactId>cloudplatform-connectivity</artifactId>
             <version>${sap-cloud-connectivity.version}</version>
@@ -129,6 +135,11 @@
             <groupId>com.sap.cloud.sdk.datamodel</groupId>
             <artifactId>openapi-core</artifactId>
             <version>${sap-cloud-openapi-core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sap.hcp.cf.logging</groupId>
+            <artifactId>cf-java-logging-support-logback</artifactId>
+            <version>${cf-java-logging-support-logback.version}</version>
         </dependency>
     </dependencies>
 </project>

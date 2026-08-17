@@ -47,6 +47,11 @@ class MixinClasspathLoader extends MixinLoader {
         File artifcatFile = null;
         log.debug("Searching in:");
         for (Artifact it : ((Set<Artifact>) project.getDependencyArtifacts())) {
+            if (it.getFile() == null) {
+                // Direct dependency not yet resolved to a file (e.g. Mojo missing
+                // requiresDependencyResolution). Skip rather than NPE.
+                continue;
+            }
             var fName = it.getFile().getName();
             log.debug("- " + fName);
 

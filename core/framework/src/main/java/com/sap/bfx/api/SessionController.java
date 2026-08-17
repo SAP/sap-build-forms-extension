@@ -43,7 +43,11 @@ import java.util.concurrent.CountDownLatch;
  * see <a href=
  * "https://technicalsand.com/streaming-data-spring-boot-restful-web-service/">here</a>.
  */
-@RestController @RequestMapping("api/v1/sessions") @Slf4j @Hidden public class SessionController {
+@RestController
+@RequestMapping("api/v1/sessions")
+@Slf4j
+@Hidden
+public class SessionController {
 
     private final DefinitionService definitionService;
     private final SessionService sessionService;
@@ -72,13 +76,13 @@ import java.util.concurrent.CountDownLatch;
      * @param configurationService configuration service
      * @param securityService      security service
      */
-    @Autowired public SessionController(final DefinitionService scenarioService, final SessionService sessionService,
-                                        final CallbackService callbackService, final ValueHelpClient valueHelpClient,
-                                        final TaskExecutor taskExecutor, final ControllerUtils utils,
-                                        final ContextFactory contextFactory, final WorkflowService workflowService,
-                                        final FormsService formsService,
-                                        final ConfigurationService configurationService,
-                                        final SecurityService securityService) {
+    @Autowired
+    public SessionController(final DefinitionService scenarioService, final SessionService sessionService,
+                             final CallbackService callbackService, final ValueHelpClient valueHelpClient,
+                             final TaskExecutor taskExecutor, final ControllerUtils utils,
+                             final ContextFactory contextFactory, final WorkflowService workflowService,
+                             final FormsService formsService, final ConfigurationService configurationService,
+                             final SecurityService securityService) {
         this.definitionService = scenarioService;
         this.sessionService = sessionService;
         this.callbackService = callbackService;
@@ -102,7 +106,8 @@ import java.util.concurrent.CountDownLatch;
      * @return json response for client
      * @throws Exception in case of errors
      */
-    @PatchMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE) @ResponseBody
+    @PatchMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
     public ResponseEntity<byte[]> patchSession(AbstractAuthenticationToken token, @RequestBody JsonNode node)
             throws Exception {
 
@@ -203,7 +208,8 @@ import java.util.concurrent.CountDownLatch;
      * @return json response for client
      * @throws Exception in case of errors
      */
-    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE) @ResponseBody
+    @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseBody
     ResponseEntity<byte[]> createSession(AbstractAuthenticationToken token, Principal principal,
                                          @RequestBody CreateSessionRequest request) throws Exception {
         log.info("Create-session called with {} for user {}", request.toString(),
@@ -324,7 +330,7 @@ import java.util.concurrent.CountDownLatch;
         response.setValues(session.getForm().getElements());
         response.setLocale(context.getLocale());
         response.setCallbackService(this.callbackService);
-        response.setValueHelps(vhVersions.get());
+        response.setValueHelpVersions(vhVersions.get());
         var jsonResponse = utils.createSessionResult(response);
 
         // wait until session is stored...
@@ -338,7 +344,8 @@ import java.util.concurrent.CountDownLatch;
     /**
      * Request class for creating a new session.
      */
-    @Data static class CreateSessionRequest {
+    @Data
+    static class CreateSessionRequest {
         private String state;
         private String task;
         private String locale;

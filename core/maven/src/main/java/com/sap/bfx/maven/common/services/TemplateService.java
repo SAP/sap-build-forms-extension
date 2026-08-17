@@ -26,7 +26,8 @@ import java.util.*;
  * Service class for generating Java source files based on scenario definitions and mixins. It uses the Freemarker
  * template engine to create access classes, field enums, context factory classes, and mixin mapping structures.
  */
-@Service public class TemplateService extends AbstractProcessor {
+@Service
+public class TemplateService extends AbstractProcessor {
 
     final private static String NM_VERSION = "version";
     final private static String NM_BASE_PACKAGE = "basePackage";
@@ -77,7 +78,8 @@ import java.util.*;
      *
      * @param appContext the application context from which to retrieve the MetadataService bean
      */
-    @Autowired public TemplateService(ApplicationContext appContext) {
+    @Autowired
+    public TemplateService(ApplicationContext appContext) {
 
         this.metadataService = appContext.getBean(MetadataService.class);
 
@@ -390,8 +392,8 @@ import java.util.*;
 
                 for (var it : sd.getMixins().values()) {
                     for (var mixinInfo : it) {
-                        final var name = "Mixin" + StringUtils.capitalize(IdentifierUtils.camelCase(
-                                ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName())) + sd.getVersion() +
+                        final var name = "Mixin" + IdentifierUtils.toPascalCase(
+                                ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) + sd.getVersion() +
                                 "Fields";
 
                         if (!params.containsKey(name)) {
@@ -433,24 +435,29 @@ import java.util.*;
                 final var m = new HashMap<String, Object>();
 
                 m.put(NM_CLASS,
-                        "Mixin" + IdentifierUtils.camelCase(sd.getAccessObjectName()) + sd.getVersion() + "Mapping");
+                        "Mixin" + IdentifierUtils.toPascalCase(sd.getAccessObjectName()) + sd.getVersion() + "Mapping");
                 m.put(NM_BASE_PACKAGE, sd.getBasePackage());
 
+                // Elements map contains an item for each mixin found in the definition (even recursive elements)
                 final var em = new HashMap<String, List<Pair<String, String>>>();
                 m.put(NM_ELEMENTS, em);
                 for (var key : sd.getMixins().keySet()) {
                     final var it = sd.getMixins().get(key);
+                    // for each mixin element we add an entry in the list that is the value for each mixin, so
+                    // we can have a link from the mixin to all of its fields
                     for (var mixinInfo : it) {
                         final var l = new ArrayList<Pair<String, String>>();
                         em.put(key + "Fields." + mixinInfo.getMixin().getName(), l);
                         mixinInfo.getElements().forEach(e -> {
-                            final var mixinName = "Mixin" + StringUtils.capitalize(IdentifierUtils.camelCase(
-                                    ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName())) +
+                            final var mixinName = "Mixin" + IdentifierUtils.toPascalCase(
+                                    ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) +
                                     sd.getVersion() + "Fields." + StringUtils.substring(e.getName(),
                                     StringUtils.length(mixinInfo.getMixin().getName()));
 
-                            final var mixedFieldName = metadataService.findAccessClassForElement(sd.getElements(),
-                                    sd.getAccessObjectName() + sd.getVersion(), e) + "Fields." + e.getName();
+//                            this.log.info("Calling findAccessClassForElement with elements=" + sd.getElements() +
+//                                    ", className=" + sd.getAccessObjectName() + sd.getVersion() + ", element=" + e);
+                            var mixedFieldName = mixinInfo.getClassName() + "Fields." + e.getName();
+//                            this.log.info("=> " + mixedFieldName);
 
                             l.add(new ImmutablePair<>(mixinName, mixedFieldName));
                         });
@@ -521,14 +528,16 @@ import java.util.*;
      * between scanning for access class information and scanning for field enum information when processing the scenario definitions and their elements.
      */
     private enum ScanType {
-        AccessClassScan, EnumScan
+        AccessClassScan,
+        EnumScan
     }
 
     /**
      * Class representing the data type information for an element definition. It contains the return type and dialog
      * type information that is determined based on the UI element type and data type of the element definition.
      */
-    @Data private static class DataTypeInfo {
+    @Data
+    private static class DataTypeInfo {
         private String returnType;
         //        private String type;
         private String dialogReturnType;

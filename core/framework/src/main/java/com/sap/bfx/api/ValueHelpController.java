@@ -1,14 +1,20 @@
 package com.sap.bfx.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.sap.bfx.definition.EventType;
 import com.sap.bfx.exception.BadRequestException;
+import com.sap.bfx.exception.ExceptionUtils;
+import com.sap.bfx.exception.FormsCoreException;
 import com.sap.bfx.security.SecurityService;
 import com.sap.bfx.valuehelp.ValueHelpService;
+import com.sap.bfx.valuehelp.model.ValueHelpType;
 import io.swagger.v3.oas.annotations.Hidden;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -17,8 +23,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
+/**
+ * REST controller for handling value help related API requests.
+ */
 @RestController
 @RequestMapping("api/v1/valuehelpvalues")
 @Slf4j
@@ -27,20 +38,36 @@ public class ValueHelpController {
 
     private final ValueHelpService valueHelpService;
     private final SecurityService securityService;
+    private final ObjectMapper om;
 
+    /**
+     * Constructor for ValueHelpController.
+     *
+     * @param valueHelpService the ValueHelpService to be used for value help operations
+     * @param securityService  the SecurityService to be used for authorization checks
+     */
     @Autowired
     public ValueHelpController(final ValueHelpService valueHelpService, final SecurityService securityService) {
         this.valueHelpService = valueHelpService;
         this.securityService = securityService;
+
+        om = JsonMapper.builder().build();
     }
 
+    /**
+     * Endpoint for finding value help values based on the provided ID and locale.
+     *
+     * @param id     the value help ID
+     * @param locale the locale for which to find values
+     * @param token  the authentication token for authorization checks
+     * @return a ResponseEntity containing the values and their version
+     */
     @GetMapping(value = "/{id}/{locale}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     public ResponseEntity<ValuesResponse> findValueHelp(@PathVariable(name = "id") String id,
                                                         @PathVariable(name = "locale") String locale,
-                                                        AbstractAuthenticationToken token)
-            throws Exception {
+                                                        AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("Missing id");
         }
@@ -49,17 +76,42 @@ public class ValueHelpController {
         }
         securityService.ensureAuthorized(token, EventType.FindValueHelpAuth, Boolean.FALSE, null, null);
 
-        var result = valueHelpService.findValues(id, new Locale(locale));
-        return ResponseEntity
-                .ok()
-                .cacheControl(CacheControl.noCache())
-                .body(new ValuesResponse(result.getLeft(), result.getRight()));
+        final var response = valueHelpService.findValues(id, new Locale(locale));
+        final var values = new HashMap<String, String>();
+        response.getValues().forEach(it -> {
+            final var key = it.get(response.getKeyKey());
+
+            String value;
+            if (response.getType().equals(ValueHelpType.FREESTYLE)) {
+                if (StringUtils.isNotEmpty(response.getFormatTemplate())) {
+                    final var subs = new StringSubstitutor(it);
+                    value = subs.replace(response.getFormatTemplate());
+                } else {
+                    value = it.get(response.getValueKeys().get(0));
+                }
+            } else if (response.getType().equals(ValueHelpType.CURRENCY)) {
+                try {
+                    value = new String(om.writeValueAsBytes(it));
+                } catch (Exception e) {
+                    throw ExceptionUtils.from(e);
+                }
+            } else {
+                throw new FormsCoreException("unsupported valuehelp type '" + response.getType().getIdentifier() + "'");
+            }
+            values.put(key, value);
+        });
+
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache())
+                             .body(new ValuesResponse(values, response.getVersion()));
     }
 
+    /**
+     * Response class for value help values, containing the values and their version.
+     */
     @Data
     @AllArgsConstructor
     public static class ValuesResponse {
-        String values;
+        Map<String, String> values;
         Long version;
     }
 }

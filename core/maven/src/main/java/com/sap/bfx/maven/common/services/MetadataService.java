@@ -16,6 +16,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.PathUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
+import org.apache.maven.project.MavenProject;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -26,11 +28,30 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-@Service public class MetadataService extends AbstractProcessor {
+/**
+ * Service for processing the metadata information coming from the yaml definition files
+ */
+@Service
+public class MetadataService extends AbstractProcessor {
 
     private final Map<String, Map<Integer, MixinDefinition>> mixinDefinitionMap = new HashMap<>();
     private Map<Integer, ExtendedScenarioDefinition> scenarioDefinitionMap = new HashMap<>();
 
+    /**
+     * Names of mixins whose current in-memory definition came from a classpath jar (not the local
+     * filesystem metadata folder). Used by {@link #writeMixinMetadataFiles(String)} to skip writing
+     * these back — they are read-only from the dev server's perspective. Populated by
+     * {@link #scanMixinMetadataWithClasspath(String, MavenProject)}.
+     */
+    private final Set<String> classpathMixinNames = new HashSet<>();
+
+    /**
+     * Finds the scenario definition for a given version. If it does not exist, a new ExtendedScenarioDefinition is
+     * created and added to the map.
+     *
+     * @param version the version of the scenario definition to find
+     * @return the found or newly created ScenarioDefinition
+     */
     public ScenarioDefinition findScenarioVersion(int version) {
         var sd = scenarioDefinitionMap.get(version);
         if (sd == null) {
@@ -40,6 +61,14 @@ import java.util.*;
         return sd;
     }
 
+    /**
+     * Finds the mixin definition for a given name and version. If it does not exist, a new MixinDefinition is created
+     * and added to the map.
+     *
+     * @param name    the name of the mixin definition to find
+     * @param version the version of the mixin definition to find
+     * @return the found or newly created MixinDefinition
+     */
     public MixinDefinition findMixinNameVersion(String name, int version) {
         var innerMap = mixinDefinitionMap.get(name);
         if (innerMap == null) {
@@ -56,6 +85,14 @@ import java.util.*;
         return mixinDefinition;
     }
 
+    /**
+     * Finds the texts for a given scenario version and locale. If the texts do not exist, a new map is created and
+     * added to the scenario definition.
+     *
+     * @param version the version of the scenario definition to find
+     * @param locale  the locale for which to find the texts
+     * @return the found or newly created map of texts
+     */
     public Map<String, String> findTexts(int version, Locale locale) {
         final ScenarioDefinition sd = this.findScenarioVersion(version);
         // texts is set in scenario-definition constructor, so it's always defined..
@@ -63,6 +100,15 @@ import java.util.*;
         return texts.computeIfAbsent(locale, v -> new HashMap<>());
     }
 
+    /**
+     * Finds the texts for a given mixin name, version, and locale. If the texts do not exist, a new map is created and
+     * added to the mixin definition.
+     *
+     * @param mixinName the name of the mixin definition to find
+     * @param version   the version of the mixin definition to find
+     * @param locale    the locale for which to find the texts
+     * @return the found or newly created map of texts
+     */
     public Map<String, String> findTextsMixin(String mixinName, int version, Locale locale) {
         final MixinDefinition md = this.findMixinNameVersion(mixinName, version);
         // texts is set in scenario-definition constructor, so it's always defined..
@@ -70,13 +116,23 @@ import java.util.*;
         return texts.computeIfAbsent(locale, v -> new HashMap<>());
     }
 
+    /**
+     * Returns a collection of all scenario definitions currently stored in the service.
+     *
+     * @return a collection of ExtendedScenarioDefinition objects
+     */
     public Collection<ExtendedScenarioDefinition> getScenarioDefinitions() {
         return scenarioDefinitionMap.values();
     }
 
-    public Set<Integer> getScenarioDefinitionVersions() {
-        return scenarioDefinitionMap.keySet();
-    }
+//    /**
+//     * Returns a set of all scenario definition versions currently stored in the service.
+//     *
+//     * @return a set of Integer values representing the scenario definition versions
+//     */
+//    public Set<Integer> getScenarioDefinitionVersions() {
+//        return scenarioDefinitionMap.keySet();
+//    }
 
     /**
      * Scans the given root path for scenario definition meta-data files and reads them into the service. The method will
@@ -96,7 +152,7 @@ import java.util.*;
             final String[] fParts = fName.split("\\.");
             final int version = Integer.parseInt(fParts[1]);
 
-            if (StringUtils.equalsIgnoreCase(fParts[0], Constants.NAME_PREFIX_DEFINITION)) {
+            if (Strings.CI.equals(fParts[0], Constants.NAME_PREFIX_DEFINITION)) {
                 log.info("    processing definition file '" + fName + "'");
                 try (var is = new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8)) {
                     final var mapper = new ObjectMapper(new YAMLFactory());
@@ -119,7 +175,7 @@ import java.util.*;
 //                            + sd.getVersion() + "')");
                     scenarioDefinitionMap.put(version, sd);
                 }
-            } else if (StringUtils.startsWithIgnoreCase(fParts[0], Constants.NAME_PREFIX_TEXTS)) {
+            } else if (Strings.CI.startsWith(fParts[0], Constants.NAME_PREFIX_TEXTS)) {
                 log.info("    found Texts file '" + fName + "'");
                 var map = this.findTexts(version, this.getLocaleFromFilename(fParts[0]));
                 PropertyFileUtils.readTexts(path, "", map);
@@ -127,8 +183,16 @@ import java.util.*;
         }
     }
 
+    /**
+     * Scans the given root path for mixin definition meta-data files and reads them into the service. The method will
+     * look for files with the name pattern 'mixin.{name}.{version}.yaml' and 'texts_{locale}.{name}.{version}.properties'.
+     *
+     * @param rootPath the root path to scan for meta-data files
+     * @throws Exception if any error occurs during scanning or reading the files
+     */
     public void scanMixinMetadata(String rootPath) throws Exception {
         this.mixinDefinitionMap.clear();
+        this.classpathMixinNames.clear();
         final var paths = new ArrayList<String>();
 
         scanMetadata(MetadataType.Mixin, rootPath, paths);
@@ -139,7 +203,7 @@ import java.util.*;
             final String name = fParts[1];
             final int version = Integer.parseInt(fParts[2]);
 
-            if (StringUtils.equalsIgnoreCase(fParts[0], Constants.NAME_PREFIX_MIXIN)) {
+            if (Strings.CI.equals(fParts[0], Constants.NAME_PREFIX_MIXIN)) {
                 log.info("    processing mixin file '" + fName + "'");
                 try (var is = new InputStreamReader(new FileInputStream(path), StandardCharsets.UTF_8)) {
                     final var mapper = new ObjectMapper(new YAMLFactory());
@@ -163,7 +227,7 @@ import java.util.*;
                     innerMap.put(version, sd);
                     mixinDefinitionMap.put(name, innerMap);
                 }
-            } else if (StringUtils.startsWithIgnoreCase(fParts[0], Constants.NAME_PREFIX_TEXTS)) {
+            } else if (Strings.CI.startsWith(fParts[0], Constants.NAME_PREFIX_TEXTS)) {
                 log.info("    found Texts file '" + fName + "'");
                 var map = this.findTextsMixin(name, version, this.getLocaleFromFilename(fParts[0]));
                 PropertyFileUtils.readTexts(path, "", map);
@@ -171,6 +235,44 @@ import java.util.*;
         }
     }
 
+    /**
+     * Scan the local metadata folder AND the current project's dependency jars for mixin
+     * definitions. Local files take precedence when the same {@code (name, version)} exists in both
+     * sources. Mixins loaded exclusively from a jar have their names recorded in
+     * {@link #classpathMixinNames} so {@link #writeMixinMetadataFiles(String)} will skip writing
+     * them back — they are read-only from the dev server's perspective.
+     * <p>
+     * This method is intended for the dev server's mixin-listing endpoint. Build-time flows keep
+     * using {@link #scanMixinMetadata(String)}, which is filesystem-only.
+     */
+    public void scanMixinMetadataWithClasspath(String rootPath, MavenProject project) throws Exception {
+        scanMixinMetadata(rootPath);
+        if (project == null) return;
+
+        final var scanner = new MixinClasspathScanner();
+        final var jarMixins = scanner.scanAllMixins(project, log);
+        for (final var jarMixin : jarMixins) {
+            final var innerMap = mixinDefinitionMap.computeIfAbsent(jarMixin.getName(), k -> new HashMap<>());
+            // Local wins: only add if this (name, version) isn't already present from the local folder.
+            if (innerMap.containsKey(jarMixin.getVersion())) {
+                log.info("    classpath mixin '" + jarMixin.getName() + "' v" + jarMixin.getVersion()
+                        + "' shadowed by local file — using local");
+                continue;
+            }
+            innerMap.put(jarMixin.getVersion(), jarMixin);
+            classpathMixinNames.add(jarMixin.getName());
+        }
+    }
+
+    /**
+     * Recursively scans the given root path for meta-data files of the specified type (Definition or Mixin) and adds
+     * their paths to the provided collection.
+     *
+     * @param type     the type of metadata to scan for (Definition or Mixin)
+     * @param rootPath the root path to scan for meta-data files
+     * @param paths    the collection to which found file paths will be added
+     * @throws Exception if any error occurs during scanning
+     */
     public void scanMetadata(MetadataType type, String rootPath, Collection<String> paths) throws Exception {
         log.info("  scanning " + rootPath);
 
@@ -187,7 +289,15 @@ import java.util.*;
         }
     }
 
-    private void scanFile(MetadataType type, Path path, Collection<String> paths) throws Exception {
+    /**
+     * Scans a single file to determine if it matches the expected naming conventions for the specified metadata type
+     * (Definition or Mixin). If it does, the file path is added to the provided collection.
+     *
+     * @param type  the type of metadata to scan for (Definition or Mixin)
+     * @param path  the path of the file to scan
+     * @param paths the collection to which found file paths will be added
+     */
+    private void scanFile(MetadataType type, Path path, Collection<String> paths) {
         final String fName = FilenameUtils.getName(path.toString());
 
         if (type == MetadataType.Definition) {
@@ -196,10 +306,10 @@ import java.util.*;
                 return;
             }
 
-            if (StringUtils.startsWithIgnoreCase(fName, Constants.NAME_PREFIX_DEFINITION)) {
+            if (Strings.CI.startsWith(fName, Constants.NAME_PREFIX_DEFINITION)) {
                 log.debug("    found definition file '" + fName + "'");
                 paths.add(path.toString());
-            } else if (StringUtils.startsWithIgnoreCase(fName, Constants.NAME_PREFIX_TEXTS)) {
+            } else if (Strings.CI.startsWith(fName, Constants.NAME_PREFIX_TEXTS)) {
                 log.debug("    found definition texts file '" + fName + "'");
                 paths.add(path.toString());
             }
@@ -209,16 +319,23 @@ import java.util.*;
                 return;
             }
 
-            if (StringUtils.startsWithIgnoreCase(fName, Constants.NAME_PREFIX_MIXIN)) {
+            if (Strings.CI.startsWith(fName, Constants.NAME_PREFIX_MIXIN)) {
                 log.debug("    found mixin file '" + fName + "'");
                 paths.add(path.toString());
-            } else if (StringUtils.startsWithIgnoreCase(fName, Constants.NAME_PREFIX_TEXTS)) {
+            } else if (Strings.CI.startsWith(fName, Constants.NAME_PREFIX_TEXTS)) {
                 log.debug("    found mixin text file '" + fName + "'");
                 paths.add(path.toString());
             }
         }
     }
 
+    /**
+     * Extracts the locale from a given filename. The locale is expected to be the substring after the last underscore
+     * in the filename.
+     *
+     * @param fName the filename from which to extract the locale
+     * @return the extracted Locale object
+     */
     private Locale getLocaleFromFilename(String fName) {
 //        final Log log = this.getLog();
         var localeText = StringUtils.substringAfterLast(fName, "_");
@@ -226,6 +343,13 @@ import java.util.*;
         return new Locale(localeText);
     }
 
+    /**
+     * Writes the metadata information to a JSON file named 'definitions.json' in the specified path. The method
+     * ensures that the parent directories exist before writing the file.
+     *
+     * @param path the path where the 'definitions.json' file will be created
+     * @throws IOException if any error occurs during file writing
+     */
     public void writeMetadataToDefinitionJson(String path) throws IOException {
         // Ensure path exists
         log.debug("Creating path: " + path);
@@ -235,53 +359,105 @@ import java.util.*;
         // Write definitions.json file to target directory
         try (BufferedWriter writer = new BufferedWriter(
                 new FileWriter(path + "/definitions.json", StandardCharsets.UTF_8))) {
-            this.writeMetadataAsJson(writer, true, true);
+            this.writeMetadataAsJson(writer, true, true, false);
         }
     }
 
-    public String getMetadataAsJson() throws IOException {
+    /**
+     * Writes the mixin metadata information to a JSON structure and returns this as a string. Will be used from
+     * frontend and for writing files as well.
+     *
+     * @param toFrontend whether the output is intended for frontend consumption
+     * @throws IOException if any error occurs during file writing
+     */
+    public String getMetadataAsJson(final boolean toFrontend) throws IOException {
         final StringWriter writer = new StringWriter();
         try {
-            this.writeMetadataAsJson(writer, false, true);
+            this.writeMetadataAsJson(writer, false, true, toFrontend);
         } finally {
             IOUtils.closeQuietly(writer);
         }
         return writer.toString();
     }
 
-    public String getMixinMetadataAsJson() throws IOException {
+    /**
+     * Writes the mixin metadata information to a JSON structure and returns this as a string. Will be used from
+     * frontend and for writing files as well.
+     *
+     * @param toFrontend whether the output is intended for frontend consumption
+     * @throws IOException if any error occurs during file writing
+     */
+    public String getMixinMetadataAsJson(final boolean toFrontend) throws IOException {
         final StringWriter writer = new StringWriter();
         try {
-            this.writeMixinMetadataAsJson(writer, false, true);
+            this.writeMixinMetadataAsJson(writer, false, true, toFrontend);
         } finally {
             IOUtils.closeQuietly(writer);
         }
         return writer.toString();
     }
 
-    private void writeMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts)
-            throws IOException {
+    /**
+     * Writes the scenario metadata information to a JSON format using the provided Writer. The method uses the
+     * Jackson ObjectMapper to serialize the scenarioDefinitionMap into JSON, applying custom serialization rules
+     * defined in ScenarioDefinitionSerializer.
+     *
+     * @param writer       the Writer to which the JSON will be written
+     * @param includeKeys  whether to include keys in the serialized output
+     * @param includeTexts whether to include texts in the serialized output
+     * @param toFrontend   whether the output is intended for frontend consumption
+     * @throws IOException if any error occurs during writing
+     */
+    private void writeMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts,
+                                     final boolean toFrontend) throws IOException {
         final var mapper = new ObjectMapper();
         final var module = new SimpleModule();
-        module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(includeKeys, includeTexts));
+        module.addSerializer(ScenarioDefinition.class,
+                new ScenarioDefinitionSerializer(includeKeys, includeTexts, toFrontend));
         mapper.registerModule(module);
         mapper.writeValue(writer, scenarioDefinitionMap);
     }
 
-    private void writeMixinMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts)
-            throws IOException {
+    /**
+     * Writes the mixin metadata information to a JSON format using the provided Writer. The method uses the
+     * Jackson ObjectMapper to serialize the mixinDefinitionMap into JSON, applying custom serialization rules
+     * defined in MixinDefinitionSerializer.
+     *
+     * @param writer       the Writer to which the JSON will be written
+     * @param includeKeys  whether to include keys in the serialized output
+     * @param includeTexts whether to include texts in the serialized output
+     * @param toFrontend   whether the output is intended for frontend consumption
+     * @throws IOException if any error occurs during writing
+     */
+    private void writeMixinMetadataAsJson(final Writer writer, final boolean includeKeys, final boolean includeTexts,
+                                          final boolean toFrontend) throws IOException {
         final var mapper = new ObjectMapper();
         final var module = new SimpleModule();
-        module.addSerializer(MixinDefinition.class, new MixinDefinitionSerializer(includeKeys, includeTexts));
+        module.addSerializer(MixinDefinition.class, new MixinDefinitionSerializer(includeKeys, includeTexts, toFrontend, classpathMixinNames));
         mapper.registerModule(module);
         mapper.writeValue(writer, mixinDefinitionMap);
     }
 
+    /**
+     * Writes the scenario and mixin metadata information to their respective files in the specified root path. The method
+     * calls writeScenarioMetadataFiles and writeMixinMetadataFiles to handle the writing of each type of metadata.
+     *
+     * @param rootPath the root path where the metadata files will be written
+     * @throws IOException if any error occurs during file writing
+     */
     public void writeMetadataFiles(final String rootPath) throws IOException {
         writeScenarioMetadataFiles(rootPath);
         writeMixinMetadataFiles(rootPath);
     }
 
+    /**
+     * Writes the scenario metadata information to their respective files in the specified root path. The method
+     * iterates through the scenarioDefinitionMap, writing each definition and its associated texts to files. It also
+     * deletes any old meta-related files that are no longer needed.
+     *
+     * @param rootPath the root path where the metadata files will be written
+     * @throws IOException if any error occurs during file writing
+     */
     public void writeScenarioMetadataFiles(final String rootPath) throws IOException {
         List<String> files_modified = new ArrayList<>();
         var files = FileUtils.listFiles(new File(rootPath), null, true);
@@ -314,11 +490,25 @@ import java.util.*;
         }
     }
 
+    /**
+     * Writes the mixin metadata information to their respective files in the specified root path. The method
+     * iterates through the mixinDefinitionMap, writing each definition and its associated texts to files. It also
+     * deletes any old meta-related files that are no longer needed.
+     *
+     * @param rootPath the root path where the metadata files will be written
+     * @throws IOException if any error occurs during file writing
+     */
     public void writeMixinMetadataFiles(final String rootPath) throws IOException {
         var files = FileUtils.listFiles(new File(rootPath), null, true);
         List<String> files_modified = new ArrayList<>();
         for (var mixinNames : this.mixinDefinitionMap.values()) {
             for (var mixin : mixinNames.values()) {
+                // Skip mixins that came from a classpath jar — those are read-only and must never
+                // be written to the local metadata folder, otherwise the local copy would shadow
+                // the shared jar on the next scan.
+                if (classpathMixinNames.contains(mixin.getName())) {
+                    continue;
+                }
                 mixin.setElements(sortElements(mixin.getElements()));
                 var f = findAndEnsureMixinFile(files, mixin.getName(), mixin.getVersion(), rootPath);
                 files_modified.add((f.getName()));
@@ -347,12 +537,23 @@ import java.util.*;
         }
     }
 
+    /**
+     * Finds a file based on the scenario definition and ensures it exists. If the file does not exist, it is created.
+     * The method searches for a file with a name formatted according to the provided template and the version of the
+     * scenario definition.
+     *
+     * @param sd            the scenario definition for which to find or create the file
+     * @param files         the collection of existing files to search through
+     * @param rootPath      the root path where the file should be located or created
+     * @param fNameTemplate the template for formatting the filename, which should include a placeholder for the version
+     * @return the found or newly created File object
+     */
     private File findAndEnsureFile(final ScenarioDefinition sd, Collection<File> files, final String rootPath,
                                    final String fNameTemplate) {
         final var fName = String.format(fNameTemplate, sd.getVersion());
         // search if file already exists or if needed to be created...
         var optFile =
-                files.stream().filter(f -> StringUtils.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
+                files.stream().filter(f -> Strings.CI.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
         if (optFile.isPresent()) {
             files.remove(optFile.get());
             return optFile.get();
@@ -367,11 +568,19 @@ import java.util.*;
         }
     }
 
+    /**
+     * Writes the scenario definition metadata to a YAML file. The method uses the Jackson ObjectMapper with a YAML
+     * factory to serialize the ScenarioDefinition object into YAML format, applying custom serialization rules defined
+     * in ScenarioDefinitionSerializer.
+     *
+     * @param f  the File object representing the file to which the metadata will be written
+     * @param sd the ScenarioDefinition object containing the metadata to be written
+     */
     private void writeScenarioMetadataFile(final File f, final ScenarioDefinition sd) {
         try (var writer = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8)) {
             final var mapper = new ObjectMapper(new YAMLFactory());
             final var module = new SimpleModule();
-            module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(false, false));
+            module.addSerializer(ScenarioDefinition.class, new ScenarioDefinitionSerializer(false, false, false));
             mapper.registerModule(module);
 
             mapper.writeValue(writer, sd);
@@ -380,6 +589,14 @@ import java.util.*;
         }
     }
 
+    /**
+     * Writes the mixin definition metadata to a YAML file. The method uses the Jackson ObjectMapper with a YAML
+     * factory to serialize the MixinDefinition object into YAML format, applying custom serialization rules defined
+     * in MixinDefinitionSerializer.
+     *
+     * @param f     the File object representing the file to which the metadata will be written
+     * @param mixin the MixinDefinition object containing the metadata to be written
+     */
     private void writeMixinMetadataFile(final File f, final MixinDefinition mixin) {
         try (var writer = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8)) {
             final var mapper = new ObjectMapper(new YAMLFactory());
@@ -392,6 +609,14 @@ import java.util.*;
         }
     }
 
+    /**
+     * Saves the provided language entries to a properties file. The method writes each key-value pair from the entries
+     * map to the specified file in UTF-8 encoding, ensuring that null keys or values are not written.
+     *
+     * @param file    the File object representing the properties file to which the entries will be written
+     * @param entries a map containing the key-value pairs to be written to the properties file
+     * @throws IOException if any error occurs during file writing
+     */
     private void saveLanguageFile(final File file, Map<String, String> entries) throws IOException {
         try (var writer = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
             for (Map.Entry<String, String> entry : entries.entrySet()) {
@@ -402,6 +627,18 @@ import java.util.*;
         }
     }
 
+    /**
+     * Finds a language properties file based on the specified locale, version, and mixin name, and ensures it exists.
+     * If the file does not exist, it is created. The method searches for a file with a name formatted according to the
+     * provided parameters.
+     *
+     * @param files     the collection of existing files to search through
+     * @param language  the Locale object representing the language for which to find or create the file
+     * @param version   the version number to be included in the filename
+     * @param rootPath  the root path where the file should be located or created
+     * @param mixinName the name of the mixin, if applicable; can be null for scenario definitions
+     * @return the found or newly created File object
+     */
     private File findAndEnsureLanguageFile(final Collection<File> files, final Locale language, final int version,
                                            final String rootPath, final String mixinName) {
         String fName;
@@ -413,7 +650,7 @@ import java.util.*;
 
         File file;
         var optFile =
-                files.stream().filter(f -> StringUtils.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
+                files.stream().filter(f -> Strings.CI.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
         if (optFile.isPresent()) {
             files.remove(optFile.get());
             file = optFile.get();
@@ -429,12 +666,22 @@ import java.util.*;
         return file;
     }
 
+    /**
+     * Finds a mixin metadata file based on the specified name and version, and ensures it exists. If the file does not
+     * exist, it is created. The method searches for a file with a name formatted according to the provided parameters.
+     *
+     * @param files    the collection of existing files to search through
+     * @param name     the name of the mixin for which to find or create the file
+     * @param version  the version number to be included in the filename
+     * @param rootPath the root path where the file should be located or created
+     * @return the found or newly created File object
+     */
     private File findAndEnsureMixinFile(final Collection<File> files, final String name, final int version,
                                         final String rootPath) {
         final var fName = String.format("mixin.%s.%s.yaml", name, version);
         File file;
         var optFile =
-                files.stream().filter(f -> StringUtils.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
+                files.stream().filter(f -> Strings.CI.equals(FilenameUtils.getName(f.getName()), fName)).findFirst();
         if (optFile.isPresent()) {
             files.remove(optFile.get());
             file = optFile.get();
@@ -450,6 +697,14 @@ import java.util.*;
         return file;
     }
 
+    /**
+     * Reads the scenario metadata from a JSON input stream and populates the scenarioDefinitionMap. The method uses
+     * the Jackson ObjectMapper to deserialize the JSON data into a map of ExtendedScenarioDefinition objects, applying
+     * custom deserialization rules defined in ExtendedScenarioDefinitionDeserializer.
+     *
+     * @param is the InputStream from which to read the JSON data
+     * @throws Exception if any error occurs during reading or deserialization
+     */
     public void readMetadataFromJson(final InputStream is) throws Exception {
         final var mapper = new ObjectMapper();
         final var module = new SimpleModule();
@@ -459,6 +714,14 @@ import java.util.*;
         });
     }
 
+    /**
+     * Reads the mixin metadata from a JSON input stream and populates the mixinDefinitionMap. The method uses the
+     * Jackson ObjectMapper to deserialize the JSON data into a map of MixinDefinition objects, applying custom
+     * deserialization rules defined in MixinDefinitionDeserializer.
+     *
+     * @param is the InputStream from which to read the JSON data
+     * @throws Exception if any error occurs during reading or deserialization
+     */
     public void readMixinMetadataFromJson(final InputStream is) throws Exception {
         final var mapper = new ObjectMapper();
         final var module = new SimpleModule();
@@ -478,20 +741,22 @@ import java.util.*;
     }
 
     /**
-     * @param elements
-     * @param className
-     * @param search
-     * @return
+     * Recursively searches for the access class name for a given element in a list of elements.
+     *
+     * @param elements  the list of elements to search through
+     * @param className the current class name to append to
+     * @param search    the element definition to search for
+     * @return the access class name if found, otherwise null
      */
     public String findAccessClassForElement(final List<ElementDefinition> elements, String className,
                                             final ElementDefinition search) {
         if (elements != null && !elements.isEmpty()) {
             for (var it : elements) {
-                if (StringUtils.equals(it.getKey(), search.getKey())) {
+                if (Strings.CI.equals(it.getKey(), search.getKey())) {
                     return className;
                 }
                 final var helpClassName = (it.hasOwnType() && it.getType() != UIElementType.Form &&
-                        it.getType() != UIElementType.Wizard) ? className + IdentifierUtils.camelCase(it.getName()) :
+                        it.getType() != UIElementType.Wizard) ? className + IdentifierUtils.toPascalCase(it.getName()) :
                         className;
                 // recursive action for subtree
                 var r = findAccessClassForElement(it.getElements(), helpClassName, search);
@@ -503,6 +768,14 @@ import java.util.*;
         return null;
     }
 
+    /**
+     * Sorts a list of ElementDefinition objects based on their sort value and name.
+     * Elements with the same sort value are sorted by name in descending order.
+     * Additionally, the method assigns new sort values to elements based on their type.
+     *
+     * @param elements the list of ElementDefinition objects to be sorted
+     * @return the sorted list of ElementDefinition objects
+     */
     private List<ElementDefinition> sortElements(List<ElementDefinition> elements) {
         // order by sort-value and name
         elements.sort((element2, element1) -> {
@@ -547,8 +820,11 @@ import java.util.*;
         return elements;
     }
 
+    /**
+     * Enum representing the type of metadata being processed, either Definition or Mixin.
+     */
     public enum MetadataType {
-        Definition, Mixin
+        Definition,
+        Mixin
     }
-
 }

@@ -11,13 +11,13 @@
     <parent>
         <groupId>com.sap.build-forms-extension</groupId>
         <artifactId>core-workflow</artifactId>
-        <version>0.2.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
 
     <dependencies>
         <dependency>
             <groupId>com.sap.build-forms-extension</groupId>
-            <artifactId>core-framework</artifactId>
+            <artifactId>core-common</artifactId>
             <version>${forms.version}</version>
         </dependency>
         <dependency>

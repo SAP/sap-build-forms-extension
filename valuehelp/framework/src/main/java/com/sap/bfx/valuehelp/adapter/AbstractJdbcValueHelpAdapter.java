@@ -4,8 +4,9 @@ import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
 import com.sap.bfx.valuehelp.service.ValueHelpService;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 public abstract class AbstractJdbcValueHelpAdapter implements ValueHelpAdapter {
@@ -26,6 +27,7 @@ public abstract class AbstractJdbcValueHelpAdapter implements ValueHelpAdapter {
     }
 
     /**
+     *
      * @param vdh
      * @param locale
      * @return
@@ -36,7 +38,8 @@ public abstract class AbstractJdbcValueHelpAdapter implements ValueHelpAdapter {
         newValueHelp.setId(vdh.getId());
         newValueHelp.setLocale(locale);
 
-        Optional<ValueHelp> existingValueHelp = service.findValueLatestVersionByIdLocale(vdh.getId(), locale.toString());
+        Optional<ValueHelp> existingValueHelp =
+                service.findValueLatestVersionByIdLocale(vdh.getId(), locale.toString());
         if (existingValueHelp.isPresent()) {
             newValueHelp.setVersion(existingValueHelp.get().getVersion());
         } else {
@@ -46,6 +49,14 @@ public abstract class AbstractJdbcValueHelpAdapter implements ValueHelpAdapter {
         return newValueHelp;
     }
 
-    protected abstract HashMap<String, String> getValues(Locale locale);
+    /**
+     * This method needs to be implemented by the concrete adapter. It should return a list of maps, where each map
+     * represents a row of the value help and contains key-value pairs for the columns defined in the ValueHelpDef.
+     *
+     * @param locale locale/language that is requested
+     * @return valuehle as list of maps, where each map represents a row of the value help and contains key-value
+     * pairs for the columns defined in the ValueHelpDef
+     */
+    protected abstract List<Map<String, String>> getValues(Locale locale);
 
 }

@@ -38,29 +38,29 @@ public interface EventHandler<AC extends AccessClass> {
     /**
      * Called before the main event processing.
      *
-     * @param ctx      the context
-     * @param previous the result of the previous handler
+     * @param ctx    the context
+     * @param result the result of the previous handler
      * @return the result of this handler
      */
-    CallbackResult before(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult before(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Called during the main event processing.
      *
-     * @param ctx      the context
-     * @param previous the result of the previous handler
+     * @param ctx    the context
+     * @param result the result of the previous handler
      * @return the result of this handler
      */
-    CallbackResult on(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult on(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Called after the main event processing.
      *
-     * @param ctx      the context
-     * @param previous the result of the previous handler
+     * @param ctx    the context
+     * @param result the result of the previous handler
      * @return the result of this handler
      */
-    CallbackResult after(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult after(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Get the event type this handler is for.

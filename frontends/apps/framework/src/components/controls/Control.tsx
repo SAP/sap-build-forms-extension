@@ -43,6 +43,7 @@ import IconControl from "./IconControl"
 import ImageControl from "./ImageControl"
 import LinkControl from "./LinkControl"
 import DocFormControl from "./DocFormControl"
+import { ValuehelpsService, ValueName } from "../../features/valuehelps/logic"
 
 /**
  *
@@ -119,6 +120,14 @@ export function handleChange(
         | number
         | undefined,
 ): Promise<any> {
+    dispatch(
+        update({
+            def,
+            rowId,
+            prop: ElementProp.Message,
+            value: undefined,
+        }),
+    )
     dispatch(
         update({
             def,
@@ -287,6 +296,63 @@ export async function handleSortTable(
 }
 
 /**
+ * handleValueHelp is a function that handles value helps for a given definition. It checks if the
+ * definition has a value help and if it exists in the provided vhs record. If so, it loads the value help options
+ * from the local store and updates the state accordingly.
+ *
+ * @param def The definition object containing metadata about the element.
+ * @param vhs A record of value helps.
+ * @param locale The locale to use for loading value help options.
+ * @param setOptions A function to update the options for the value help.
+ * @param setElementDisabled A function to update the disabled state of the element.
+ */
+export function handleValueHelp(
+    def: Definition,
+    vhs: Record<string, boolean>,
+    locale: string,
+    setOptions: React.Dispatch<React.SetStateAction<ValueName[]>>,
+    setElementDisabled: React.Dispatch<React.SetStateAction<boolean>>,
+): void {
+    // console.log(`SelectControl: def=${def.id} with vh=${def.vh?.name} and locale=${locale}`)
+    if (def.vh && vhs[def.vh.name]) {
+        const p = ValuehelpsService.loadFormLocalstore(def.vh.name, locale)
+        p.then((values) => {
+            setOptions(ValuehelpsService.createVHOptions(values, def.vh))
+            setElementDisabled(false)
+        })
+    }
+}
+
+/**
+ * handleDynamicValueHelp is a function that handles dynamic value helps for a given definition. It checks if the
+ * definition has a value help and if it exists in the provided dvhs record. If so, it creates options for the value
+ * help and updates the state accordingly.
+ *
+ * @param def The definition object containing metadata about the element.
+ * @param dvhs A record of dynamic value helps.
+ * @param setOptions A function to update the options for the value help.
+ * @param setElementDisabled A function to update the disabled state of the element.
+ */
+export function handleDynamicValueHelp(
+    def: Definition,
+    dvhs: Record<string, Record<string, string>>,
+    setOptions: React.Dispatch<React.SetStateAction<ValueName[]>>,
+    setElementDisabled: React.Dispatch<React.SetStateAction<boolean>>,
+): void {
+    if (def.vh && dvhs[def.vh.name]) {
+        setOptions(ValuehelpsService.createVHOptions(dvhs[def.vh.name], def.vh))
+        setElementDisabled(false)
+    }
+
+    // console.log(`SelectControl: def=${def.id} with vh=${def.vh?.name} and locale=${locale}`)
+    if (def.vh && dvhs[def.vh.name]) {
+        console.log(`SelectControl: def=${def.id} with vh=${def.vh?.name} has value-help in state`)
+        setOptions(ValuehelpsService.createVHOptions(dvhs[def.vh.name], def.vh))
+        setElementDisabled(false)
+    }
+}
+
+/**
  *
  * @param texts
  * @param def
@@ -343,6 +409,22 @@ export function getDoc(texts: Record<string, string>, def: Definition): string {
     }
 
     return text
+}
+
+/**
+ *
+ * @param texts
+ * @param def
+ * @returns
+ */
+export function getPlaceholder(texts: Record<string, string>, def: Definition): string | undefined {
+    if (texts) {
+        const text = texts[def.id + ".placeholder"]
+        if (typeof text === "string" && text.length > 0) {
+            return text
+        }
+    }
+    return undefined
 }
 
 /**

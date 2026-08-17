@@ -30,7 +30,7 @@ export default {
     common_show: "Show",
     common_delete: "Delete",
     common_edit: "Edit",
-    common_table_add: "Tabellenzeile hinzufügen",
+    common_table_add: "Add table row",
     common_text: "{text}",
     common_upload: "Upload",
     common_select_files: "Select files",
@@ -69,4 +69,10 @@ export default {
     currency_col_digits: "Digits",
     currency_col_name: "Name",
     currency_empty_selection: "(no currency)",
+
+    button_shortcut_triggered: "''{label}'' triggered",
+
+    "default.msg.validation.required": "Field is required",
+    "default.msg.validation.min": "Value is below minimum",
+    "default.msg.text": "{text}",
 }

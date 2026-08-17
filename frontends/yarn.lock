@@ -4338,6 +4338,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-hook-form@npm:^7.77.0":
+  version: 7.78.0
+  resolution: "react-hook-form@npm:7.78.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17 || ^18 || ^19
+  checksum: 10c0/53835398cfcc87a72309532cceb1442e0591d31549ba8ceee592bb169eb16057f52d1bc7ffe6ba46838f3395774be13ec7f15ba2ea902cdbe315cd95fd07e37e
+  languageName: node
+  linkType: hard
+
 "react-intl@npm:^7.1.11":
   version: 7.1.11
   resolution: "react-intl@npm:7.1.11"
@@ -5141,6 +5150,7 @@ __metadata:
     immer: "npm:^10.1.1"
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
+    react-hook-form: "npm:^7.77.0"
     react-intl: "npm:^7.1.11"
     react-jss: "npm:^10.10.0"
     react-router-dom: "npm:7.8.2"

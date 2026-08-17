@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sap.bfx.callback.AdapterDescriptor;
+import com.sap.bfx.utils.EnumUtils;
 import com.sap.bfx.valuehelp.adapter.ValueHelpAdapter;
 import com.sap.bfx.valuehelp.config.ApplicationConfig;
 import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
+import com.sap.bfx.valuehelp.model.ValueHelpType;
 import com.sap.bfx.valuehelp.model.xml.*;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
@@ -17,6 +19,8 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,12 +50,11 @@ import java.util.stream.Collectors;
 public class ValueHelpService {
 
     private final static java.sql.Timestamp MAX_VALID_UNTIL = new java.sql.Timestamp(
-            LocalDateTime.of(9999, Month.DECEMBER, 31, 23, 59)
-                    .toEpochSecond(ZoneOffset.UTC) * 1000);
+            LocalDateTime.of(9999, Month.DECEMBER, 31, 23, 59).toEpochSecond(ZoneOffset.UTC) * 1000);
 
     private final ApplicationConfig appCfg;
     private final Map<String, ValueHelpAdapter> adapterMap = new HashMap<>();
-    private final CoreDao dao;
+    private final ValueHelpDao dao;
     private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
     /**
@@ -59,12 +62,17 @@ public class ValueHelpService {
      * @param appCfg
      */
     @Autowired
-    public ValueHelpService(final CoreDao dao, final ApplicationConfig appCfg) {
+    public ValueHelpService(final ValueHelpDao dao, final ApplicationConfig appCfg) {
         this.dao = dao;
         this.appCfg = appCfg;
     }
 
-
+    /**
+     * Inits the given ValueHelpAdapters and stores them in a map for later use. The key of the map is defined in the
+     * AdapterDescriptor annotation of the ValueHelpAdapter.
+     *
+     * @param ctx Spring ApplicationContext to be used
+     */
     public void initValueHelpAdapters(final ApplicationContext ctx) {
         adapterMap.clear();
 
@@ -72,17 +80,18 @@ public class ValueHelpService {
         adapter.values().forEach(it -> {
             var descriptor = it.getClass().getAnnotation(AdapterDescriptor.class);
             if (descriptor == null) {
-                log.error("ValueHelpAdapter '" + it.getClass().getName()
-                        + "' has not annotation of type AdapterDescriptor");
+                log.error("ValueHelpAdapter '" + it.getClass().getName() +
+                        "' has not annotation of type AdapterDescriptor");
             } else {
                 adapterMap.put(descriptor.value(), it);
-                log.info("ValueHelpAdapter '" + it.getClass().getName() + "' added with name '"
-                        + descriptor.value() + "'.");
+                log.info("ValueHelpAdapter '" + it.getClass().getName() + "' added with name '" + descriptor.value() +
+                        "'.");
             }
         });
     }
 
     /**
+     *
      * @param searchString
      * @param adapter
      * @return
@@ -133,8 +142,8 @@ public class ValueHelpService {
             if (def.getAdapter().equalsIgnoreCase("local")) {
                 def.setAdapter("local");
             } else {
-                Optional<String> existingAdapter = adapterMap.keySet().stream()
-                        .filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
+                Optional<String> existingAdapter =
+                        adapterMap.keySet().stream().filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
                 if (existingAdapter.isPresent()) {
                     def.setAdapter(existingAdapter.get());
                 } else {
@@ -142,7 +151,8 @@ public class ValueHelpService {
                 }
             }
 
-            if (def.getLanguages() != null && def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
+            if (def.getLanguages() != null &&
+                    def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
                 throw new RuntimeException("Locales " + def.getLanguages() + " not valid");
             }
 
@@ -158,15 +168,16 @@ public class ValueHelpService {
             if (def.getAdapter().equalsIgnoreCase("local")) {
                 def.setAdapter("local");
             } else {
-                Optional<String> existingAdapter = adapterMap.keySet().stream()
-                        .filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
+                Optional<String> existingAdapter =
+                        adapterMap.keySet().stream().filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
                 if (existingAdapter.isPresent()) {
                     def.setAdapter(existingAdapter.get());
                 } else {
                     throw new RuntimeException("Adapter " + def.getAdapter() + " not defined");
                 }
             }
-            if (def.getLanguages() != null && def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
+            if (def.getLanguages() != null &&
+                    def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
                 throw new RuntimeException("Locales " + def.getLanguages() + " not valid");
             }
             dao.updateDef(def);
@@ -254,12 +265,15 @@ public class ValueHelpService {
                 ArrayList<XmlValueHelpValue> xmlValueHelpValues = new ArrayList<>();
 
                 for (ValueHelp v : values) {
-                    xmlValueHelpValues.add(new XmlValueHelpValue(v.getId(), v.getVersion(), v.getLocale(),
-                            v.getValidUntil(), v.getValues()));
+                    xmlValueHelpValues.add(
+                            new XmlValueHelpValue(v.getId(), v.getVersion(), v.getLocale(), v.getValidUntil(),
+                                    v.getValues()));
                 }
 
-                xmlValueHelpDefs.add(new XmlValueHelpDef(d.getId(), d.getTtl(), d.getAdapter(), d.getConfig(),
-                        d.getDescription(), d.getLanguages(), xmlValueHelpValues));
+                xmlValueHelpDefs.add(
+                        new XmlValueHelpDef(d.getId(), d.getTtl(), d.getAdapter(), d.getConfig(), d.getDescription(),
+                                d.getLanguages(), d.getKeyKey(), d.getValueKeys(), d.getFormatTemplate(),
+                                d.getValueHelpType().getIdentifier(), xmlValueHelpValues));
             }
 
             mar.marshal(new XmlValueHelps(xmlValueHelpDefs), outputStream);
@@ -267,7 +281,8 @@ public class ValueHelpService {
 
         } catch (JAXBException e) {
             log.error("Exception during creation of xml file.");
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Exception during creation of xml file.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Exception during creation of xml file.");
         }
     }
 
@@ -281,35 +296,43 @@ public class ValueHelpService {
     public String importXmlFile(MultipartFile file, boolean override) throws JAXBException, IOException {
         List<String> notImportedValues = new ArrayList<>();
         List<String> notImportedDefs = new ArrayList<>();
-        XmlValueHelps xmlValueHelps = (XmlValueHelps) JAXBContext
-                .newInstance(XmlValueHelps.class)
-                .createUnmarshaller()
-                .unmarshal(new ByteArrayInputStream(file.getBytes()));
+        XmlValueHelps xmlValueHelps = (XmlValueHelps) JAXBContext.newInstance(XmlValueHelps.class).createUnmarshaller()
+                                                                 .unmarshal(new ByteArrayInputStream(file.getBytes()));
         validateXml(xmlValueHelps);
 
         if (xmlValueHelps.getValueHelpDefs() != null) {
             for (XmlValueHelpDef def : xmlValueHelps.getValueHelpDefs()) {
-
                 String adapter;
                 if (def.getAdapter().equalsIgnoreCase("local")) {
                     adapter = "local";
                 } else {
-                    Optional<String> existingAdapter = adapterMap.keySet().stream().filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
+                    Optional<String> existingAdapter =
+                            adapterMap.keySet().stream().filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
                     if (existingAdapter.isPresent()) {
                         adapter = existingAdapter.get();
                     } else {
-                        log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because adapter"
-                                + def.getAdapter() + " is not defined");
+                        log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because adapter" +
+                                def.getAdapter() + " is not defined");
                         notImportedDefs.add(def.getId());
                         continue;
                     }
                 }
 
-                if (def.getLanguages() != null && def.getLanguages().stream().anyMatch(l -> !this.appCfg.getLocales().contains(l))) {
-                    log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because languages"
-                            + def.getLanguages() + " are not valid");
+                if (def.getLanguages() != null &&
+                        def.getLanguages().stream().anyMatch(l -> !Arrays.asList(findAllDefinedLocales()).contains(l))) {
+                    log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because languages" +
+                            def.getLanguages() + " are not valid");
                     notImportedDefs.add(def.getId());
                     continue;
+                }
+
+                // Check type, if not defined or wrong then set freestyle
+                if (def.getValueHelpType() != null) {
+                    def.setValueHelpType(
+                            EnumUtils.valueById(ValueHelpType.class, def.getValueHelpType(), ValueHelpType.FREESTYLE)
+                                     .getIdentifier());
+                } else {
+                    def.setValueHelpType(ValueHelpType.FREESTYLE.getIdentifier());
                 }
 
                 if (override) {
@@ -318,38 +341,41 @@ public class ValueHelpService {
                 }
 
                 if (dao.findDefById(def.getId()).isEmpty()) {
-
-                    ArrayList<String> languages = def.getLanguages() == null ? new ArrayList<>() : def.getLanguages();
+                    List<String> languages = def.getLanguages() == null ? new ArrayList<>() : def.getLanguages();
 
                     if (def.getValueHelpValues() != null) {
-
                         for (XmlValueHelpValue value : def.getValueHelpValues()) {
                             if (dao.findValueByIdLocaleVersion(value.getId(), value.getLocale().toString(),
                                     value.getVersion()).isEmpty()) {
-
                                 String newValue;
                                 try {
                                     ObjectMapper objectMapper = new ObjectMapper();
                                     newValue = objectMapper.writeValueAsString(value.getValues());
                                 } catch (Exception e) {
-                                    log.error("ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId()
-                                            + " could not be inserted because no valid values json could be created.");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                                    log.error("ValueHelpValue with language " + value.getLocale() + " of definition " +
+                                            def.getId() +
+                                            " could not be inserted because no valid values json could be created.");
+                                    notImportedValues.add(
+                                            "language: " + value.getLocale() + " of definition " + def.getId());
                                     continue;
                                 }
 
                                 if (!isValidJson(newValue)) {
-                                    log.error("ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId()
-                                            + " could not be inserted because no valid values json could be created.");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                                    log.error("ValueHelpValue with language " + value.getLocale() + " of definition " +
+                                            def.getId() +
+                                            " could not be inserted because no valid values json could be created.");
+                                    notImportedValues.add(
+                                            "language: " + value.getLocale() + " of definition " + def.getId());
                                     continue;
                                 }
 
                                 if (!value.getLocale().toString().equals("_")) {
-                                    if (!this.appCfg.getLocales().contains(value.getLocale().toString())) {
-                                        log.error("ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId()
-                                                + " could not be inserted because locale is not valid.");
-                                        notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                                    if (!Arrays.asList(findAllDefinedLocales()).contains(value.getLocale().toString())) {
+                                        log.error("ValueHelpValue with language " + value.getLocale() +
+                                                " of definition " + def.getId() +
+                                                " could not be inserted because locale is not valid.");
+                                        notImportedValues.add(
+                                                "language: " + value.getLocale() + " of definition " + def.getId());
                                         continue;
                                     }
                                     if (!languages.contains(value.getLocale().toString())) {
@@ -357,40 +383,35 @@ public class ValueHelpService {
                                     }
                                 }
 
-                                dao.addValue(value.getId(),
-                                        value.getVersion(),
-                                        value.getLocale().toString(),
-                                        new Timestamp(value.getValidUntil().getTime()),
-                                        newValue);
+                                dao.addValue(value.getId(), value.getVersion(), value.getLocale().toString(),
+                                        new Timestamp(value.getValidUntil().getTime()), newValue);
                             }
                         }
                     }
-                    dao.addDef(new ValueHelpDef(def.getId(), def.getTtl(), adapter, def.getConfig(),
-                            def.getDescription(), languages));
+                    dao.addDef(
+                            new ValueHelpDef(def.getId(), def.getTtl(), adapter, def.getConfig(), def.getDescription(),
+                                    languages, def.getKeyKey(), def.getValueKeys(), def.getFormatTemplate(),
+                                    EnumUtils.valueById(ValueHelpType.class, def.getValueHelpType(),
+                                            ValueHelpType.FREESTYLE)));
                 }
             }
         }
         if (notImportedDefs.size() > 0) {
             if (notImportedValues.size() > 0) {
-                return "The following value help definitions could not be imported: \n" + notImportedDefs.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"))
-                        + ". The following value help values could not be imported: \n" + notImportedValues.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"));
+                return "The following value help definitions could not be imported: \n" +
+                        notImportedDefs.stream().map(Object::toString).collect(Collectors.joining(", \n")) +
+                        ". The following value help values could not be imported: \n" +
+                        notImportedValues.stream().map(Object::toString).collect(Collectors.joining(", \n"));
             } else {
-                return "The following value help definitions could not be imported: \n" + notImportedDefs.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"));
+                return "The following value help definitions could not be imported: \n" +
+                        notImportedDefs.stream().map(Object::toString).collect(Collectors.joining(", \n"));
             }
         } else if (notImportedValues.size() > 0) {
-            return "The following value help values could not be imported: \n" + notImportedValues.stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(", \n"));
+            return "The following value help values could not be imported: \n" +
+                    notImportedValues.stream().map(Object::toString).collect(Collectors.joining(", \n"));
         } else {
             return null;
         }
-
     }
 
     /**
@@ -405,200 +426,151 @@ public class ValueHelpService {
             throws JAXBException, IOException {
         List<String> notImportedValues = new ArrayList<>();
         List<String> notImportedDefs = new ArrayList<>();
-        XmlAbpmValueHelps xmlValueHelps = (XmlAbpmValueHelps) JAXBContext
-                .newInstance(XmlAbpmValueHelps.class)
-                .createUnmarshaller()
-                .unmarshal(new ByteArrayInputStream(file.getBytes()));
+        XmlAbpmValueHelps xmlValueHelps =
+                (XmlAbpmValueHelps) JAXBContext.newInstance(XmlAbpmValueHelps.class).createUnmarshaller()
+                                               .unmarshal(new ByteArrayInputStream(file.getBytes()));
         validateAbpmXml(xmlValueHelps);
 
-        if (xmlValueHelps.getValueHelpDefs() != null) {
-            for (XmlAbpmValueHelpDef def : xmlValueHelps.getValueHelpDefs()) {
+        IterableUtils.forEach(xmlValueHelps.getValueHelpDefs(), def -> {
+            if (useTechnicalName && (def.getDescription() == null || def.getDescription().isEmpty())) {
+                log.error("Warning: ValueHelpDef with id " + def.getId() +
+                        "could not be imported because it does not contain any technical name.");
+                notImportedDefs.add("id: " + def.getId());
+                return;
+            }
 
-                if (useTechnicalName && (def.getDescription() == null || def.getDescription().isEmpty())) {
-                    log.warn("Warning: ValueHelpDef with id " + def.getId()
-                            + "could not be imported because it does not contain any technical name.");
-                    notImportedDefs.add("id: " + def.getId());
-                    continue;
-                }
-
-                String adapter;
-                if (def.getAdapter().equalsIgnoreCase("local")) {
-                    adapter = "local";
+            String adapter;
+            if (def.getAdapter().equalsIgnoreCase("local")) {
+                adapter = "local";
+            } else {
+                Optional<String> existingAdapter =
+                        adapterMap.keySet().stream().filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
+                if (existingAdapter.isPresent()) {
+                    adapter = existingAdapter.get();
                 } else {
-                    Optional<String> existingAdapter = adapterMap.keySet().stream()
-                            .filter(e -> e.equalsIgnoreCase(def.getAdapter())).findFirst();
-                    if (existingAdapter.isPresent()) {
-                        adapter = existingAdapter.get();
-                    } else {
-                        log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because adapter"
-                                + def.getAdapter() + " is not defined");
-                        continue;
-                    }
-                }
-
-                if (override) {
-                    if (useTechnicalName) {
-                        dao.deleteDef(def.getDescription());
-                        dao.deleteValue(def.getDescription());
-                    } else {
-                        dao.deleteDef(def.getId());
-                        dao.deleteValue(def.getId());
-                    }
-                }
-
-                if ((useTechnicalName && dao.findDefById(def.getDescription()).isEmpty()) ||
-                        (!useTechnicalName && dao.findDefById(def.getId()).isEmpty())) {
-
-                    ValueHelpDef newValueHelpDef;
-                    if (useTechnicalName) {
-                        newValueHelpDef = new ValueHelpDef(def.getDescription(), def.getTtl(), adapter, "",
-                                "", new ArrayList<>());
-                    } else {
-                        newValueHelpDef = new ValueHelpDef(def.getId(), def.getTtl(), adapter, "",
-                                def.getDescription(), new ArrayList<>());
-                    }
-
-                    //TODO: Create config if adapter is not local
-
-                    if (def.getValueHelpValues() != null) {
-
-                        for (XmlAbpmValueHelpValue value : def.getValueHelpValues()) {
-
-                            if (!value.getLocale().toString().equals("_")) {
-                                if (!this.appCfg.getLocales().contains(value.getLocale().toString())) {
-                                    log.warn("Warning: Locale " + value.getLocale() + " in value with id " + value.getId()
-                                            + " not valid. Value could not be created");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                    continue;
-                                } else if (newValueHelpDef.getLanguages().stream()
-                                        .noneMatch(l -> l.equalsIgnoreCase(value.getLocale().toString()))) {
-                                    newValueHelpDef.getLanguages().add(value.getLocale().toString());
-                                }
-                            }
-
-                            if (value.getSelection() != 0) {
-                                log.warn("Warning: Selection is not zero in value with id: "
-                                        + value.getId() + ". Value is ignored");
-                                notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                continue;
-                            }
-
-                            Optional<ValueHelp> existingValues = dao.findValueByIdLocaleVersion(
-                                    newValueHelpDef.getId(), value.getLocale().toString(), 0);
-
-                            Map<String, String> valuesMap;
-                            boolean existing = false;
-                            if (existingValues.isPresent()) {
-                                valuesMap = existingValues.get().getValues();
-                                existing = true;
-                            } else {
-                                valuesMap = new HashMap<>();
-                            }
-
-                            if (value.getValues() != null && value.getValues().size() > 0) {
-                                //Firstly, take keyKey of valueHelpValue. If it doesn't exist, take keyKey of valueHelpDef
-                                String k;
-                                if (value.getKeyKey() != null) {
-                                    k = value.getKeyKey();
-                                } else if (def.getKeyKey() != null) {
-                                    k = def.getKeyKey();
-                                } else {
-                                    log.warn("Warning: Integrity error in value with id: "
-                                            + value.getId() + ". Value could not be created");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                    continue;
-                                }
-
-                                String v;
-                                if (value.getValueKey() != null) {
-                                    v = value.getValueKey();
-                                } else if (def.getValueKey() != null) {
-                                    v = def.getValueKey();
-                                } else {
-                                    log.warn("Warning: Integrity error in value with id: " + value.getId()
-                                            + ". Value could not be created");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                    continue;
-                                }
-
-                                int positionKey = value.getHvSort().indexOf(k);
-                                int positionValue = value.getHvSort().indexOf(v);
-
-                                if (positionKey < 0 || positionValue < 0) {
-                                    log.warn("Warning: Integrity error in value with id: " + value.getId()
-                                            + ". Value could not be created");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                    continue;
-                                }
-
-                                if (value.getValues().size() % value.getHvSort().size() != 0) {
-                                    log.warn("Warning: Integrity error in value with id: " + value.getId()
-                                            + ". Value could not be created");
-                                    notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                    continue;
-                                }
-
-                                for (int i = 0; i < value.getValues().size(); i += value.getHvSort().size()) {
-                                    valuesMap.put(value.getValues().get(i + positionKey), value.getValues().get(i
-                                            + positionValue));
-                                }
-                            }
-
-                            String newValue;
-                            try {
-                                ObjectMapper objectMapper = new ObjectMapper();
-                                newValue = objectMapper.writeValueAsString(valuesMap);
-                            } catch (Exception e) {
-                                log.error("ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId()
-                                        + " could not be inserted because no valid values json could be created.");
-                                notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                continue;
-                            }
-
-                            if (!isValidJson(newValue)) {
-                                log.error("ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId()
-                                        + " could not be inserted because no valid values json could be created.");
-                                notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
-                                continue;
-                            }
-
-                            if (existing) {
-                                dao.updateValue(newValueHelpDef.getId(),
-                                        0L,
-                                        value.getLocale().toString(),
-                                        getTimestamp(newValueHelpDef.getTtl()),
-                                        newValue);
-                            } else {
-                                dao.addValue(newValueHelpDef.getId(),
-                                        0L,
-                                        value.getLocale().toString(),
-                                        getTimestamp(newValueHelpDef.getTtl()),
-                                        newValue);
-                            }
-                        }
-                    }
-                    dao.addDef(newValueHelpDef);
+                    log.error("ValueHelpDefinition " + def.getId() + " could not be inserted because adapter" +
+                            def.getAdapter() + " is not defined");
+                    return;
                 }
             }
-        }
+
+            if (override) {
+                if (useTechnicalName) {
+                    dao.deleteDef(def.getDescription());
+                    dao.deleteValue(def.getDescription());
+                } else {
+                    dao.deleteDef(def.getId());
+                    dao.deleteValue(def.getId());
+                }
+            }
+
+            if ((useTechnicalName && dao.findDefById(def.getDescription()).isEmpty()) ||
+                    (!useTechnicalName && dao.findDefById(def.getId()).isEmpty())) {
+
+                // Initialize the new valuehelp def
+                ValueHelpDef newValueHelpDef;
+                final var valueKeys = new ArrayList<String>();
+                valueKeys.add(def.getValueKey());
+
+                if (useTechnicalName) {
+                    newValueHelpDef =
+                            new ValueHelpDef(def.getDescription(), def.getTtl(), adapter, "", "", new ArrayList<>(),
+                                    def.getKeyKey(), valueKeys, "", ValueHelpType.FREESTYLE);
+                } else {
+                    newValueHelpDef = new ValueHelpDef(def.getId(), def.getTtl(), adapter, "", def.getDescription(),
+                            new ArrayList<>(), def.getKeyKey(), valueKeys, "", ValueHelpType.FREESTYLE);
+                }
+
+                //TODO: Create config if adapter is not local
+
+                // Import values
+                IterableUtils.forEach(def.getValueHelpValues(), value -> {
+                    if (!value.getLocale().toString().equals("_")) {
+                        if (!Arrays.asList(findAllDefinedLocales()).contains(value.getLocale().toString())) {
+                            log.error("Warning: Locale " + value.getLocale() + " in value with id " + value.getId() +
+                                    " not valid. Value could not be created");
+                            notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                            return; // acts as continue in tranditional loop
+                        } else if (newValueHelpDef.getLanguages().stream()
+                                                  .noneMatch(l -> l.equalsIgnoreCase(value.getLocale().toString()))) {
+                            newValueHelpDef.getLanguages().add(value.getLocale().toString());
+                        }
+                    }
+
+                    if (value.getSelection() != 0) {
+                        log.error("Warning: Selection is not zero in value with id: " + value.getId() +
+                                ". Value is ignored");
+                        notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                        return; // acts as continue in tranditional loop
+                    }
+
+                    Optional<ValueHelp> existingValues =
+                            dao.findValueByIdLocaleVersion(newValueHelpDef.getId(), value.getLocale().toString(), 0);
+
+                    List<Map<String, String>> newValues;
+                    boolean existing = false;
+                    if (existingValues.isPresent()) {
+                        newValues = existingValues.get().getValues();
+                        existing = true;
+                    } else {
+                        newValues = new ArrayList<>();
+                    }
+
+                    if (CollectionUtils.isEmpty(value.getValues())) {
+                        IterableUtils.forEach(value.getValues(), row -> {
+                            final var newRow = new HashMap<String, String>();
+                            for (var i = 0; i < value.getValues().size(); i++) {
+                                newRow.put(value.getHvSort().get(i), value.getValues().get(i));
+                            }
+                            newValues.add(newRow);
+                        });
+                    }
+
+                    String newValue;
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        newValue = objectMapper.writeValueAsString(newValues);
+                    } catch (Exception e) {
+                        log.error(
+                                "ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId() +
+                                        " could not be inserted because no valid values json could be created.");
+                        notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                        return;
+                    }
+
+                    if (!isValidJson(newValue)) {
+                        log.error(
+                                "ValueHelpValue with language " + value.getLocale() + " of definition " + def.getId() +
+                                        " could not be inserted because no valid values json could be created.");
+                        notImportedValues.add("language: " + value.getLocale() + " of definition " + def.getId());
+                        return;
+                    }
+
+                    if (existing) {
+                        dao.updateValue(newValueHelpDef.getId(), 0L, value.getLocale().toString(),
+                                getTimestamp(newValueHelpDef.getTtl()), newValue);
+                    } else {
+                        dao.addValue(newValueHelpDef.getId(), 0L, value.getLocale().toString(),
+                                getTimestamp(newValueHelpDef.getTtl()), newValue);
+                    }
+                });
+                dao.addDef(newValueHelpDef);
+            }
+        });
 
         if (notImportedDefs.size() > 0) {
             if (notImportedValues.size() > 0) {
-                return "The following value help definitions could not be imported: \n" + notImportedDefs.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"))
-                        + ". The following value help values could not be imported: \n" + notImportedValues.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"));
+                return "The following value help definitions could not be imported: \n" +
+                        notImportedDefs.stream().map(Object::toString).collect(Collectors.joining(", \n")) +
+                        ". The following value help values could not be imported: \n" +
+                        notImportedValues.stream().map(Object::toString).collect(Collectors.joining(", \n"));
             } else {
-                return "The following value help definitions could not be imported: \n" + notImportedDefs.stream()
-                        .map(Object::toString)
-                        .collect(Collectors.joining(", \n"));
+                return "The following value help definitions could not be imported: \n" +
+                        notImportedDefs.stream().map(Object::toString).collect(Collectors.joining(", \n"));
             }
         } else if (notImportedValues.size() > 0) {
-            return "The following value help values could not be imported: \n" + notImportedValues.stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(", \n"));
+            return "The following value help values could not be imported: \n" +
+                    notImportedValues.stream().map(Object::toString).collect(Collectors.joining(", \n"));
         } else {
             return null;
         }
@@ -610,7 +582,7 @@ public class ValueHelpService {
      */
     public boolean isValidJson(String json) {
         try {
-            new ObjectMapper().readValue(json, Map.class);
+            new ObjectMapper().readValue(json, List.class);
         } catch (JacksonException e) {
             return false;
         }
@@ -744,8 +716,8 @@ public class ValueHelpService {
         }
         Optional<ValueHelpDef> def = findDefById(vh.getId());
         if (def.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Value help definition with id "
-                    + vh.getId() + " does not exist.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Value help definition with id " + vh.getId() + " does not exist.");
         }
         vh.setValidUntil(getTimestamp(def.get().getTtl()));
 
@@ -754,19 +726,19 @@ public class ValueHelpService {
             ObjectMapper objectMapper = new ObjectMapper();
             newValue = objectMapper.writeValueAsString(vh.getValues());
         } catch (Exception e) {
-            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "ValueHelpValue with language "
-                    + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
+            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                    " could not be inserted because no valid values json could be created.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                            " could not be inserted because no valid values json could be created.");
         }
 
         if (!isValidJson(newValue)) {
-            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "ValueHelpValue with language "
-                    + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
+            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                    " could not be inserted because no valid values json could be created.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                            " could not be inserted because no valid values json could be created.");
         }
 
         dao.addValue(vh.getId(), vh.getVersion(), vh.getLocale().toString(), vh.getValidUntil(), newValue);
@@ -779,16 +751,15 @@ public class ValueHelpService {
      */
     @Transactional
     public ValueHelp updateValue(ValueHelp vh) {
-        var resultOptNew = this.findValueByIdLocaleVersion(vh.getId(), vh.getLocale().toString(),
-                vh.getVersion() + 1);
+        var resultOptNew = this.findValueByIdLocaleVersion(vh.getId(), vh.getLocale().toString(), vh.getVersion() + 1);
         if (resultOptNew.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Provided entity is not latest. " +
-                    "Please reload data and try again");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Provided entity is not latest. " + "Please reload data and try again");
         }
         Optional<ValueHelpDef> def = findDefById(vh.getId());
         if (def.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Value help definition with id "
-                    + vh.getId() + " does not exist.");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Value help definition with id " + vh.getId() + " does not exist.");
         }
         vh.setValidUntil(getTimestamp(def.get().getTtl()));
 
@@ -797,18 +768,18 @@ public class ValueHelpService {
             ObjectMapper objectMapper = new ObjectMapper();
             newValue = objectMapper.writeValueAsString(vh.getValues());
         } catch (Exception e) {
-            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "ValueHelpValue with language "
-                    + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
+            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                    " could not be inserted because no valid values json could be created.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                            " could not be inserted because no valid values json could be created.");
         }
         if (!isValidJson(newValue)) {
-            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "ValueHelpValue with language " + vh.getLocale()
-                    + " of definition " + vh.getId()
-                    + " could not be inserted because no valid values json could be created.");
+            log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                    " could not be inserted because no valid values json could be created.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                            " could not be inserted because no valid values json could be created.");
         }
 
         dao.updateValue(vh.getId(), vh.getVersion(), vh.getLocale().toString(), vh.getValidUntil(), newValue);
@@ -821,18 +792,18 @@ public class ValueHelpService {
      */
     public void addValue(ValueHelp vh, Long ttl) {
         vh.setValidUntil(getTimestamp(ttl));
-        final var om = new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
+        final var om =
+                new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
         try (var reader = new InputStreamReader(new ByteArrayInputStream(om.writeValueAsBytes(vh.getValues())))) {
             String newValue = IOUtils.toString(reader);
             if (!isValidJson(newValue)) {
-                log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                        + " could not be inserted because no valid values json could be created.");
-                throw new RuntimeException("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                        + " could not be created because no valid values json could be created.");
+                log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                        " could not be inserted because no valid values json could be created.");
+                throw new RuntimeException(
+                        "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                                " could not be created because no valid values json could be created.");
             }
-            dao.addValue(vh.getId(), vh.getVersion(), vh.getLocale().toString(), vh.getValidUntil(),
-                    newValue);
+            dao.addValue(vh.getId(), vh.getVersion(), vh.getLocale().toString(), vh.getValidUntil(), newValue);
         } catch (Exception e) {
             log.error("Error converting value-help-value", e);
             throw new RuntimeException(e);
@@ -845,15 +816,16 @@ public class ValueHelpService {
      */
     public void updateValue(ValueHelp vh, Long ttl) {
         vh.setValidUntil(getTimestamp(ttl));
-        final var om = new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
+        final var om =
+                new ObjectMapper().enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
         try (var reader = new InputStreamReader(new ByteArrayInputStream(om.writeValueAsBytes(vh.getValues())))) {
             String newValue = IOUtils.toString(reader);
             if (!isValidJson(newValue)) {
-                log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                        + " could not be updated because no valid values json could be created.");
-                throw new RuntimeException("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId()
-                        + " could not be updated because no valid values json could be created.");
+                log.error("ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                        " could not be updated because no valid values json could be created.");
+                throw new RuntimeException(
+                        "ValueHelpValue with language " + vh.getLocale() + " of definition " + vh.getId() +
+                                " could not be updated because no valid values json could be created.");
             }
             dao.updateValue(vh.getId(), vh.getVersion(), vh.getLocale().toString(), vh.getValidUntil(), newValue);
         } catch (Exception e) {

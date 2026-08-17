@@ -11,7 +11,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.sap.bfx.valuehelp.model.ValueHelpDef.TTL_STATIC;
@@ -46,7 +45,19 @@ public class XmlValueHelpDef {
     private String description;
 
     @XmlElement
-    private ArrayList<String> languages;
+    private List<String> languages;
+
+    @XmlElement
+    private String keyKey;
+
+    @XmlElement
+    private List<String> valueKeys;
+
+    @XmlElement
+    private String formatTemplate;
+
+    @XmlElement
+    private String valueHelpType;
 
     @XmlElement(name = "valueHelp")
     private List<XmlValueHelpValue> valueHelpValues;

@@ -28,29 +28,30 @@ public interface LifecycleHook<AC extends AccessClass> {
     /**
      * Handles the 'before' lifecycle event.
      *
-     * @param ctx      the context of the lifecycle event
-     * @param previous the previous callback result
+     * @param ctx    the context of the lifecycle event
+     * @param result the previous callback result
      * @return the callback result after handling the event
      */
-    CallbackResult before(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult before(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Handles the 'on' lifecycle event.
      *
-     * @param ctx      the context of the lifecycle event
-     * @param previous the previous callback result
+     * @param ctx    the context of the lifecycle event
+     * @param result the previous callback result
      * @return the callback result after handling the event
      */
-    CallbackResult on(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult on(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Handles the 'after' lifecycle event.
      *
-     * @param ctx      the context of the lifecycle event
-     * @param previous the previous callback result
+     * @param ctx    the context of the lifecycle event
+     * @param result the previous callback result
+     * @param result the previous callback result
      * @return the callback result after handling the event
      */
-    CallbackResult after(final Context<AC> ctx, final CallbackResult previous);
+    CallbackResult after(final Context<AC> ctx, final CallbackResult result);
 
     /**
      * Gets the type of the lifecycle hook.

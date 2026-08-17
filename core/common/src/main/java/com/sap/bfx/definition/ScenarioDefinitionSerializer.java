@@ -1,35 +1,35 @@
 package com.sap.bfx.definition;
 
-import java.io.IOException;
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+
+import java.io.IOException;
+import java.util.List;
 
 import static com.sap.bfx.definition.DefinitionNames.*;
 
 public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefinition> {
     private boolean includeKeys = false;
     private boolean includeTexts = false;
+    private boolean toFrontend = false;
 
     /**
-     * @param includeKeys
-     * @param includeTexts
+     * Constructor
+     *
+     * @param includeKeys  flag if keys should be included
+     * @param includeTexts flag if texts should be included
+     * @param toFrontend   flag if the serialization is for frontend usage
      */
-    public ScenarioDefinitionSerializer(final boolean includeKeys, final boolean includeTexts) {
+    public ScenarioDefinitionSerializer(final boolean includeKeys, final boolean includeTexts,
+                                        final boolean toFrontend) {
         super(ScenarioDefinition.class);
 
         this.includeKeys = includeKeys;
         this.includeTexts = includeTexts;
+        this.toFrontend = toFrontend;
     }
 
-    /**
-     * @param sd
-     * @param gen
-     * @param provider
-     * @throws IOException
-     */
     @Override
     public void serialize(ScenarioDefinition sd, JsonGenerator gen, SerializerProvider provider) throws IOException {
         gen.writeStartObject();
@@ -53,13 +53,15 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
     }
 
     /**
-     * @param elementDefs
-     * @param gen
-     * @param provider
-     * @throws IOException
+     * Serializes the elements list. This results in an JSON element named elements and an array
+     *
+     * @param elementDefs list of element-definitions
+     * @param gen         the JsonGenerator used for writing JSON content
+     * @param provider    the SerializerProvider that can be used to access serializers for serializing objects
+     * @throws IOException if an io-exception occurs during serialization
      */
-    private void serializeElements(List<ElementDefinition> elementDefs, JsonGenerator gen,
-                                   SerializerProvider provider) throws IOException {
+    private void serializeElements(List<ElementDefinition> elementDefs, JsonGenerator gen, SerializerProvider provider)
+            throws IOException {
         gen.writeFieldName(NM_ELEMENTS);
         gen.writeStartArray();
         for (var ed : elementDefs) {
@@ -69,10 +71,14 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
     }
 
     /**
-     * @param ed
-     * @param gen
-     * @param provider
-     * @throws IOException
+     * Serializes a single element definition into JSON format. This method handles the serialization of various
+     * properties of the element definition, including its name, type, data type, default value, visibility, and
+     * other attributes. It also handles specific serialization logic based on the type of the element definition.
+     *
+     * @param ed       the ElementDefinition object to be serialized
+     * @param gen      the JsonGenerator used for writing JSON content
+     * @param provider the SerializerProvider that can be used to access serializers for serializing objects
+     * @throws IOException if an io-exception occurs during serialization
      */
     private void serializeElement(ElementDefinition ed, JsonGenerator gen, SerializerProvider provider)
             throws IOException {
@@ -140,12 +146,14 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 }
                 gen.writeEndArray();
 
-                if(((AttachmentElementDefinition) ed).getValueHelp() != null) {
+                if (((AttachmentElementDefinition) ed).getValueHelp() != null) {
                     gen.writeObjectFieldStart(NM_VALUE_HELP);
                     gen.writeStringField(NM_NAME, ((AttachmentElementDefinition) ed).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((AttachmentElementDefinition) ed).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((AttachmentElementDefinition) ed).getValueHelp().isEmptySelection());
-                    gen.writeStringField(NM_DISPLAY_FORMAT, ((AttachmentElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((AttachmentElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((AttachmentElementDefinition) ed).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
 
@@ -153,23 +161,33 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
-                if (((ButtonElementDefinition) ed).getLinkHRef() != null && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
+                if (((ButtonElementDefinition) ed).getTooltip() != null
+                        && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
+                }
+                if (((ButtonElementDefinition) ed).getLinkHRef() != null
+                        && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
                     gen.writeStringField(NM_LINK_HREF, ((ButtonElementDefinition) ed).getLinkHRef());
+                }
+                if (((ButtonElementDefinition) ed).getShortcut() != null && !((ButtonElementDefinition) ed).getShortcut().isEmpty()) {
+                    gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) ed).getShortcut());
                 }
                 break;
             case Currency:
-                if(((CurrencyElementDefinition) ed).getValueHelp() != null) {
+                if (((CurrencyElementDefinition) ed).getValueHelp() != null) {
                     gen.writeObjectFieldStart(NM_VALUE_HELP);
                     gen.writeStringField(NM_NAME, ((CurrencyElementDefinition) ed).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((CurrencyElementDefinition) ed).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
-                    gen.writeStringField(NM_DISPLAY_FORMAT, ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
                 break;
             case Dialog:
                 Dimension size = ((DialogElementDefinition) ed).getSize();
-                if(size != null) {
+                if (size != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
@@ -185,14 +203,18 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 break;
             case Form:
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
-                this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(),
-                        gen, provider);
+                this.serializeElementWithName(NM_HEADER_SEGMENT, ((FormElementDefinition) ed).getHeaderSegment(), gen,
+                        provider);
                 break;
             case Icon:
                 gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
+                if (((IconElementDefinition) ed).getTooltip() != null
+                        && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
+                    gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) ed).getTooltip());
+                }
                 break;
             case Image:
-                if(((ImageElementDefinition) ed).getSize() != null) {
+                if (((ImageElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((ImageElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((ImageElementDefinition) ed).getSize().getWidth());
@@ -214,27 +236,31 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 }
                 break;
             case MultiSelect:
-                if(((MultiSelectElementDefinition) ed).getValueHelp() != null) {
+                if (((MultiSelectElementDefinition) ed).getValueHelp() != null) {
                     gen.writeObjectFieldStart(NM_VALUE_HELP);
                     gen.writeStringField(NM_NAME, ((MultiSelectElementDefinition) ed).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((MultiSelectElementDefinition) ed).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                    gen.writeStringField(NM_DISPLAY_FORMAT, ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
                 break;
             case Radio:
-                if(((RadioElementDefinition) ed).getValueHelp() != null) {
+                if (((RadioElementDefinition) ed).getValueHelp() != null) {
                     gen.writeObjectFieldStart(NM_VALUE_HELP);
                     gen.writeStringField(NM_NAME, ((RadioElementDefinition) ed).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((RadioElementDefinition) ed).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
-                    gen.writeStringField(NM_DISPLAY_FORMAT, ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
                 break;
             case SearchHelp:
-                if(((SearchHelpElementDefinition) ed).getSize() != null) {
+                if (((SearchHelpElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((SearchHelpElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((SearchHelpElementDefinition) ed).getSize().getWidth());
@@ -243,12 +269,14 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 this.serializeElementWithName(NM_FOOTER, ((SearchHelpElementDefinition) ed).getFooter(), gen, provider);
                 break;
             case Select:
-                if(((SelectElementDefinition) ed).getValueHelp() != null) {
+                if (((SelectElementDefinition) ed).getValueHelp() != null) {
                     gen.writeObjectFieldStart(NM_VALUE_HELP);
                     gen.writeStringField(NM_NAME, ((SelectElementDefinition) ed).getValueHelp().getName());
                     gen.writeBooleanField(NM_VALIDATE, ((SelectElementDefinition) ed).getValueHelp().isValidate());
-                    gen.writeBooleanField(NM_EMPTY_SELECTION, ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                    gen.writeStringField(NM_DISPLAY_FORMAT, ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
                     gen.writeEndObject();
                 }
                 break;
@@ -256,6 +284,9 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 gen.writeStringField(NM_MIXIN_NAME, ((MetaFileElementDefinition) ed).getMixinName());
                 gen.writeStringField(NM_PATH, ((MetaFileElementDefinition) ed).getPath());
                 gen.writeNumberField(NM_VERSION, ((MetaFileElementDefinition) ed).getVersion());
+                if (this.toFrontend) {
+                    gen.writeStringField(NM_KIND, ((MetaFileElementDefinition) ed).getKindCode());
+                }
                 break;
             case Table:
                 gen.writeStringField(NM_SELECT, ((TableElementDefinition) ed).getSelect().getIdentifier());

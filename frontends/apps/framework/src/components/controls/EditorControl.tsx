@@ -4,7 +4,7 @@ import { TextArea } from "@ui5/webcomponents-react"
 
 import { useMessages } from "commons"
 
-import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlaceholder } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import { FormService } from "../../features/sessions/forms"
@@ -16,7 +16,7 @@ import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId } = props
+    const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const intl = useIntl()
@@ -28,6 +28,7 @@ export default function (props: ControlProps) {
             <TextArea
                 id={def.key}
                 value={(element?.va as string) ?? ""}
+                placeholder={getPlaceholder(texts, def)}
                 readonly={!element?.ed || !globalEd}
                 required={element?.rq}
                 onInput={(e) => handleChange(dispatch, def, rowId, messages, e.target.value ?? "")}
