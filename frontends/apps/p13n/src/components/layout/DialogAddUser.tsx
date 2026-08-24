@@ -87,9 +87,9 @@ export default function (props: DialogAddUserProps) {
                                 !props.users.includes(newUsername.trim())
                             ) {
                                 props.setUsername(newUsername.trim())
-                                props.setUsers([...props.users, newUsername])
+                                props.setUsers([...props.users, newUsername.trim()])
                                 const p = backendDispatch(
-                                    `/v1/p13n/user/${newUsername}`,
+                                    `/v1/p13n/admin/user/${newUsername.trim()}`,
                                     "GET",
                                     undefined,
                                     undefined,
