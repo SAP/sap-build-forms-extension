@@ -10,6 +10,10 @@ import DialogAddApplication from "../components/layout/DialogAddApplication"
 export default function () {
     const intl = useIntl()
 
+    useEffect(() => {
+        document.title = intl.formatMessage({ id: "p13n_title_user" })
+    }, [intl])
+
     const [user, setUser] = useState<string>("")
     const [personalizationsOfUser, setPersonalizationsOfUser] = useState<Personalization[]>([])
     const [values, setValues] = useState<Value[]>([])

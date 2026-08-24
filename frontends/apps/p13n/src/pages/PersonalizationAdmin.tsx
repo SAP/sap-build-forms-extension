@@ -37,6 +37,10 @@ export default function () {
 
     const intl = useIntl()
 
+    useEffect(() => {
+        document.title = intl.formatMessage({ id: "p13n_title_admin" })
+    }, [intl])
+
     const [users, setUsers] = useState<string[]>([])
     const [values, setValues] = useState<Value[]>([])
     const [searchUser, setSearchUser] = useState<string>("")

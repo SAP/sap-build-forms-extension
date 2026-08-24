@@ -81,12 +81,10 @@ export default function (props: SettingsProps) {
                                         props.setApplication(e.detail.selectedOption.id)
 
                                         const p = backendDispatch(
-                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${
-                                                props.userName
-                                            }${
-                                                e.detail.selectedOption.id == "_"
-                                                    ? ""
-                                                    : "/" + e.detail.selectedOption.id
+                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName
+                                            }${e.detail.selectedOption.id == "_"
+                                                ? ""
+                                                : "/" + e.detail.selectedOption.id
                                             }`,
                                             "GET",
                                             undefined,
@@ -196,8 +194,7 @@ export default function (props: SettingsProps) {
                                     onClick={() => {
                                         if (props.deletedPersonalizations.length > 0) {
                                             const p = backendDispatch(
-                                                `/v1/p13n/${
-                                                    props.isAdminView ? "admin/" : ""
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                 }user/${props.userName}/${props.application}`,
                                                 "DELETE",
                                                 undefined,
@@ -219,15 +216,14 @@ export default function (props: SettingsProps) {
                                                         }).length > 0
                                                     ) {
                                                         const p2 = backendDispatch(
-                                                            `/v1/p13n/${
-                                                                props.isAdminView ? "admin/" : ""
+                                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                             }user/${props.userName}`,
                                                             "PUT",
                                                             props.personalizationsOfUser.filter(
                                                                 (p) => {
                                                                     return (
                                                                         p.app ==
-                                                                            props.application &&
+                                                                        props.application &&
                                                                         p.user == props.userName
                                                                     )
                                                                 },
@@ -260,8 +256,7 @@ export default function (props: SettingsProps) {
                                             }).length > 0
                                         ) {
                                             const p = backendDispatch(
-                                                `/v1/p13n/${
-                                                    props.isAdminView ? "admin/" : ""
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                 }user/${props.userName}`,
                                                 "PUT",
                                                 props.personalizationsOfUser.filter((p) => {
@@ -290,6 +285,9 @@ export default function (props: SettingsProps) {
                         }
                         heading={
                             <Title>{props.userName == "_" ? "Default user" : props.userName}</Title>
+                        }
+                        snappedHeading={
+                            <Title>{props.userName === "_" ? "Default user" : props.userName}</Title>
                         }
                         breadcrumbs={
                             <Breadcrumbs>
@@ -346,12 +344,12 @@ export default function (props: SettingsProps) {
                                     ?.values.find((v: string) => {
                                         return v.includes(
                                             "(" +
-                                                props.personalizationsOfUser.find(
-                                                    (e: Personalization) => {
-                                                        return e.key == "_lang"
-                                                    },
-                                                )?.value +
-                                                ")",
+                                            props.personalizationsOfUser.find(
+                                                (e: Personalization) => {
+                                                    return e.key == "_lang"
+                                                },
+                                            )?.value +
+                                            ")",
                                         )
                                     }) || ""
                             }
@@ -475,12 +473,12 @@ export default function (props: SettingsProps) {
                                     ?.values.find((v: string) => {
                                         return v.includes(
                                             "(" +
-                                                props.personalizationsOfUser.find(
-                                                    (e: Personalization) => {
-                                                        return e.key == "_number"
-                                                    },
-                                                )?.value +
-                                                ")",
+                                            props.personalizationsOfUser.find(
+                                                (e: Personalization) => {
+                                                    return e.key == "_number"
+                                                },
+                                            )?.value +
+                                            ")",
                                         )
                                     }) || ""
                             }
@@ -539,14 +537,14 @@ export default function (props: SettingsProps) {
                         {props.personalizationsOfUser.filter((personalization) => {
                             return !personalization.key.startsWith("_")
                         }).length == 0 && (
-                            <FormItem>
-                                <Text>
-                                    {intl.formatMessage({
-                                        id: "form_no_additional_settings",
-                                    })}
-                                </Text>
-                            </FormItem>
-                        )}
+                                <FormItem>
+                                    <Text>
+                                        {intl.formatMessage({
+                                            id: "form_no_additional_settings",
+                                        })}
+                                    </Text>
+                                </FormItem>
+                            )}
                     </FormGroup>
                 </Form>
             </DynamicPage>
