@@ -6,7 +6,7 @@
 
     <groupId>com.sap.build-forms-extension</groupId>
     <artifactId>forms</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <name>forms</name>
     <description>Forms parent project</description>
@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <forms.version>1.0.1</forms.version>
+        <forms.version>1.0.2</forms.version>
 
         <activation.version>1.1</activation.version>
         <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
