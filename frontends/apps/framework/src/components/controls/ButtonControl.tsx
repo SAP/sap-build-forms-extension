@@ -102,7 +102,7 @@ export default function (props: ControlProps) {
                     await onAfterAction()
                 }
             }}
-            style={withContainer ? { width: "100%" } : undefined}
+            style={withContainer ? { width: "100%"} : { minWidth: "100px" }}
         >
             {getLabel(texts, def)}
         </Button>

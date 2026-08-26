@@ -39,7 +39,7 @@ interface SettingsProps {
     setPersonalizationsOfUser(personalizations: Personalization[]): void
     setDeletedPersonalizations(personalizations: Personalization[]): void
     setApplication(application: string): void
-    openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string): void
+    openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string, onConfirm?: () => void): void
     setDialogAddApplicationOpen(o: boolean): void
     setDialogAddSettingOpen(o: boolean): void
     toListView(): void
@@ -68,7 +68,7 @@ export default function (props: SettingsProps) {
         )
     }
 
-    if (props.values.length > 0 && props.personalizationsOfUser.length > 0) {
+    if (props.userName != null && props.values.length > 0) {
         return (
             <DynamicPage
                 slot="midColumn"
@@ -149,6 +149,51 @@ export default function (props: SettingsProps) {
                                                 })}
                                             </>,
                                             "DeleteSettings",
+                                            () => {
+                                                const p = backendDispatch(
+                                                    `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName}/${props.application}`,
+                                                    "DELETE",
+                                                    undefined,
+                                                    undefined,
+                                                )
+                                                p.then((action: any) => {
+                                                    if (action.status == 204) {
+                                                        const p = backendDispatch(
+                                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName}${props.application != "_" ? "/" + props.application : ""}`,
+                                                            "GET",
+                                                            undefined,
+                                                            undefined,
+                                                        )
+                                                        p.then((action: any) => {
+                                                            if (action.status == 200) {
+                                                                props.setPersonalizationsOfUser(
+                                                                    action.data,
+                                                                )
+                                                            } else {
+                                                                props.openMessageBox(
+                                                                    MessageBoxType.Error,
+                                                                    <>
+                                                                        {intl.formatMessage({
+                                                                            id: "p13n_load_error",
+                                                                        })}
+                                                                    </>,
+                                                                    "",
+                                                                )
+                                                            }
+                                                        })
+                                                    } else {
+                                                        props.openMessageBox(
+                                                            MessageBoxType.Error,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "p13n_delete_settings_error",
+                                                                })}
+                                                            </>,
+                                                            "",
+                                                        )
+                                                    }
+                                                })
+                                            },
                                         )
                                     }}
                                 >
@@ -276,7 +321,26 @@ export default function (props: SettingsProps) {
                                                 }
                                             })
                                         } else {
-                                            openMessageBoxSave(true)
+                                            const p = backendDispatch(
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
+                                                }user/${props.userName}`,
+                                                "PUT",
+                                                props.personalizationsOfUser.filter((p) => {
+                                                    return (
+                                                        p.app == props.application &&
+                                                        p.user == props.userName
+                                                    )
+                                                }),
+                                                undefined,
+                                            )
+                                            p.then((action: any) => {
+                                                if (action.status == 200) {
+                                                    props.setPersonalizationsOfUser(action.data)
+                                                    openMessageBoxSave(true)
+                                                } else {
+                                                    openMessageBoxSave(false)
+                                                }
+                                            })
                                         }
                                     }}
                                     design="Emphasized"

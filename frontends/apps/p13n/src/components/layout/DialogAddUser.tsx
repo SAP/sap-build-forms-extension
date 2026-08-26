@@ -86,18 +86,46 @@ export default function (props: DialogAddUserProps) {
                                 newUsername.trim() != "_" &&
                                 !props.users.includes(newUsername.trim())
                             ) {
-                                props.setUsername(newUsername.trim())
-                                props.setUsers([...props.users, newUsername.trim()])
-                                const p = backendDispatch(
-                                    `/v1/p13n/admin/user/${newUsername.trim()}`,
+                                const trimmed = newUsername.trim()
+                                const defaults = backendDispatch(
+                                    `/v1/p13n/admin/user/_`,
                                     "GET",
                                     undefined,
                                     undefined,
                                 )
-                                p.then((action: any) => {
-                                    if (action.status == 200) {
-                                        const data = action.data
-                                        props.setPersonalizationsOfUser(data)
+                                defaults.then((defaultsAction: any) => {
+                                    if (defaultsAction.status == 200) {
+                                        const defaultPersonalizations: Personalization[] =
+                                            defaultsAction.data.map((p: Personalization) => ({
+                                                ...p,
+                                                id: null,
+                                                user: trimmed,
+                                            }))
+                                        const save = backendDispatch(
+                                            `/v1/p13n/admin/user/${trimmed}`,
+                                            "PUT",
+                                            defaultPersonalizations,
+                                            undefined,
+                                        )
+                                        save.then((saveAction: any) => {
+                                            if (saveAction.status == 200) {
+                                                props.setUsername(trimmed)
+                                                props.setUsers([...props.users, trimmed])
+                                                props.setPersonalizationsOfUser(saveAction.data)
+                                                props.setApplication("_")
+                                                props.setLayout(FCLLayout.TwoColumnsMidExpanded)
+                                            } else {
+                                                props.openMessageBox(
+                                                    MessageBoxType.Error,
+                                                    <>
+                                                        {intl.formatMessage({
+                                                            id: "p13n_load_error",
+                                                        })}
+                                                    </>,
+                                                    "",
+                                                )
+                                            }
+                                        })
                                     } else {
                                         props.openMessageBox(
                                             MessageBoxType.Error,
@@ -110,8 +138,6 @@ export default function (props: DialogAddUserProps) {
                                         )
                                     }
                                 })
-                                props.setApplication("_")
-                                props.setLayout(FCLLayout.TwoColumnsMidExpanded)
                                 props.setDialogOpen(false)
                                 setNewUsername("")
                             }

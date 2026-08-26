@@ -16,7 +16,7 @@ import {
     ListItemStandard,
 } from "@ui5/webcomponents-react"
 import { ThemingParameters } from "@ui5/webcomponents-react-base"
-import { JSX, useEffect, useState } from "react"
+import { JSX, useEffect, useRef, useState } from "react"
 import { backendDispatch } from "../utils/backend"
 import { ListItemClickEventDetail } from "@ui5/webcomponents/dist/List"
 import { MessageBoxParams, Personalization, Value } from "../features/personalizationDefinitions"
@@ -64,6 +64,8 @@ export default function () {
     const [dialogAddApplicationOpen, setDialogAddApplicationOpen] = useState(false)
     const [dialogAddSettingOpen, setDialogAddSettingOpen] = useState(false)
 
+    const confirmCallbackRef = useRef<(() => void) | null>(null)
+
     function loadUsers(requestParams: object | undefined) {
         const p = backendDispatch("/v1/p13n/admin/user", "GET", undefined, requestParams)
         p.then((action: any) => {
@@ -110,8 +112,9 @@ export default function () {
         })
     }
 
-    function openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string) {
+    function openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string, onConfirm?: () => void) {
         setMessageBoxParams({ type: mBoxType, id: mBoxId, text: mBoxText })
+        confirmCallbackRef.current = onConfirm ?? null
         setMessageBoxOpen(true)
     }
 
@@ -232,18 +235,49 @@ export default function () {
                                                 id: "p13n_delete_information",
                                             })
                                             .split("<>")
+                                        const currentUser = userSelected
                                         openMessageBox(
                                             MessageBoxType.Confirm,
                                             <>
                                                 {parts[0]}
                                                 <b>
-                                                    <i>{userSelected}</i>{" "}
+                                                    <i>{currentUser}</i>{" "}
                                                 </b>
                                                 {parts[1]}
                                                 <br />
                                                 {parts[2]}
                                             </>,
                                             "Delete",
+                                            () => {
+                                                const p = backendDispatch(
+                                                    `/v1/p13n/admin/user/${currentUser}`,
+                                                    "DELETE",
+                                                    undefined,
+                                                    undefined,
+                                                )
+                                                p.then((action: any) => {
+                                                    if (action.status == 204) {
+                                                        setUsers(
+                                                            users.filter(
+                                                                (user) => user !== currentUser,
+                                                            ),
+                                                        )
+                                                        setUserSelected("")
+                                                        setPersonalizationsOfUser([])
+                                                        setLayout(FCLLayout.OneColumn)
+                                                    } else {
+                                                        openMessageBox(
+                                                            MessageBoxType.Error,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "p13n_delete_error",
+                                                                })}
+                                                            </>,
+                                                            "",
+                                                        )
+                                                    }
+                                                })
+                                            },
                                         )
                                     }}
                                 >
@@ -365,71 +399,9 @@ export default function () {
                         messageBoxParams.type === MessageBoxType.Confirm &&
                         action === MessageBoxAction.OK
                     ) {
-                        if (messageBoxParams.type == MessageBoxType.Confirm) {
-                            if (messageBoxParams.id == "Delete") {
-                                const p = backendDispatch(
-                                    `/v1/p13n/admin/user/${userSelected}`,
-                                    "DELETE",
-                                    undefined,
-                                    undefined,
-                                )
-                                p.then((action: any) => {
-                                    if (action.status == 204) {
-                                        setUsers(users.filter((user) => user !== userSelected))
-                                        setUserSelected("")
-                                        setPersonalizationsOfUser([])
-                                        setLayout(FCLLayout.OneColumn)
-                                    } else {
-                                        openMessageBox(
-                                            MessageBoxType.Error,
-                                            <>
-                                                {intl.formatMessage({
-                                                    id: "p13n_delete_error",
-                                                })}
-                                            </>,
-                                            "",
-                                        )
-                                    }
-                                })
-                            } else if (messageBoxParams.id == "DeleteSettings") {
-                                const p = backendDispatch(
-                                    `/v1/p13n/admin/user/${userSelected}/${application}`,
-                                    "DELETE",
-                                    undefined,
-                                    undefined,
-                                )
-                                p.then((action: any) => {
-                                    if (action.status == 204) {
-                                        const p = backendDispatch(
-                                            `/v1/p13n/admin/user/${userSelected}${
-                                                application != "_" ? "/" + application : ""
-                                            }`,
-                                            "GET",
-                                            undefined,
-                                            undefined,
-                                        )
-                                        p.then((action: any) => {
-                                            if (action.status == 200) {
-                                                setPersonalizationsOfUser(action.data)
-                                            } else {
-                                                openMessageBoxLoadError()
-                                            }
-                                        })
-                                    } else {
-                                        openMessageBox(
-                                            MessageBoxType.Error,
-                                            <>
-                                                {intl.formatMessage({
-                                                    id: "p13n_delete_settings_error",
-                                                })}
-                                            </>,
-                                            "",
-                                        )
-                                    }
-                                })
-                            }
-                        }
+                        confirmCallbackRef.current?.()
                     }
+                    confirmCallbackRef.current = null
                     setMessageBoxOpen(false)
                 }}
                 type={messageBoxParams.type}
