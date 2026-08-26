@@ -22,8 +22,8 @@ import com.sap.bfx.utils.FileUtils;
 /**
  * Important
  * <p>
- * - in definition file this needs to be declared as classpath:start-name-of-jar-dependency
- * .e.g. classpath:forms-scenario-common
+ * - in definition file this needs to be declared as classpath:&lt;artifactId&gt; where artifactId
+ * is the exact Maven artifactId of the dependency jar, e.g. classpath:forms-scenario-common
  * <p>
  * - its possible to use replacements like $7{name} and define <name>...</name> in pom as mixinPaths
  * <p>
@@ -55,7 +55,7 @@ class MixinClasspathLoader extends MixinLoader {
             var fName = it.getFile().getName();
             log.debug("- " + fName);
 
-            if (StringUtils.startsWithIgnoreCase(fName, rootPath)) {
+            if (it.getArtifactId().equalsIgnoreCase(rootPath)) {
                 artifcatFile = it.getFile();
                 log.debug("-> found -> breaking");
                 break;
