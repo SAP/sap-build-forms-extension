@@ -1,5 +1,6 @@
 package com.sap.bfx.definition;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -34,9 +35,13 @@ public class RegexValidationRule extends AbstractValidationRule {
     @Override
     public Optional<Message> validate(final String rowId, final String key, Context<?> context) {
         var value = context.getDataApi().getValue(rowId, key);
-        if (!pattern.matches((String) value)) {
+        if (value == null) {
             return Optional.empty();
         }
-        return Optional.of(new Message(this.severity, this.messageKey, null));
+        final var params = Map.of("value", (Object) pattern);
+        if (!compiledPattern.matcher((String) value).matches()) {
+            return Optional.of(new Message(this.severity, this.messageKey, params));
+        }
+        return Optional.empty();
     }
 }

@@ -64,6 +64,8 @@ export class Limitations {
     min?: string
     max?: string
     match?: string
+    fixedLength?: string
+    fixedFractions?: string
 }
 
 export interface CategoryOption {

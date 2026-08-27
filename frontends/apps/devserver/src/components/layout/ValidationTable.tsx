@@ -192,8 +192,8 @@ export default function ValidationTable(props: Props) {
                                         max
                                     </Option>
                                 )}
-                                {(["string"].includes(props.el?.type!) ||
-                                    ["string"].includes(props.el?.dataType!)) && (
+                                {(["string", "decimal"].includes(props.el?.type!) ||
+                                    ["string", "decimal"].includes(props.el?.dataType!)) && (
                                     <Option selected={item.type == "fixed"} key="fixed" id="fixed">
                                         fixed
                                     </Option>

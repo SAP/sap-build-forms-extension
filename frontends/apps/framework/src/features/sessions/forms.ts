@@ -7,6 +7,7 @@ export interface ElementInfo {
     severity: Severity
     key: string | undefined
     params: Record<string, any>
+    text?: string
 }
 
 /**

@@ -40,6 +40,7 @@ class SessionResponse {
     private String headerTitle;
     private Collection<CallbackResult.Message> messages;
     private Map<String, Map<String, String>> dynamicValuehelps;
+    private Map<String, String> msgTexts;
 
     /**
      * Constructs a new SessionResponse with the specified session ID, callback result, form, and backend journal.
@@ -108,10 +109,16 @@ class SessionResponse {
             }
             if (value.values != null) {
                 gen.writeFieldName("values");
-                this.serializeElementMap(value.values, gen, provider);
+                final var texts = value.msgTexts != null ? value.msgTexts
+                        : (value.def != null && value.locale != null)
+                            ? value.def.getTexts().get(value.locale) : null;
+                this.serializeElementMap(value.values, texts, gen, provider);
             }
             if (value.journal != null) {
-                this.serializeJournal(value.form, value.journal, gen, provider);
+                final var texts = value.msgTexts != null ? value.msgTexts
+                        : (value.def != null && value.locale != null)
+                            ? value.def.getTexts().get(value.locale) : null;
+                this.serializeJournal(value.form, value.journal, texts, gen, provider);
             }
             if (value.pageTitle != null) {
                 gen.writeStringField("pageTitle", value.pageTitle);
@@ -458,8 +465,48 @@ class SessionResponse {
             ArrayList<ElementDefinition> temp = new ArrayList<>(parentElements);
             temp.add(element);
             this.serializeElementsDef("elements", element.getElements(), eventHandlersMap, gen, provider, temp);
+            // validation constraints for client-side enforcement
+            serializeValidationConstraints(element, gen);
             // that all, close the object
             gen.writeEndObject();
+        }
+
+        /**
+         * Serializes applicable validation rules of an element into a "limits" JSON object.
+         * Only MIN, MAX, FIXED, and REGEX rules are included; SpEL and Bean rules are not included
+         * as they cannot be evaluated on the frontend.
+         *
+         * @param element the ElementDefinition whose validation rules are inspected
+         * @param gen     the JsonGenerator used for writing JSON content
+         * @throws IOException if an I/O error occurs during serialization
+         */
+        private void serializeValidationConstraints(final ElementDefinition element, JsonGenerator gen)
+                throws IOException {
+            String min = null, max = null, match = null;
+            String fixedLength = null, fixedFractions = null;
+
+            for (ValidationRule rule : element.getValidationRules()) {
+                if (rule instanceof MinValidationRule minRule) {
+                    min = minRule.getLimit();
+                } else if (rule instanceof MaxValidationRule maxRule) {
+                    max = maxRule.getLimit();
+                } else if (rule instanceof FixedValidationRule fixedRule) {
+                    fixedLength = String.valueOf(fixedRule.getLength());
+                    fixedFractions = String.valueOf(fixedRule.getFractions());
+                } else if (rule instanceof RegexValidationRule regexRule) {
+                    match = regexRule.getPattern();
+                }
+            }
+
+            if (min != null || max != null || match != null || fixedLength != null) {
+                gen.writeObjectFieldStart("limits");
+                if (min != null) gen.writeStringField("min", min);
+                if (max != null) gen.writeStringField("max", max);
+                if (match != null) gen.writeStringField("match", match);
+                if (fixedLength != null) gen.writeStringField("fixedLength", fixedLength);
+                if (fixedFractions != null) gen.writeStringField("fixedFractions", fixedFractions);
+                gen.writeEndObject();
+            }
         }
 
         /**
@@ -470,7 +517,8 @@ class SessionResponse {
          * @param provider the SerializerProvider used for serialization
          * @throws IOException if an I/O error occurs during serialization
          */
-        private void serializeElementMap(final ElementMap values, JsonGenerator gen, SerializerProvider provider)
+        private void serializeElementMap(final ElementMap values, final Map<String, String> texts,
+                                          JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
             gen.writeStartObject();
 
@@ -485,13 +533,30 @@ class SessionResponse {
                 gen.writeStringField("key", value.getKey());
                 gen.writeStringField("nm", value.getName());
                 if (value.getMessage() != null) {
-                    gen.writeObjectField("msg", value.getMessage());
+                    final var msg = value.getMessage();
+                    gen.writeObjectFieldStart("msg");
+                    gen.writeStringField("severity", msg.getSeverity().getIdentifier());
+                    gen.writeStringField("key", msg.getKey());
+                    if (msg.getParams() != null && !msg.getParams().isEmpty()) {
+                        gen.writeObjectFieldStart("params");
+                        for (var entry : msg.getParams().entrySet()) {
+                            gen.writeStringField(entry.getKey(), String.valueOf(entry.getValue()));
+                        }
+                        gen.writeEndObject();
+                    }
+                    if (texts != null && msg.getKey() != null) {
+                        final var resolved = texts.get(com.sap.bfx.utils.IdentifierUtils.toPascalCase(msg.getKey()));
+                        if (resolved != null) {
+                            gen.writeStringField("text", resolved);
+                        }
+                    }
+                    gen.writeEndObject();
                 }
                 gen.writeBooleanField("ed", value.isEditable());
                 gen.writeBooleanField("rq", value.isRequired());
                 gen.writeBooleanField("vi", value.isVisible());
                 gen.writeFieldName("va");
-                this.serializeValue(rowId, value.getKey(), value.getValue(), null, gen, provider);
+                this.serializeValue(rowId, value.getKey(), value.getValue(), null, texts, gen, provider);
 
                 gen.writeEndObject();
             }
@@ -507,14 +572,15 @@ class SessionResponse {
          * @param provider the SerializerProvider used for serialization
          * @throws IOException if an I/O error occurs during serialization
          */
-        private void serializeElementRow(final ElementRow row, JsonGenerator gen, SerializerProvider provider)
+        private void serializeElementRow(final ElementRow row, final Map<String, String> texts,
+                                          JsonGenerator gen, SerializerProvider provider)
                 throws IOException {
 
             gen.writeStartObject();
             gen.writeStringField("id", row.getRowId());
             gen.writeBooleanField("sel", row.isSelected());
             gen.writeFieldName("values");
-            this.serializeElementMap(row.getElements(), gen, provider);
+            this.serializeElementMap(row.getElements(), texts, gen, provider);
             gen.writeEndObject();
         }
 
@@ -530,7 +596,7 @@ class SessionResponse {
          * @throws IOException if an I/O error occurs during serialization
          */
         private void serializeValue(final String rowId, final String key, final Object value, BackendJournal journal,
-                                    JsonGenerator gen, SerializerProvider provider) throws IOException {
+                                    final Map<String, String> texts, JsonGenerator gen, SerializerProvider provider) throws IOException {
             if (value instanceof LocalDate || value instanceof LocalTime) {
                 gen.writeString(value.toString());
             } else if (value instanceof LocalDateTime) {
@@ -558,18 +624,18 @@ class SessionResponse {
                 for (var it : (journal != null) ? journal.getNecessaryRows(rowId, key, table) :
                         table.getCurrentRows()) {
                     gen.writeFieldName(it);
-                    serializeElementRow(table.getData().get(it), gen, provider);
+                    serializeElementRow(table.getData().get(it), texts, gen, provider);
                 }
                 gen.writeEndObject();
 
                 gen.writeEndObject();
             } else if (value instanceof ElementMap) {
-                this.serializeElementMap((ElementMap) value, gen, provider);
+                this.serializeElementMap((ElementMap) value, texts, gen, provider);
             } else if (value instanceof Pair) {
                 gen.writeStartObject();
                 gen.writeStringField("value", ((Pair<String, ElementValue>) value).getLeft());
                 gen.writeFieldName("values");
-                this.serializeElementMap(((Pair<String, ElementMap>) value).getRight(), gen, provider);
+                this.serializeElementMap(((Pair<String, ElementMap>) value).getRight(), texts, gen, provider);
                 gen.writeEndObject();
             } else if (value instanceof DateRange) {
                 gen.writeStartObject();
@@ -604,6 +670,24 @@ class SessionResponse {
                 gen.writeStringField(FormUtils.NM_CURRENCY, ((MoneyAmount) value).getCurrency());
                 gen.writeNumberField(FormUtils.NM_AMOUNT, ((MoneyAmount) value).getAmount());
                 gen.writeEndObject();
+            } else if (value instanceof Message msg) {
+                gen.writeStartObject();
+                gen.writeStringField("severity", msg.getSeverity().getIdentifier());
+                gen.writeStringField("key", msg.getKey());
+                if (msg.getParams() != null && !msg.getParams().isEmpty()) {
+                    gen.writeObjectFieldStart("params");
+                    for (var entry : msg.getParams().entrySet()) {
+                        gen.writeStringField(entry.getKey(), String.valueOf(entry.getValue()));
+                    }
+                    gen.writeEndObject();
+                }
+                if (texts != null && msg.getKey() != null) {
+                    final var resolved = texts.get(com.sap.bfx.utils.IdentifierUtils.toPascalCase(msg.getKey()));
+                    if (resolved != null) {
+                        gen.writeStringField("text", resolved);
+                    }
+                }
+                gen.writeEndObject();
             } else {
                 gen.writeObject(value);
             }
@@ -619,7 +703,8 @@ class SessionResponse {
          * @param provider the SerializerProvider used for serialization
          * @throws IOException if an I/O error occurs during serialization
          */
-        private void serializeJournal(final Form form, final BackendJournal journal, JsonGenerator gen,
+        private void serializeJournal(final Form form, final BackendJournal journal,
+                                      final Map<String, String> texts, JsonGenerator gen,
                                       SerializerProvider provider) throws IOException {
 
             gen.writeObjectFieldStart("journal");
@@ -651,7 +736,7 @@ class SessionResponse {
                         var ce = journal.getChanges().get(rowId).get(key);
                         for (var prop : ce.getChanges().keySet()) {
                             gen.writeFieldName(prop.getKey());
-                            serializeValue(rowId, key, ce.getChanges().get(prop), journal, gen, provider);
+                            serializeValue(rowId, key, ce.getChanges().get(prop), journal, texts, gen, provider);
                         }
                         gen.writeEndObject();
                     }
