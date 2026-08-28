@@ -23,10 +23,17 @@ export interface CreateSessionRequest {
 }
 
 /**
- *  This interface describes the response from the backend when a session is created or updated. It contains 
- *  information about the session, including its definition, header title, ID, journal, locale, page title, values, 
+ *  This interface describes the response from the backend when a session is created or updated. It contains
+ *  information about the session, including its definition, header title, ID, journal, locale, page title, values,
  *  and messages. The dvhs property is optional and may contain dynamic value helps.
+ *  The operation property is optional and carries a FrontendOperation instruction from the backend.
  */
+export interface FrontendOperation {
+    command: "readonly" | "reset" | "editable"
+    text?: string
+    type?: string
+}
+
 export interface SessionResponse {
     def?: FormDefinition
     headerTitle?: string
@@ -38,6 +45,7 @@ export interface SessionResponse {
     vhs: Record<string, number>
     msg: Message[]
     dvhs?: Record<string, Record<string, string>>
+    operation?: FrontendOperation
 }
 
 /**
@@ -354,6 +362,30 @@ export function handleSessionResponse(
         // handling of dynamic value-helps
         if (data.dvhs) {
             state.dvhs = data.dvhs
+        }
+
+        // handling of frontend operations from backend hooks/events
+        if (data.operation) {
+            switch (data.operation.command) {
+                case "readonly":
+                    state.globalReadonly = true
+                    if (data.operation.text) {
+                        const text = data.operation.text
+                        const type = data.operation.type
+                        setTimeout(
+                            () => action.meta.arg.messages.readonlyDialog(type ?? "i", text),
+                            10,
+                        )
+                    }
+                    break
+                case "editable":
+                    state.globalReadonly = false
+                    setTimeout(() => action.meta.arg.messages.closeReadonlyDialog(), 10)
+                    break
+                case "reset":
+                    state.shouldReset = true
+                    break
+            }
         }
     }
 }

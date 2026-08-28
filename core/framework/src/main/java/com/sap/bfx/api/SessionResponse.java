@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.sap.bfx.callback.CallbackResult;
 import com.sap.bfx.callback.CallbackService;
+import com.sap.bfx.callback.operation.FrontendOperation;
+import com.sap.bfx.callback.operation.ReadonlyOperation;
 import com.sap.bfx.definition.*;
 import com.sap.bfx.session.*;
 import lombok.Data;
@@ -41,6 +43,7 @@ class SessionResponse {
     private Collection<CallbackResult.Message> messages;
     private Map<String, Map<String, String>> dynamicValuehelps;
     private Map<String, String> msgTexts;
+    private FrontendOperation operation;
 
     /**
      * Constructs a new SessionResponse with the specified session ID, callback result, form, and backend journal.
@@ -73,6 +76,7 @@ class SessionResponse {
         headerTitle = result.getHeaderTitle();
         messages = result.getMessages();
         dynamicValuehelps = result.getValueHelps();
+        operation = result.getOperation();
     }
 
     /**
@@ -131,6 +135,15 @@ class SessionResponse {
             }
             if (value.dynamicValuehelps != null && !value.dynamicValuehelps.isEmpty()) {
                 gen.writeObjectField("dvhs", value.dynamicValuehelps);
+            }
+            if (value.operation != null) {
+                gen.writeObjectFieldStart("operation");
+                gen.writeStringField("command", value.operation.getCommand());
+                if (value.operation instanceof ReadonlyOperation ro) {
+                    if (ro.getText() != null) gen.writeStringField("text", ro.getText());
+                    if (ro.getType() != null) gen.writeStringField("type", ro.getType());
+                }
+                gen.writeEndObject();
             }
 
             gen.writeEndObject();

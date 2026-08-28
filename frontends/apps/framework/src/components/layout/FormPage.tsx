@@ -38,6 +38,7 @@ export default function (props: FormProps) {
     const dispatch = useAppDispatch()
     const intlContext = useContext(ChangableIntlContext)
     const session = useAppSelector((state) => state.session)
+    const globalReadonly = useAppSelector((state) => state.session.globalReadonly)
     const [root, setRoot] = useState<Definition>()
     const [footer, setFooter] = useState<Definition>()
     const isShowMode = window.location.pathname.endsWith("/Show")
@@ -104,7 +105,7 @@ export default function (props: FormProps) {
                     {footer && (
                         <Control
                             def={footer}
-                            globalEd={!isShowMode}
+                            globalEd={!isShowMode && !globalReadonly}
                             texts={session.def!.texts}
                             vhs={session.vhs}
                             asTableCell={false}
@@ -127,7 +128,7 @@ export default function (props: FormProps) {
                 {root && (
                     <Control
                         def={root}
-                        globalEd={!isShowMode}
+                        globalEd={!isShowMode && !globalReadonly}
                         texts={session.def!.texts}
                         vhs={session.vhs}
                         asTableCell={false}

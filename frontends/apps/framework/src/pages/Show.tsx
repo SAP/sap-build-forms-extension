@@ -6,6 +6,7 @@ import { useMessages } from "commons"
 import { useAppDispatch, useAppSelector } from "../features/store"
 import { createSession, SessionResponse } from "../features/sessions/sessionActions"
 import Form from "../components/layout/FormPage"
+import { resetFlag } from "../features/sessions/sessionSlice"
 
 /**
  *
@@ -18,9 +19,10 @@ export default function () {
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const session = useAppSelector((state) => state.session)
+    const shouldReset = useAppSelector((state) => state.session.shouldReset)
     const [response, setResponse] = useState<SessionResponse>()
 
-    useEffect(() => {
+    const doCreateSession = () => {
         dispatch(createSession({ messages, formsId, state })).then((action: any) => {
             // console.log(action)
             if (action.meta.requestStatus === "fulfilled") {
@@ -28,7 +30,19 @@ export default function () {
                 setResponse(action.payload.data)
             }
         })
-    }, [])
+    }
+
+    useEffect(() => {
+            doCreateSession()
+        }, [])
+    
+        useEffect(() => {
+            if (shouldReset) {
+                dispatch(resetFlag())
+                doCreateSession()
+            }
+        }, [shouldReset])
+    
 
     useEffect(() => {
         document.title = session.pageTitle

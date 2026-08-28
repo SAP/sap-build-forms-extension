@@ -21,6 +21,8 @@ export interface SessionState {
     vhs: Record<string, number>
     dvhs: Record<string, Record<string, string>>
     ignore: boolean
+    globalReadonly: boolean
+    shouldReset: boolean
 }
 
 /**
