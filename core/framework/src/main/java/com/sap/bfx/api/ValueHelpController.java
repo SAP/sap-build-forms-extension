@@ -7,6 +7,7 @@ import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.exception.FormsCoreException;
 import com.sap.bfx.security.SecurityService;
+import com.sap.bfx.security.SecurityUtils;
 import com.sap.bfx.valuehelp.ValueHelpService;
 import com.sap.bfx.valuehelp.model.ValueHelpType;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -74,7 +75,11 @@ public class ValueHelpController {
         if (StringUtils.isBlank(locale)) {
             throw new BadRequestException("Illegal or missing locale");
         }
-        securityService.ensureAuthorized(token, EventType.FindValueHelpAuth, Boolean.FALSE, null, (String) null);
+
+        final var securitySession = SecurityUtils.getSecuritySession();
+
+        securityService.ensureAuthorized(null, securitySession.getUser(), EventType.FindValueHelpAuth, false, null,
+                (String) null);
 
         final var response = valueHelpService.findValues(id, new Locale(locale));
         final var values = new HashMap<String, String>();

@@ -2,8 +2,8 @@ package com.sap.bfx.callback;
 
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.p13n.Settings;
+import com.sap.bfx.security.User;
 import com.sap.bfx.session.ElementPos;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 import java.util.Locale;
 import java.util.Set;
@@ -155,7 +155,15 @@ public interface Context<AC extends AccessClass> {
      *
      * @return access token used for authentication and authorization
      */
-    AbstractAuthenticationToken getToken();
+    Object getAuthentication();
+
+    /**
+     * Returns the user associated with the current context. The user object contains information about the
+     * authenticated user, including their username, roles, and other relevant details.
+     *
+     * @return user object representing the authenticated user
+     */
+    User getUser();
 
     /**
      * Returns the source element position. The source element position indicates the position of the element that

@@ -1,7 +1,8 @@
 package com.sap.bfx.config;
 
 import com.sap.bfx.security.SecuritySession;
-import com.sap.bfx.security.oidc.RedisRequestCache;
+import com.sap.bfx.security.SecuritySessionRedisSerializer;
+import com.sap.bfx.security.ias.RedisRequestCache;
 import com.sap.bfx.utils.JsonRedisSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -59,7 +60,7 @@ public class SecurityRepositoriesConfig {
             RedisTemplate<String, SecuritySession> template = new RedisTemplate<>();
             template.setConnectionFactory(jedisConnectionFactory());
             template.setKeySerializer(new StringRedisSerializer());
-            template.setValueSerializer(new JsonRedisSerializer<>(SecuritySession.class));
+            template.setValueSerializer(new SecuritySessionRedisSerializer());
             return template;
         }
         return null;
@@ -99,6 +100,11 @@ public class SecurityRepositoriesConfig {
         return null;
     }
 
+    /**
+     * Configures CORS settings for the application.
+     *
+     * @return a configured UrlBasedCorsConfigurationSource
+     */
     @Bean
     UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

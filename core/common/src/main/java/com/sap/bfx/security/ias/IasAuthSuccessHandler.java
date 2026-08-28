@@ -1,6 +1,7 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.Constants;
+import com.sap.bfx.security.SecuritySessionFactory;
 import com.sap.bfx.utils.AbstractCookieHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,20 +22,27 @@ import java.time.Instant;
  * user to their original destination after login.
  */
 @Component
-class OidcAuthSuccessHandler extends AbstractCookieHandler implements AuthenticationSuccessHandler {
+class IasAuthSuccessHandler extends AbstractCookieHandler implements AuthenticationSuccessHandler {
 
     private final RedisRequestCache requestCache;
     private final SecuritySessionService securitySessionService;
+    private final SecuritySessionFactory securitySessionFactory;
 
     /**
-     * Constructor for IasAuthSuccessHandler.
+     * Constructs a new IasAuthSuccessHandler with the provided RedisRequestCache, SecuritySessionService, and
+     * SecuritySessionFactory.
      *
-     * @param requestCache the CookieRequestCache to retrieve saved requests
+     * @param requestCache           the RedisRequestCache for storing and retrieving original request URLs
+     * @param securitySessionService the SecuritySessionService for managing security sessions
+     * @param securitySessionFactory the SecuritySessionFactory for creating SecuritySession objects from JWT tokens
      */
     @Autowired
-    public OidcAuthSuccessHandler(RedisRequestCache requestCache, SecuritySessionService securitySessionService) {
+    public IasAuthSuccessHandler(final RedisRequestCache requestCache,
+                                 final SecuritySessionService securitySessionService,
+                                 final SecuritySessionFactory securitySessionFactory) {
         this.requestCache = requestCache;
         this.securitySessionService = securitySessionService;
+        this.securitySessionFactory = securitySessionFactory;
     }
 
     @Override
@@ -49,7 +57,7 @@ class OidcAuthSuccessHandler extends AbstractCookieHandler implements Authentica
         }
 
         if (jwtToken != null) {
-            final var session = securitySessionService.createSession(jwtToken);
+            final var session = securitySessionFactory.create(jwtToken);
             securitySessionService.saveSession(session);
             // now store the id in a cookie for subsequent requests
             final var timeout = Duration.between(Instant.now(), session.getToken().getExpiresAt());

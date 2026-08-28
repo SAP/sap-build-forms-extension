@@ -1,4 +1,4 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.Constants;
 import com.sap.bfx.utils.AbstractCookieHandler;

@@ -1,18 +1,12 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
-import com.sap.bfx.config.OidcConnectionConfig;
+import com.sap.bfx.config.IasConnectionConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
-import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
@@ -28,9 +22,9 @@ import java.util.List;
  */
 @Configuration
 @Slf4j
-public class JwtOidcConfig {
+public class JwtConfig {
 
-    private final OidcConnectionConfig idpConfig;
+    private final IasConnectionConfig idpConfig;
 
     /**
      * Constructs a JwtConfig with the provided OIDC configuration.
@@ -38,7 +32,7 @@ public class JwtOidcConfig {
      * @param idpConfig the OIDC configuration containing issuer URI and client ID
      */
     @Autowired
-    public JwtOidcConfig(OidcConnectionConfig idpConfig) {
+    public JwtConfig(IasConnectionConfig idpConfig) {
         log.debug("Setting IDP to '{}'", idpConfig);
         this.idpConfig = idpConfig;
     }
@@ -52,15 +46,15 @@ public class JwtOidcConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         // Build decoder using OIDC Discovery (fetches JWKS URI automatically)
-        final var decoder = NimbusJwtDecoder.withIssuerLocation(idpConfig.getIssuerUri()).build();
+        final var decoder = NimbusJwtDecoder.withIssuerLocation(idpConfig.getUrl()).build();
 
         // ── Audience validator: token must target this application ──────────
         OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(JwtClaimNames.AUD,
-                aud -> aud != null && aud.contains(idpConfig.getClientId()));
+                aud -> aud != null && aud.contains(idpConfig.getOidcClientId()));
 
         // ── Combine standard validators with audience validator ─────────────
         OAuth2TokenValidator<Jwt> combinedValidator =
-                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(idpConfig.getIssuerUri()),
+                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(idpConfig.getUrl()),
                         audienceValidator);
 
         decoder.setJwtValidator(combinedValidator);
@@ -96,45 +90,5 @@ public class JwtOidcConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(groupsConverter);
         return converter;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Registration of IDP (e.g. IAS instance)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Creates a client-registration with name "ias" that should point to an IAS for authentication and
-     * authorization.
-     *
-     * @return ClientRegistration instance
-     */
-    @Bean
-    public ClientRegistration iasClientRegistration() {
-        final var result = ClientRegistration.withRegistrationId("ias").clientId(idpConfig.getClientId())
-                                             .clientSecret(idpConfig.getClientSecret())
-                                             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                                             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                                             .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                                             .scope("openid", "profile", "email")
-                                             .authorizationUri(idpConfig.getIssuerUri() + "/oauth2/authorize")
-                                             .tokenUri(idpConfig.getIssuerUri() + "/oauth2/token")
-                                             .userInfoUri(idpConfig.getIssuerUri() + "/oauth2/userinfo")
-                                             .userNameAttributeName(IdTokenClaimNames.SUB)
-                                             .issuerUri(idpConfig.getIssuerUri())
-                                             .jwkSetUri(idpConfig.getIssuerUri() + "/oauth2/certs").clientName("ias")
-                                             .build();
-
-        log.debug("IAS Client Registration: '{}' with Issuer-Uri: '{}'", result, idpConfig.getIssuerUri());
-        return result;
-    }
-
-    /**
-     * Creates an in-memory ClientRegistrationRepository that holds the IAS client registration.
-     *
-     * @return ClientRegistrationRepository instance
-     */
-    @Bean
-    public ClientRegistrationRepository clientRegistrationRepository() {
-        return new InMemoryClientRegistrationRepository(iasClientRegistration());
     }
 }

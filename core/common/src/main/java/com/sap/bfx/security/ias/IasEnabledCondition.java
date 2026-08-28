@@ -1,4 +1,4 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import jakarta.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
@@ -12,15 +12,15 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * a OIDC based security, otherwise it should not be enabled
  */
 @Slf4j
-public class OidcEnabledCondition implements Condition {
+public class IasEnabledCondition implements Condition {
     @Override
     public boolean matches(@Nonnull ConditionContext context, @Nonnull AnnotatedTypeMetadata metadata) {
-        final var issuerUrl = context.getEnvironment().getProperty("forms.security.oidc.issuerUri");
-        final var clientId = context.getEnvironment().getProperty("forms.security.oidc.clientId");
-        final var clientSecret = context.getEnvironment().getProperty("forms.security.oidc.clientSecret");
+        final var issuerUrl = context.getEnvironment().getProperty("forms.security.ias.url");
+        final var oidcClientId = context.getEnvironment().getProperty("forms.security.ias.oidc.clientId");
+        final var oidcClientSecret = context.getEnvironment().getProperty("forms.security.ias.oidc.clientSecret");
 
-        final var match = StringUtils.isNotBlank(issuerUrl) && StringUtils.isNotBlank(clientId) &&
-                StringUtils.isNotBlank(clientSecret);
+        final var match = StringUtils.isNotBlank(issuerUrl) && StringUtils.isNotBlank(oidcClientId) &&
+                StringUtils.isNotBlank(oidcClientSecret);
 
         if (match) {
             log.info("OidcEnabledCondition match");

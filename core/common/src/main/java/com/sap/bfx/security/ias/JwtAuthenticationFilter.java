@@ -1,4 +1,4 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.Constants;
 import com.sap.bfx.utils.AbstractCookieHandler;
@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 
 /**
  * A filter that intercepts incoming HTTP requests to extract and validate JWT tokens from cookies.
@@ -39,12 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (session != null && session.getToken() != null) {
                     // Reconstruct the Spring Security Authentication context for this request thread
                     SecurityContextHolder.getContext().setAuthentication(
-                            new UsernamePasswordAuthenticationToken(session.getToken(), session,
-                                    Collections.emptyList()));
+                            new UsernamePasswordAuthenticationToken(session.getUser(), session,
+                                    session.getUser().getAuthorities()));
                 }
             } catch (Exception e) {
                 // Handle token decoding/validation errors if necessary
-                log.error("Failed to decode JWT token: {}", e.getMessage());
+                log.error("Failed to decode JWT token", e);
             }
         }
 

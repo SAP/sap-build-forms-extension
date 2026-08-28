@@ -7,6 +7,7 @@ import com.sap.bfx.definition.EventType;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.NotFoundException;
 import com.sap.bfx.security.SecurityService;
+import com.sap.bfx.security.SecurityUtils;
 import com.sap.bfx.session.AttachmentService;
 import com.sap.bfx.session.SessionService;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -30,6 +31,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * Controller for handling attachment-related operations.
+ */
 @RestController
 @RequestMapping("api/v1/attachments")
 @Slf4j
@@ -45,19 +49,27 @@ public class AttachmentController {
 
     private final CallbackService callbackService;
     private final SessionService sessionService;
-    private final ControllerUtils utils;
     private final AttachmentService attachmentService;
     private final TaskExecutor taskExecutor;
     private final ContextFactory contextFactory;
     private final SecurityService securityService;
 
+    /**
+     * Constructor for AttachmentController.
+     *
+     * @param callbackService   the callback service
+     * @param sessionService    the session service
+     * @param attachmentService the attachment service
+     * @param taskExecutor      the task executor
+     * @param contextFactory    the context factory
+     * @param securityService   the security service
+     */
     @Autowired
     public AttachmentController(final CallbackService callbackService, final SessionService sessionService,
-                                final ControllerUtils utils, final AttachmentService attachmentService,
-                                final TaskExecutor taskExecutor, final ContextFactory contextFactory, final SecurityService securityService) {
+                                final AttachmentService attachmentService, final TaskExecutor taskExecutor,
+                                final ContextFactory contextFactory, final SecurityService securityService) {
         this.callbackService = callbackService;
         this.sessionService = sessionService;
-        this.utils = utils;
         this.attachmentService = attachmentService;
         this.taskExecutor = taskExecutor;
         this.contextFactory = contextFactory;
@@ -65,16 +77,18 @@ public class AttachmentController {
     }
 
     /**
-     * @param file
-     * @param request
-     * @return
-     * @throws Exception
+     * Handles the upload of an attachment.
+     *
+     * @param file    the file to be uploaded
+     * @param request the HTTP servlet request
+     * @param token   the authentication token
+     * @return a ResponseEntity containing the session result
+     * @throws Exception if an error occurs during the upload process
      */
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<byte[]> upload(@RequestParam(PARAM_FILE) MultipartFile file, HttpServletRequest request,
-                                         AbstractAuthenticationToken token)
-            throws Exception {
+                                         AbstractAuthenticationToken token) throws Exception {
 
         log.debug("AttachmentController.upload called.");
 
@@ -82,8 +96,8 @@ public class AttachmentController {
         final var sessionId = request.getParameter(PARAM_SESSION_ID);
         final var rowId = request.getParameter(PARAM_ROW);
         final var key = request.getParameter(PARAM_KEY);
-        final var category = utils.getUTF8Param(request, PARAM_CATEGORY, charset);
-        final var description = utils.getUTF8Param(request, PARAM_DESCRIPTION, charset);
+        final var category = ControllerUtils.getUTF8Param(request, PARAM_CATEGORY, charset);
+        final var description = ControllerUtils.getUTF8Param(request, PARAM_DESCRIPTION, charset);
 
         if (StringUtils.isBlank(sessionId)) {
             throw new BadRequestException("missing session-id");
@@ -97,19 +111,26 @@ public class AttachmentController {
         if (file == null) {
             throw new BadRequestException("missing file");
         }
-        securityService.ensureAuthorized(token, EventType.UploadAttachmentAuth, Boolean.FALSE, rowId, key);
 
-        var context = contextFactory.createContext(token, null, null, null, null, rowId, key, null);
+        // Get the security session from the Spring Security context. This contains information about the authenticated
+        // user and their roles/permissions.
+        final var securitySession = SecurityUtils.getSecuritySession();
+
+        // load session from store and ensure it exists. If it does not exist, throw a Not.
+        final var session = sessionService.findById(sessionId);
+        if (session == null) {
+            return new ResponseEntity<>(HttpStatus.REQUEST_TIMEOUT);
+        }
+
+        // Ensure the user is authorized to upload the attachment. If not, throw an Unauthorized exception.
+        securityService.ensureAuthorized(session.getForm().getSd().getName(), securitySession.getUser(),
+                EventType.UploadAttachmentAuth, false, rowId, key);
+
+        var context = contextFactory.createContext(securitySession, session.getForm().getSd(), session,
+                session.getDisplayState(), session.getLocale(), rowId, key, null);
         var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
 
-        // load session from store
-        final var session = sessionService.findById(sessionId);
-
         // TODO(ML) Read and apply Journal if we add some lifecycle/event callbacks here
-
-        // Creating "real" context
-        context = contextFactory.createContext(token, session.getForm().getSd(), session, context.getDisplayState(),
-                context.getLocale(), rowId, key, null);
 
         attachmentService.addAttachment(session.getForm(), rowId, key, context, file, category, description);
 
@@ -124,29 +145,28 @@ public class AttachmentController {
         });
 
         final var response = new SessionResponse(session.getId(), result, session.getForm(), session.getJournal());
-        var jsonResponse = utils.createSessionResult(response);
+        var jsonResponse = ControllerUtils.createSessionResult(response);
 
         // wait until session is stored...
         wg.await();
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.noCache())
-                .body(jsonResponse.toByteArray());
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).cacheControl(CacheControl.noCache())
+                             .body(jsonResponse.toByteArray());
     }
 
     /**
-     * @param sessionId
-     * @param key
-     * @param id
-     * @param response
-     * @throws Exception
+     * Handles the download of an attachment.
+     *
+     * @param sessionId the session ID
+     * @param key       the key associated with the attachment
+     * @param id        the ID of the attachment
+     * @param response  the HTTP servlet response
+     * @param token     the authentication token
+     * @throws Exception if an error occurs during the download process
      */
     @GetMapping(value = "{sessionId}/{key}/{id}")
-    public void download(@PathVariable("sessionId") final String sessionId,
-                         @PathVariable("key") final String key,
-                         @PathVariable("id") final String id,
-                         HttpServletResponse response,
+    public void download(@PathVariable("sessionId") final String sessionId, @PathVariable("key") final String key,
+                         @PathVariable("id") final String id, HttpServletResponse response,
                          AbstractAuthenticationToken token) throws Exception {
 
         if (StringUtils.isBlank(sessionId)) {
@@ -158,17 +178,25 @@ public class AttachmentController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("missing id");
         }
-        securityService.ensureAuthorized(token, EventType.DownloadAttachmentAuth, Boolean.FALSE, null, (String) null);
 
-        var context = contextFactory.createContext(token, null, null, null, null, null, null, null);
-        var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
+        // Get the security session from the Spring Security context. This contains information about the authenticated
+        // user and their roles/permissions.
+        final var securitySession = SecurityUtils.getSecuritySession();
 
-        // load session from store
+        // load session from store and ensure it exists. If it does not exist, throw a Not.
         final var session = sessionService.findById(sessionId);
+        if (session == null) {
+            response.setStatus(HttpStatus.REQUEST_TIMEOUT.value());
+            return;
+        }
 
-        // Creating "real" context
-        context = contextFactory.createContext(token, session.getForm().getSd(), session, context.getDisplayState(),
-                context.getLocale(), null, null, null);
+        // check if the user is authorized to download the attachment. If not, throw an Unauthorized exception.
+        securityService.ensureAuthorized(session.getForm().getSd().getName(), securitySession.getUser(),
+                EventType.DownloadAttachmentAuth, false, null, (String) null);
+
+        var context = contextFactory.createContext(securitySession, session.getForm().getSd(), session,
+                session.getDisplayState(), session.getLocale(), null, null, null);
+        var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
 
         final var opt = attachmentService.load(session.getForm(), key, id, context);
         if (opt.isEmpty()) {
@@ -181,12 +209,12 @@ public class AttachmentController {
         final var attachment = opt.get().getLeft();
 
         response.setStatus(HttpStatus.OK.value());
-        response.setContentType(StringUtils.isBlank(attachment.getContentType())
-                ? MediaType.APPLICATION_OCTET_STREAM_VALUE
-                : attachment.getContentType());
+        response.setContentType(
+                StringUtils.isBlank(attachment.getContentType()) ? MediaType.APPLICATION_OCTET_STREAM_VALUE :
+                        attachment.getContentType());
         response.setContentLength(Math.toIntExact(attachment.getSize()));
-        response.setHeader("Content-disposition", "attachment; filename=" +
-                URLEncoder.encode(attachment.getFileName(), StandardCharsets.ISO_8859_1));
+        response.setHeader("Content-disposition",
+                "attachment; filename=" + URLEncoder.encode(attachment.getFileName(), StandardCharsets.ISO_8859_1));
         response.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         try {
@@ -199,18 +227,21 @@ public class AttachmentController {
     }
 
     /**
-     * @param sessionId
-     * @param rowId
-     * @param key
-     * @param id
-     * @throws Exception
+     * Handles the deletion of an attachment.
+     *
+     * @param sessionId the session ID
+     * @param rowId     the row ID associated with the attachment
+     * @param key       the key associated with the attachment
+     * @param id        the ID of the attachment
+     * @param token     the authentication token
+     * @return a ResponseEntity containing the session result
+     * @throws Exception if an error occurs during the deletion process
      */
     @DeleteMapping(value = "{sessionId}/{rowId}/{key}/{id}")
     @ResponseBody
     public ResponseEntity<byte[]> delete(@PathVariable("sessionId") final String sessionId,
                                          @PathVariable("rowId") final String rowId,
-                                         @PathVariable("key") final String key,
-                                         @PathVariable("id") final String id,
+                                         @PathVariable("key") final String key, @PathVariable("id") final String id,
                                          AbstractAuthenticationToken token) throws Exception {
 
         if (StringUtils.isBlank(sessionId)) {
@@ -225,17 +256,23 @@ public class AttachmentController {
         if (StringUtils.isBlank(id)) {
             throw new BadRequestException("missing id");
         }
-        securityService.ensureAuthorized(token, EventType.DeleteAttachmentAuth, Boolean.FALSE, rowId, key);
 
-        var context = contextFactory.createContext(token, null, null, null, null, rowId, key, null);
-        var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
+        // Get the security session from the Spring Security context. This contains information about the authenticated
+        // user and their roles/permissions.
+        final var securitySession = SecurityUtils.getSecuritySession();
 
-        // load session from store
+        // load session from store and ensure it exists. If it does not exist, throw a Not.
         final var session = sessionService.findById(sessionId);
+        if (session == null) {
+            return new ResponseEntity<>(HttpStatus.REQUEST_TIMEOUT);
+        }
 
-        // Creating "real" context
-        context = contextFactory.createContext(token, session.getForm().getSd(), session, context.getDisplayState(),
-                context.getLocale(), rowId, key, null);
+        securityService.ensureAuthorized(session.getForm().getSd().getName(), securitySession.getUser(),
+                EventType.DeleteAttachmentAuth, false, rowId, key);
+
+        var context = contextFactory.createContext(securitySession, session.getForm().getSd(), session,
+                session.getDisplayState(), session.getLocale(), rowId, key, null);
+        var result = callbackService.callLifecycleHook(LifecycleHookType.StartRoundtrip, context, null);
 
         if (!attachmentService.deleteAttachment(session.getForm(), rowId, key, id, context)) {
             throw new NotFoundException("cannot find attachment with id ''" + id + "'");
@@ -252,14 +289,12 @@ public class AttachmentController {
         });
 
         final var response = new SessionResponse(session.getId(), result, session.getForm(), session.getJournal());
-        var jsonResponse = utils.createSessionResult(response);
+        var jsonResponse = ControllerUtils.createSessionResult(response);
 
         // wait until session is stored...
         wg.await();
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .cacheControl(CacheControl.noCache())
-                .body(jsonResponse.toByteArray());
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).cacheControl(CacheControl.noCache())
+                             .body(jsonResponse.toByteArray());
     }
 }

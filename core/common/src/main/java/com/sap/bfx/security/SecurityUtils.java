@@ -2,6 +2,7 @@ package com.sap.bfx.security;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.security.Principal;
@@ -10,6 +11,8 @@ import java.security.Principal;
  * Utility class for security-related operations.
  */
 public final class SecurityUtils {
+
+    public static final String SLASH = "/";
 
     /**
      * Private constructor to prevent instantiation.
@@ -53,5 +56,27 @@ public final class SecurityUtils {
         }
 
         return null;
+    }
+
+    /**
+     * Simplifies a principal name by extracting the substring after the last slash.
+     *
+     * @param principalName the principal name to simplify
+     * @return the simplified principal name
+     */
+    public static String getSimplifiedPrincipalName(final String principalName) {
+        if (!principalName.contains(SLASH)) {
+            return principalName;
+        }
+        return principalName.substring(principalName.lastIndexOf(SLASH) + 1);
+    }
+
+    /**
+     * Retrieves the SecuritySession from the current security context.
+     *
+     * @return the SecuritySession
+     */
+    public static SecuritySession getSecuritySession() {
+        return (SecuritySession) SecurityContextHolder.getContext().getAuthentication().getCredentials();
     }
 }

@@ -1,7 +1,6 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.SecuritySession;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 
 /**
  * Repository class for managing SecuritySession objects in Redis.
@@ -75,19 +73,6 @@ public class SecuritySessionService {
         if (session != null) {
             session.decodeToken(jwtDecoder);
         }
-        return session;
-    }
-
-    /**
-     * Creates a new SecuritySession with a unique ID and the provided JWT token.
-     *
-     * @param tokenValue the JWT token value to associate with the new session
-     * @return a new SecuritySession instance
-     */
-    public SecuritySession createSession(String tokenValue) {
-        final var session =
-                new SecuritySession(StringUtils.remove(UUID.randomUUID().toString(), '-'), tokenValue, null);
-        session.decodeToken(jwtDecoder);
         return session;
     }
 }

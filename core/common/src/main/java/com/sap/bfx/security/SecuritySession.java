@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.jwt.JwtException;
 @AllArgsConstructor
 public class SecuritySession {
     private String id;
+    private User user;
     private String tokenValue;
     @JsonIgnore
     private Jwt token;

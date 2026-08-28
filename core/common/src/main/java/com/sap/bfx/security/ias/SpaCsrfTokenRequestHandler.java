@@ -1,4 +1,4 @@
-package com.sap.bfx.security.oidc;
+package com.sap.bfx.security.ias;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
