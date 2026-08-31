@@ -2,12 +2,14 @@ package com.sap.bfx.config;
 
 import com.sap.bfx.security.SecuritySession;
 import com.sap.bfx.security.SecuritySessionRedisSerializer;
-import com.sap.bfx.security.ias.RedisRequestCache;
+import com.sap.bfx.security.session.RedisRequestCache;
+import com.sap.bfx.security.session.SecuritySessionEnabled;
 import com.sap.bfx.utils.JsonRedisSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
@@ -39,6 +41,7 @@ public class SecurityRepositoriesConfig {
      * @return a configured RedisConnectionFactory
      */
     @Bean("security-session-redis-factory")
+    @Conditional(SecuritySessionEnabled.class)
     public RedisConnectionFactory jedisConnectionFactory() {
         RedisStandaloneConfiguration redisConfiguration = new RedisStandaloneConfiguration(redisHost, redisPort);
         redisConfiguration.setPassword(redisPassword);
@@ -63,6 +66,7 @@ public class SecurityRepositoriesConfig {
             template.setValueSerializer(new SecuritySessionRedisSerializer());
             return template;
         }
+
         return null;
     }
 

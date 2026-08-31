@@ -1,4 +1,4 @@
-package com.sap.bfx.security.ias;
+package com.sap.bfx.security.session;
 
 import com.sap.bfx.security.Constants;
 import com.sap.bfx.utils.AbstractCookieHandler;
@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -20,6 +21,7 @@ import java.util.UUID;
  * interface to manage OAuth2AuthorizationRequest objects.
  */
 @Component
+@Conditional(SecuritySessionEnabled.class)
 public class RedisAuthorizationRequestRepository extends AbstractCookieHandler
         implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 

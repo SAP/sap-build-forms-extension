@@ -1,6 +1,9 @@
 package com.sap.bfx.security.ias;
 
 import com.sap.bfx.config.IasConnectionConfig;
+import com.sap.bfx.security.session.RedisAuthorizationRequestRepository;
+import com.sap.bfx.security.session.RedisRequestCache;
+import com.sap.bfx.security.session.SecuritySessionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

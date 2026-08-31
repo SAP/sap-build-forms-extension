@@ -144,7 +144,7 @@ public class SessionController {
                 throw new NotFoundException("No destination name available to read workflow task!");
             }
             if (!workflowService.isTaskExecutable(principalPropagationDestinationName, session.getTaskInstanceId(),
-                    SecurityUtils.getSimplifiedPrincipalName(securitySession.getUser().getId()), false)) {
+                    SecurityUtils.getSimplifiedPrincipalName(securitySession.getUser().getUserName()), false)) {
                 throw new NotFoundException("Task " + session.getTaskInstanceId() + " is no longer executable");
             }
         } else {

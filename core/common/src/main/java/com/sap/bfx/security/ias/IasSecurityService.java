@@ -35,7 +35,7 @@ public class IasSecurityService implements SecurityService {
             case StartProcessAuth, TaskExecutionAuth, ShowContextAuth, DownloadAttachmentAuth, FindValueHelpAuth,
                  UploadAttachmentAuth, DeleteAttachmentAuth, GetScenarioControllerAuth, PostScenarioControllerAuth ->
                     ensureAuthorized(appName, user, type, disableEnrichFormsGroups, null);
-            default -> throw new NotAuthorizedException(type.getIdentifier(), user.getId());
+            default -> throw new NotAuthorizedException(type.getIdentifier(), user.getUserName());
         }
     }
 
@@ -51,7 +51,7 @@ public class IasSecurityService implements SecurityService {
             scannableGroups.addAll(enrichFormsGroupsByType(type));
         }
         if (scannableGroups.isEmpty()) {
-            throw new NotAuthorizedException(type.getIdentifier(), user.getId());
+            throw new NotAuthorizedException(type.getIdentifier(), user.getUserName());
         }
         ensureAnyAuthorized(appName, user, scannableGroups);
     }
@@ -68,7 +68,7 @@ public class IasSecurityService implements SecurityService {
             scannableGroups.addAll(enrichFormsGroupsByType(type));
         }
         if (scannableGroups.isEmpty()) {
-            throw new NotAuthorizedException(type.getIdentifier(), user.getId());
+            throw new NotAuthorizedException(type.getIdentifier(), user.getUserName());
         }
         ensureAnyAuthorized(appName, user, scannableGroups);
     }
@@ -126,7 +126,7 @@ public class IasSecurityService implements SecurityService {
                                        @NonNull final Collection<GrantedAuthority> authorities)
             throws NotAuthorizedException {
         if (authorities.stream().noneMatch(authority -> isAuthorized(appName, user, authority))) {
-            throw new NotAuthorizedException(authorities, user.getId());
+            throw new NotAuthorizedException(authorities, user.getUserName());
         }
     }
 
@@ -144,7 +144,7 @@ public class IasSecurityService implements SecurityService {
             return false;
         }
 
-        log.debug("User {} has authorities '{}'", user.getId(), user.getAuthorities());
+        log.debug("User {} has authorities '{}'", user.getUserName(), user.getAuthorities());
 
         var authorized = false;
         if (user.getAuthorities() != null) {

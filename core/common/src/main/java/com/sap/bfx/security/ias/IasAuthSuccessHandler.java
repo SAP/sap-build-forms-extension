@@ -2,11 +2,14 @@ package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.Constants;
 import com.sap.bfx.security.SecuritySessionFactory;
+import com.sap.bfx.security.session.RedisRequestCache;
+import com.sap.bfx.security.session.SecuritySessionService;
 import com.sap.bfx.utils.AbstractCookieHandler;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -22,6 +25,7 @@ import java.time.Instant;
  * user to their original destination after login.
  */
 @Component
+@Conditional(IasEnabledCondition.class)
 class IasAuthSuccessHandler extends AbstractCookieHandler implements AuthenticationSuccessHandler {
 
     private final RedisRequestCache requestCache;

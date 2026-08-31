@@ -1,6 +1,8 @@
-package com.sap.bfx.security.ias;
+package com.sap.bfx.security.session;
 
+import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.security.Constants;
+import com.sap.bfx.security.ias.IasEnabledCondition;
 import com.sap.bfx.utils.AbstractCookieHandler;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,9 +10,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.web.savedrequest.DefaultSavedRequest;
 import org.springframework.security.web.savedrequest.RequestCache;
@@ -24,20 +28,32 @@ import java.util.*;
  * This class extends AbstractCookieHandler to handle cookie operations and implements the RequestCache
  * interface to manage SavedRequest objects.
  */
+@Conditional(IasEnabledCondition.class)
 @Component
+@Slf4j
 public class RedisRequestCache extends AbstractCookieHandler implements RequestCache {
 
-    private final RedisTemplate<String, SimpleSavedRequest> redis;
+    private RedisTemplate<String, SimpleSavedRequest> redis;
 
     /**
      * Constructs a RedisRequestCache with the provided RedisTemplate.
      *
-     * @param redis the RedisTemplate used for storing and retrieving SimpleSavedRequest objects
+     * @param appCtx the application context used to retrieve the RedisTemplate bean
      */
     @Autowired
-    public RedisRequestCache(
-            @Qualifier("request-cache-redis-template") RedisTemplate<String, SimpleSavedRequest> redis) {
-        this.redis = redis;
+    public RedisRequestCache(ApplicationContext appCtx) {
+        try {
+            this.redis = appCtx.getBean("request-cache-redis-template", RedisTemplate.class);
+        } catch (Exception ignored) {
+        }
+
+        if (this.redis == null) {
+            // redis is necessary for IAS authentication, so we check with the condition if this is enabled
+            if (IasEnabledCondition.matches(appCtx.getEnvironment())) {
+                throw ExceptionUtils.from(
+                        "no redis template for request cache found, but IAS is enabled. Please check your configuration.");
+            }
+        }
     }
 
     @Override

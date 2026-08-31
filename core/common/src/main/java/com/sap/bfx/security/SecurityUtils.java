@@ -77,6 +77,12 @@ public final class SecurityUtils {
      * @return the SecuritySession
      */
     public static SecuritySession getSecuritySession() {
-        return (SecuritySession) SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        final var credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        if (credentials instanceof SecuritySession securitySession) {
+            return securitySession;
+        }
+        // we don't have a real security session, but we still want to return a valid object, so we create a
+        // new one with a dummy user name
+        return SecuritySession.createDummy();
     }
 }

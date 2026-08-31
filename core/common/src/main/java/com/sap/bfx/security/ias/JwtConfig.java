@@ -1,7 +1,9 @@
 package com.sap.bfx.security.ias;
 
 import com.sap.bfx.config.IasConnectionConfig;
+import com.sap.bfx.exception.ExceptionUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +13,8 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 
 /**
@@ -45,6 +49,15 @@ public class JwtConfig {
      */
     @Bean
     public JwtDecoder jwtDecoder() {
+        if (StringUtils.isBlank(idpConfig.getUrl())) {
+            try {
+                RSAPublicKey key = (RSAPublicKey) KeyPairGenerator.getInstance("RSA").generateKeyPair().getPublic();
+                return NimbusJwtDecoder.withPublicKey(key).build();
+            } catch (Exception e) {
+                throw ExceptionUtils.from(e);
+            }
+        }
+
         // Build decoder using OIDC Discovery (fetches JWKS URI automatically)
         final var decoder = NimbusJwtDecoder.withIssuerLocation(idpConfig.getUrl()).build();
 

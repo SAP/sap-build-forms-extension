@@ -1,6 +1,7 @@
 package com.sap.bfx.security.ias;
 
 import com.sap.bfx.security.Constants;
+import com.sap.bfx.security.session.SecuritySessionService;
 import com.sap.bfx.utils.AbstractCookieHandler;
 import com.sap.bfx.utils.SpringUtils;
 import jakarta.annotation.Nonnull;

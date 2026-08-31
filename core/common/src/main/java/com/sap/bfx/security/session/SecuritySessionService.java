@@ -1,8 +1,10 @@
-package com.sap.bfx.security.ias;
+package com.sap.bfx.security.session;
 
+import com.sap.bfx.exception.ExceptionUtils;
 import com.sap.bfx.security.SecuritySession;
+import com.sap.bfx.security.ias.IasEnabledCondition;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -17,21 +19,38 @@ import java.time.Instant;
 @Service
 public class SecuritySessionService {
 
-    private final RedisTemplate<String, SecuritySession> redis;
-    private final JwtDecoder jwtDecoder;
+    private JwtDecoder jwtDecoder;
+    private RedisTemplate<String, SecuritySession> redis;
 
     /**
      * Constructs a new SecuritySessionRepository with the provided RedisTemplate and JwtDecoder.
      *
-     * @param redis      the RedisTemplate for interacting with Redis
-     * @param jwtDecoder the JwtDecoder for decoding JWT tokens
+     * @param appCtx the application context used to retrieve the RedisTemplate bean
      */
     @Autowired
-    public SecuritySessionService(
-            @Qualifier("security-session-redis-template") RedisTemplate<String, SecuritySession> redis,
-            JwtDecoder jwtDecoder) {
-        this.redis = redis;
-        this.jwtDecoder = jwtDecoder;
+    public SecuritySessionService(ApplicationContext appCtx) {
+        try {
+            this.jwtDecoder = appCtx.getBean(JwtDecoder.class);
+        } catch (Exception ignored) {
+        }
+        if (this.jwtDecoder == null) {
+            // jwtDecoder is necessary for IAS authentication, so we check with the condition if this is enabled
+            if (IasEnabledCondition.matches(appCtx.getEnvironment())) {
+                throw ExceptionUtils.from("no jwt decoder found, but IAS is enabled. Please check your configuration.");
+            }
+        }
+
+        try {
+            this.redis = appCtx.getBean("security-session-redis-template", RedisTemplate.class);
+        } catch (Exception ignored) {
+        }
+        if (this.redis == null) {
+            // redis is necessary for IAS authentication, so we check with the condition if this is enabled
+            if (IasEnabledCondition.matches(appCtx.getEnvironment())) {
+                throw ExceptionUtils.from(
+                        "no redis template for request cache found, but IAS is enabled. Please check your configuration.");
+            }
+        }
     }
 
     /**

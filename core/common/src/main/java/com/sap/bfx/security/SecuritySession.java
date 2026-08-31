@@ -13,11 +13,23 @@ import org.springframework.security.oauth2.jwt.JwtException;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SecuritySession {
+
+    public static final String DUMMY_SESSION_ID = "_";
+
     private String id;
     private User user;
     private String tokenValue;
     @JsonIgnore
     private Jwt token;
+
+    /**
+     * Creates a dummy SecuritySession with a predefined dummy session ID.
+     *
+     * @return a new SecuritySession instance representing a dummy session
+     */
+    public static SecuritySession createDummy() {
+        return new SecuritySession(DUMMY_SESSION_ID, null, null, null);
+    }
 
     /**
      * Decodes the JWT token using the provided JwtDecoder if the token is not already decoded.
@@ -29,5 +41,14 @@ public class SecuritySession {
         if (token == null && tokenValue != null) {
             token = jwtDecoder.decode(tokenValue);
         }
+    }
+
+    /**
+     * Checks if the session is a dummy session.
+     *
+     * @return true if the session ID equals the dummy session ID, false otherwise
+     */
+    public boolean isDummy() {
+        return DUMMY_SESSION_ID.equals(id);
     }
 }

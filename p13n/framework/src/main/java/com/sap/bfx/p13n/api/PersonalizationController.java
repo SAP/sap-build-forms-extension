@@ -686,7 +686,7 @@ public class PersonalizationController {
      * @throws NotAuthorizedException if the usernames do not match
      */
     private void checkOnYourOwnUsername(User user, String requestUsername) {
-        String tokenUsername = user.getId();
+        String tokenUsername = user.getUserName();
         if (!requestUsername.matches(tokenUsername)) {
             throw new NotAuthorizedException("personalization", "Not authorized to modify users other than your own",
                     tokenUsername);
