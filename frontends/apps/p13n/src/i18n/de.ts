@@ -41,9 +41,9 @@ export default {
     sh_dialog_select: "Select",
     sh_dialog_cancel: "Cancel",
 
-    p13n_title_user: "Personalisierung - Frontend",
-    p13n_title_admin: "Personalisierung - Admin Frontend",
-    p13n_title_values: "Personalisierung - Wertebereiche",
+    p13n_title_user: "Personalisierung",
+    p13n_title_admin: "Personalisierung Admin",
+    p13n_title_values: "Personalisierung Wertebereiche",
 
     p13n_load_error: "Beim Laden der Daten ist ein Fehler aufgetreten.",
     p13n_load_defaults_error: "Es konnten nicht alle Wertebereiche geladen werden.",

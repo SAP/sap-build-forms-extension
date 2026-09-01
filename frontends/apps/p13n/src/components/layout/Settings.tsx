@@ -39,7 +39,7 @@ interface SettingsProps {
     setPersonalizationsOfUser(personalizations: Personalization[]): void
     setDeletedPersonalizations(personalizations: Personalization[]): void
     setApplication(application: string): void
-    openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string): void
+    openMessageBox(mBoxType: MessageBoxType, mBoxText: JSX.Element, mBoxId: string, onConfirm?: () => void): void
     setDialogAddApplicationOpen(o: boolean): void
     setDialogAddSettingOpen(o: boolean): void
     toListView(): void
@@ -68,7 +68,7 @@ export default function (props: SettingsProps) {
         )
     }
 
-    if (props.values.length > 0 && props.personalizationsOfUser.length > 0) {
+    if (props.userName != null && props.values.length > 0) {
         return (
             <DynamicPage
                 slot="midColumn"
@@ -81,12 +81,10 @@ export default function (props: SettingsProps) {
                                         props.setApplication(e.detail.selectedOption.id)
 
                                         const p = backendDispatch(
-                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${
-                                                props.userName
-                                            }${
-                                                e.detail.selectedOption.id == "_"
-                                                    ? ""
-                                                    : "/" + e.detail.selectedOption.id
+                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName
+                                            }${e.detail.selectedOption.id == "_"
+                                                ? ""
+                                                : "/" + e.detail.selectedOption.id
                                             }`,
                                             "GET",
                                             undefined,
@@ -151,6 +149,51 @@ export default function (props: SettingsProps) {
                                                 })}
                                             </>,
                                             "DeleteSettings",
+                                            () => {
+                                                const p = backendDispatch(
+                                                    `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName}/${props.application}`,
+                                                    "DELETE",
+                                                    undefined,
+                                                    undefined,
+                                                )
+                                                p.then((action: any) => {
+                                                    if (action.status == 204) {
+                                                        const p = backendDispatch(
+                                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""}user/${props.userName}${props.application != "_" ? "/" + props.application : ""}`,
+                                                            "GET",
+                                                            undefined,
+                                                            undefined,
+                                                        )
+                                                        p.then((action: any) => {
+                                                            if (action.status == 200) {
+                                                                props.setPersonalizationsOfUser(
+                                                                    action.data,
+                                                                )
+                                                            } else {
+                                                                props.openMessageBox(
+                                                                    MessageBoxType.Error,
+                                                                    <>
+                                                                        {intl.formatMessage({
+                                                                            id: "p13n_load_error",
+                                                                        })}
+                                                                    </>,
+                                                                    "",
+                                                                )
+                                                            }
+                                                        })
+                                                    } else {
+                                                        props.openMessageBox(
+                                                            MessageBoxType.Error,
+                                                            <>
+                                                                {intl.formatMessage({
+                                                                    id: "p13n_delete_settings_error",
+                                                                })}
+                                                            </>,
+                                                            "",
+                                                        )
+                                                    }
+                                                })
+                                            },
                                         )
                                     }}
                                 >
@@ -196,8 +239,7 @@ export default function (props: SettingsProps) {
                                     onClick={() => {
                                         if (props.deletedPersonalizations.length > 0) {
                                             const p = backendDispatch(
-                                                `/v1/p13n/${
-                                                    props.isAdminView ? "admin/" : ""
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                 }user/${props.userName}/${props.application}`,
                                                 "DELETE",
                                                 undefined,
@@ -219,15 +261,14 @@ export default function (props: SettingsProps) {
                                                         }).length > 0
                                                     ) {
                                                         const p2 = backendDispatch(
-                                                            `/v1/p13n/${
-                                                                props.isAdminView ? "admin/" : ""
+                                                            `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                             }user/${props.userName}`,
                                                             "PUT",
                                                             props.personalizationsOfUser.filter(
                                                                 (p) => {
                                                                     return (
                                                                         p.app ==
-                                                                            props.application &&
+                                                                        props.application &&
                                                                         p.user == props.userName
                                                                     )
                                                                 },
@@ -260,8 +301,7 @@ export default function (props: SettingsProps) {
                                             }).length > 0
                                         ) {
                                             const p = backendDispatch(
-                                                `/v1/p13n/${
-                                                    props.isAdminView ? "admin/" : ""
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
                                                 }user/${props.userName}`,
                                                 "PUT",
                                                 props.personalizationsOfUser.filter((p) => {
@@ -281,7 +321,26 @@ export default function (props: SettingsProps) {
                                                 }
                                             })
                                         } else {
-                                            openMessageBoxSave(true)
+                                            const p = backendDispatch(
+                                                `/v1/p13n/${props.isAdminView ? "admin/" : ""
+                                                }user/${props.userName}`,
+                                                "PUT",
+                                                props.personalizationsOfUser.filter((p) => {
+                                                    return (
+                                                        p.app == props.application &&
+                                                        p.user == props.userName
+                                                    )
+                                                }),
+                                                undefined,
+                                            )
+                                            p.then((action: any) => {
+                                                if (action.status == 200) {
+                                                    props.setPersonalizationsOfUser(action.data)
+                                                    openMessageBoxSave(true)
+                                                } else {
+                                                    openMessageBoxSave(false)
+                                                }
+                                            })
                                         }
                                     }}
                                     design="Emphasized"
@@ -290,6 +349,9 @@ export default function (props: SettingsProps) {
                         }
                         heading={
                             <Title>{props.userName == "_" ? "Default user" : props.userName}</Title>
+                        }
+                        snappedHeading={
+                            <Title>{props.userName === "_" ? "Default user" : props.userName}</Title>
                         }
                         breadcrumbs={
                             <Breadcrumbs>
@@ -346,12 +408,12 @@ export default function (props: SettingsProps) {
                                     ?.values.find((v: string) => {
                                         return v.includes(
                                             "(" +
-                                                props.personalizationsOfUser.find(
-                                                    (e: Personalization) => {
-                                                        return e.key == "_lang"
-                                                    },
-                                                )?.value +
-                                                ")",
+                                            props.personalizationsOfUser.find(
+                                                (e: Personalization) => {
+                                                    return e.key == "_lang"
+                                                },
+                                            )?.value +
+                                            ")",
                                         )
                                     }) || ""
                             }
@@ -475,12 +537,12 @@ export default function (props: SettingsProps) {
                                     ?.values.find((v: string) => {
                                         return v.includes(
                                             "(" +
-                                                props.personalizationsOfUser.find(
-                                                    (e: Personalization) => {
-                                                        return e.key == "_number"
-                                                    },
-                                                )?.value +
-                                                ")",
+                                            props.personalizationsOfUser.find(
+                                                (e: Personalization) => {
+                                                    return e.key == "_number"
+                                                },
+                                            )?.value +
+                                            ")",
                                         )
                                     }) || ""
                             }
@@ -539,14 +601,14 @@ export default function (props: SettingsProps) {
                         {props.personalizationsOfUser.filter((personalization) => {
                             return !personalization.key.startsWith("_")
                         }).length == 0 && (
-                            <FormItem>
-                                <Text>
-                                    {intl.formatMessage({
-                                        id: "form_no_additional_settings",
-                                    })}
-                                </Text>
-                            </FormItem>
-                        )}
+                                <FormItem>
+                                    <Text>
+                                        {intl.formatMessage({
+                                            id: "form_no_additional_settings",
+                                        })}
+                                    </Text>
+                                </FormItem>
+                            )}
                     </FormGroup>
                 </Form>
             </DynamicPage>

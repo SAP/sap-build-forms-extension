@@ -10,10 +10,9 @@ import "@ui5/webcomponents-fiori/dist/Assets"
 import "@ui5/webcomponents-icons/dist/Assets"
 import "@ui5/webcomponents-icons/dist/AllIcons"
 
-import { ChangableIntlProvider } from "./components/ChangableIntlProvider"
-import { getLanguage, getMessages } from "./i18n/utils"
+import { ChangableIntlProvider, getLanguage, MessagesProvider } from "commons"
 
-import { MessagesProvider } from "./components/layout/Messages"
+import { getMessages } from "./i18n/utils"
 import App from "./App"
 
 const language = getLanguage()

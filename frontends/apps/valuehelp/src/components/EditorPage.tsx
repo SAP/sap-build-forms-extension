@@ -59,7 +59,7 @@ export default function () {
         let requestParams: object | undefined
         if (effectiveS || effectiveAdapter.length > 0) {
             if (effectiveS && effectiveAdapter.length > 0) {
-                requestParams = { search: effectiveS, adapter: effectiveAdapter }
+                requestParams = { search: effectiveS, adapter: effectiveAdapter.join(",") }
             } else if (effectiveS) {
                 requestParams = { search: effectiveS }
             } else {
