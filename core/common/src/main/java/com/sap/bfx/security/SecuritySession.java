@@ -48,6 +48,7 @@ public class SecuritySession {
      *
      * @return true if the session ID equals the dummy session ID, false otherwise
      */
+    @JsonIgnore
     public boolean isDummy() {
         return DUMMY_SESSION_ID.equals(id);
     }

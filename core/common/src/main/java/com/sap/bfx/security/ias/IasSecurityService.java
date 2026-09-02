@@ -1,6 +1,7 @@
 package com.sap.bfx.security.ias;
 
 import com.sap.bfx.definition.EventType;
+import com.sap.bfx.exception.NotAuthenticatedException;
 import com.sap.bfx.exception.NotAuthorizedException;
 import com.sap.bfx.security.FormsGrantedAuthority;
 import com.sap.bfx.security.SecurityService;
@@ -31,6 +32,11 @@ public class IasSecurityService implements SecurityService {
     public void ensureAuthorized(final String appName, final User user, final EventType type,
                                  final boolean disableEnrichFormsGroups, final String sourceRowId,
                                  final String... sourceKeys) throws NotAuthorizedException {
+
+        if (user == null) {
+            throw new NotAuthenticatedException();
+        }
+
         switch (type) {
             case StartProcessAuth, TaskExecutionAuth, ShowContextAuth, DownloadAttachmentAuth, FindValueHelpAuth,
                  UploadAttachmentAuth, DeleteAttachmentAuth, GetScenarioControllerAuth, PostScenarioControllerAuth ->
@@ -43,6 +49,11 @@ public class IasSecurityService implements SecurityService {
     public void ensureAuthorized(final String appName, final User user, final EventType type,
                                  final boolean disableEnrichFormsGroups, final GrantedAuthority authority)
             throws NotAuthorizedException {
+
+        if (user == null) {
+            throw new NotAuthenticatedException();
+        }
+
         Collection<GrantedAuthority> scannableGroups = new ArrayList<>();
         if (null != authority) {
             scannableGroups.add(authority);
@@ -51,7 +62,9 @@ public class IasSecurityService implements SecurityService {
             scannableGroups.addAll(enrichFormsGroupsByType(type));
         }
         if (scannableGroups.isEmpty()) {
-            throw new NotAuthorizedException(type.getIdentifier(), user.getUserName());
+            final var authorities = new ArrayList<GrantedAuthority>();
+            authorities.add(authority);
+            throw new NotAuthorizedException(type.getIdentifier(), authorities, user.getUserName());
         }
         ensureAnyAuthorized(appName, user, scannableGroups);
     }
@@ -60,6 +73,11 @@ public class IasSecurityService implements SecurityService {
     public void ensureAnyAuthorized(final String appName, final User user, final EventType type,
                                     final boolean disableEnrichFormsGroups, final GrantedAuthority... authorities)
             throws NotAuthorizedException {
+
+        if (user == null) {
+            throw new NotAuthenticatedException();
+        }
+
         Collection<GrantedAuthority> scannableGroups = new ArrayList<>();
         if (null != authorities && 0 < authorities.length) {
             scannableGroups.addAll(Arrays.stream(authorities).toList());
@@ -68,7 +86,8 @@ public class IasSecurityService implements SecurityService {
             scannableGroups.addAll(enrichFormsGroupsByType(type));
         }
         if (scannableGroups.isEmpty()) {
-            throw new NotAuthorizedException(type.getIdentifier(), user.getUserName());
+            throw new NotAuthorizedException(type.getIdentifier(), Arrays.stream(authorities).toList(),
+                    user.getUserName());
         }
         ensureAnyAuthorized(appName, user, scannableGroups);
     }
@@ -125,6 +144,11 @@ public class IasSecurityService implements SecurityService {
     protected void ensureAnyAuthorized(final String appName, final User user,
                                        @NonNull final Collection<GrantedAuthority> authorities)
             throws NotAuthorizedException {
+
+        if (user == null) {
+            throw new NotAuthenticatedException();
+        }
+
         if (authorities.stream().noneMatch(authority -> isAuthorized(appName, user, authority))) {
             throw new NotAuthorizedException(authorities, user.getUserName());
         }
@@ -154,7 +178,17 @@ public class IasSecurityService implements SecurityService {
             authorized = user.getAuthorities()
                              .contains(new SimpleGrantedAuthority(authority.getAuthority() + "_" + appName));
         }
-        log.debug("User '{}' is {}", user.getUserName(), authorized ? "authorized" : "NOT authorized");
+
+        // print status to log-file in order to be able to analyze authorization issues in production
+        if (authorized) {
+            log.info("User '{}' is authorized for {}", user.getUserName(),
+                    StringUtils.join(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList(),
+                            ", "));
+        } else {
+            log.warn("User '{}' is NOT authorized for {}", user.getUserName(),
+                    StringUtils.join(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList(),
+                            ", "));
+        }
 
         return authorized;
     }
