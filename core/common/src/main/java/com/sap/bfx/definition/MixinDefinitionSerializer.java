@@ -72,7 +72,25 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
         gen.writeStringField(NM_REQUIRED, ed.getRequired());
         gen.writeStringField(NM_COL, ed.getCol());
         gen.writeBooleanField(NM_SHOW_AS_COLUMN, ed.isShowAsColumn());
+        gen.writeStringField(NM_CSS, ed.getCss());
+        gen.writeBooleanField(NM_SHOW_LABEL, ed.isShowLabel());
+        gen.writeBooleanField(NM_SHOW_HELP, ed.isShowHelp());
         gen.writeBooleanField(NM_LINE_BREAK, ed.isLineBreak());
+
+        if (ed.getWizardFormatOptions() != null) {
+            gen.writeObjectFieldStart(NM_WIZARD_FORMAT_OPTIONS);
+            gen.writeBooleanField(NM_SKIP_IN_SUMMARY, ed.getWizardFormatOptions().isSkipInSummary());
+            gen.writeBooleanField(NM_SKIP_IN_FORM, ed.getWizardFormatOptions().isSkipInForm());
+            gen.writeEndObject();
+        }
+
+        if (ed.getColumnOptions() != null) {
+            gen.writeObjectFieldStart(NM_COLUMN_OPTIONS);
+            gen.writeStringField(NM_MIN_COLUMN_WIDTH, ed.getColumnOptions().getMinColumnWidth());
+            gen.writeStringField(NM_MAX_COLUMN_WIDTH, ed.getColumnOptions().getMaxColumnWidth());
+            gen.writeEndObject();
+        }
+
         serializeValidationRules(ed, gen);
         if (includeKeys) {
             gen.writeStringField(NM_KEY, ed.getKey());
