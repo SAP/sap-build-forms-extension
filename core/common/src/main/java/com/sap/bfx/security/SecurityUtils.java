@@ -39,24 +39,24 @@ public final class SecurityUtils {
         return null;
     }
 
-    /**
-     * Get the username from the authentication token.
-     *
-     * @param token the authentication token
-     * @return the username or null if not found
-     */
-    public static String getUsername(final AbstractAuthenticationToken token) {
-        if (token != null && token instanceof UsernamePasswordAuthenticationToken) {
-            if (token.getPrincipal() instanceof Jwt jwt) {
-                return jwt.getSubject();
-            }
-            if (token.getPrincipal() instanceof Principal principal) {
-                return principal.getName();
-            }
-        }
-
-        return null;
-    }
+//    /**
+//     * Get the username from the authentication token.
+//     *
+//     * @param token the authentication token
+//     * @return the username or null if not found
+//     */
+//    public static String getUsername(final AbstractAuthenticationToken token) {
+//        if (token != null && token instanceof UsernamePasswordAuthenticationToken) {
+//            if (token.getPrincipal() instanceof Jwt jwt) {
+//                return jwt.getSubject();
+//            }
+//            if (token.getPrincipal() instanceof Principal principal) {
+//                return principal.getName();
+//            }
+//        }
+//
+//        return null;
+//    }
 
     /**
      * Simplifies a principal name by extracting the substring after the last slash.
@@ -84,5 +84,15 @@ public final class SecurityUtils {
         // we don't have a real security session, but we still want to return a valid object, so we create a
         // new one with a dummy user name
         return SecuritySession.createDummy();
+    }
+
+    /**
+     * Retrieves the username from the current security session.
+     *
+     * @return the username or an empty string if not found
+     */
+    public static String getUserName() {
+        final var session = SecurityUtils.getSecuritySession();
+        return (session != null && session.getUser() != null) ? session.getUser().getUserName() : "";
     }
 }

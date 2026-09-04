@@ -5,11 +5,11 @@ import com.sap.bfx.callback.AccessClassFactory;
 import com.sap.bfx.callback.ContextImpl;
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.p13n.PersonalizationService;
+import com.sap.bfx.security.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -60,7 +60,7 @@ public class SessionService {
             application = "_";
         }
 
-        final var username = SecurityContextHolder.getContext().getAuthentication().getName();
+        final var username = SecurityUtils.getUserName();
         session.setUserName(username);
         session.setSettings(personalizationService.getSettings(application, username));
 

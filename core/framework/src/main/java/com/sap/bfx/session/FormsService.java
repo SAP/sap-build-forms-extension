@@ -15,13 +15,13 @@ import com.sap.bfx.definition.DefinitionService;
 import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.ExceptionUtils;
+import com.sap.bfx.security.SecurityUtils;
 import com.sap.bfx.utils.EnumUtils;
 import com.sap.bfx.utils.SerializationUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -96,7 +96,8 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
         form.setFunctionalId(SerializationUtils.getPropText(node, FormUtils.NM_FUNCTIONAL_ID));
         form.setStartedBy(SerializationUtils.getPropText(node, FormUtils.NM_CREATED_BY));
         form.setStartedAt(SerializationUtils.getPropInstant(node, FormUtils.NM_CREATED_AT));
-        final var ps = EnumUtils.valueById(ProcessState.class, SerializationUtils.getPropText(node, FormUtils.NM_STATE));
+        final var ps =
+                EnumUtils.valueById(ProcessState.class, SerializationUtils.getPropText(node, FormUtils.NM_STATE));
         form.setState(ps.isPresent() ? ps.get() : ProcessState.Draft);
         form.setDetailState(SerializationUtils.getPropText(node, FormUtils.NM_DETAIL_STATE));
 
@@ -149,8 +150,7 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
      * @param refId
      * @return
      */
-    public Form loadByRefId(final String adapterName, final String scenarioName,
-                            final String refId) {
+    public Form loadByRefId(final String adapterName, final String scenarioName, final String refId) {
         final var adapter = this.getAdapter(adapterName);
         final var formInputStreamPair = adapter.loadByRefId(scenarioName, refId);
         final var form = (Form) formInputStreamPair.getLeft();
@@ -171,7 +171,7 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
         // increase version in order to detect concurrency issues
         form.setVersion(form.getVersion() + 1);
         // update user and timestamp, e.g. get user from spring security context
-        form.setChangedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+        form.setChangedBy(SecurityUtils.getUserName());
         form.setChangedAt(Instant.now());
         // update scenario name and version (especially important for new form)
         form.setScenarioName(form.getSd().getName());

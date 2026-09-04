@@ -1,8 +1,8 @@
 package com.sap.bfx.exception;
 
+import com.sap.bfx.security.SecurityUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,9 +13,12 @@ import java.util.UUID;
  */
 @EqualsAndHashCode(callSuper = true)
 public class FormsCoreException extends RuntimeException {
-    @Getter private final String id;
-    @Getter private final Map<String, Object> details = new HashMap<>();
-    @Getter protected String user;
+    @Getter
+    private final String id;
+    @Getter
+    private final Map<String, Object> details = new HashMap<>();
+    @Getter
+    protected String user;
 
     /**
      * Constructor
@@ -50,10 +53,7 @@ public class FormsCoreException extends RuntimeException {
      */
     public FormsCoreException(String message, Throwable base) {
         super(message == null ? "" : message, base);
-
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-            user = SecurityContextHolder.getContext().getAuthentication().getName();
-        }
+        user = SecurityUtils.getUserName();
         id = UUID.randomUUID().toString();
     }
 
