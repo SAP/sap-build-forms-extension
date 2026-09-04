@@ -60,6 +60,11 @@ export default function () {
     }, [])
 
     const intl = useIntl()
+
+    useEffect(() => {
+        document.title = intl.formatMessage({ id: "p13n_title_values" })
+    }, [intl])
+
     const classes = useStyles()
     const [valueKeys, setValueKeys] = useState<string[]>([])
     const [values, setValues] = useState<Value[]>([])

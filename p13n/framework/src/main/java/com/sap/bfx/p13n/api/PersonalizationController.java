@@ -363,6 +363,24 @@ public class PersonalizationController {
         service.deleteUserForUser(username, application);
     }
 
+//    private String getTokenUsername(AbstractAuthenticationToken token) {
+//        return token.getName().substring((-1 != token.getName().lastIndexOf("/")) ? token.getName().lastIndexOf("/") + 1 : 0);
+//    }
+//
+//    private void checkOnYourOwnUsername(AbstractAuthenticationToken token, String requestUsername) {
+//        String tokenUsername = getTokenUsername(token);
+//        if (!requestUsername.matches(tokenUsername)) {
+//            throw new NotAuthorizedException(null, new String[]{"Not authorized to modify users other than your own"}, tokenUsername);
+//        }
+//    }
+
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Map<String, String> me(AbstractAuthenticationToken token) {
+        return Map.of("username", getTokenUsername(token));
+    }
+
     //Admin Functionalities
 
     /**
@@ -521,17 +539,16 @@ public class PersonalizationController {
      */
     @DeleteMapping(value = "/admin/user/{username}/{application}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteForAdmin(@PathVariable String username, @PathVariable String application,
-                               @RequestParam(required = false) UUID[] ids) {
+    public void deleteForAdmin(@PathVariable String username, @PathVariable String application, @RequestParam(required = false) UUID[] ids, AbstractAuthenticationToken token) {
         if (StringUtils.isBlank(username)) {
             throw new BadRequestException("Missing username");
         }
         if (StringUtils.isBlank(application)) {
             throw new BadRequestException("Missing application");
         }
-        if (username.equals("_") && application.equals("_")) {
-            throw new BadRequestException("User '_' and application '_' cannot be deleted");
-        }
+//        if (username.equals("_") && application.equals("_")) {
+//            throw new BadRequestException("User '_' and application '_' cannot be deleted");
+//        }
 
         final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(null, securitySession.getUser(), null, true,
@@ -677,19 +694,19 @@ public class PersonalizationController {
         }
     }
 
-    /**
-     * Checks if the username in the request matches the username in the authentication token.
-     * If they do not match, a NotAuthorizedException is thrown.
-     *
-     * @param user            the authenticated user from the security session
-     * @param requestUsername the username provided in the request path
-     * @throws NotAuthorizedException if the usernames do not match
-     */
-    private void checkOnYourOwnUsername(User user, String requestUsername) {
-        String tokenUsername = user.getUserName();
-        if (!requestUsername.matches(tokenUsername)) {
-            throw new NotAuthorizedException("personalization", "Not authorized to modify users other than your own",
-                    tokenUsername);
-        }
-    }
+//    /**
+//     * Checks if the username in the request matches the username in the authentication token.
+//     * If they do not match, a NotAuthorizedException is thrown.
+//     *
+//     * @param user            the authenticated user from the security session
+//     * @param requestUsername the username provided in the request path
+//     * @throws NotAuthorizedException if the usernames do not match
+//     */
+//    private void checkOnYourOwnUsername(User user, String requestUsername) {
+//        String tokenUsername = user.getUserName();
+//        if (!requestUsername.matches(tokenUsername)) {
+//            throw new NotAuthorizedException("personalization", "Not authorized to modify users other than your own",
+//                    tokenUsername);
+//        }
+//    }
 }

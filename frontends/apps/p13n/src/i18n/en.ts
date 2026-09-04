@@ -42,9 +42,9 @@ export default {
     sh_dialog_select: "Select",
     sh_dialog_cancel: "Cancel",
 
-    p13n_title_user: "Personalization Frontend",
-    p13n_title_admin: "Personalization Admin Frontend",
-    p13n_title_values: "Personalization - Values",
+    p13n_title_user: "Personalization",
+    p13n_title_admin: "Personalization Admin",
+    p13n_title_values: "Personalization Values",
 
     p13n_load_error: "An error occurred while loading data.",
     p13n_load_defaults_error: "Not all default values could be loaded.",
