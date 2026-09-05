@@ -54,7 +54,7 @@ export default {
     session_error_creation: "Error in creating form!",
     session_error_timed_out:
         "Session timed out. Please refresh browser page and strart from scratch!",
-    session_error_generic: "Generic communication failure with backend!",
+    session_error_generic: "Generic communication failure with backend! Error ID is {guid}",
 
     create_title: "Create Form",
     detail_dialog_title: "Display/Edit of a table row",

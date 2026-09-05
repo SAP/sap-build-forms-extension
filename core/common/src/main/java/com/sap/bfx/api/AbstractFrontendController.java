@@ -1,7 +1,6 @@
 package com.sap.bfx.api;
 
 import com.sap.bfx.exception.FormsCoreException;
-import com.sap.bfx.security.Constants;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,9 +12,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
@@ -52,6 +48,11 @@ public abstract class AbstractFrontendController {
     @Value("${forms.api-doc.path:/api-docs}")
     private String apiDocPath;
 
+    /**
+     * Constructor for AbstractFrontendController.
+     *
+     * @param applicationContext the Spring application context
+     */
     protected AbstractFrontendController(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
 
@@ -90,6 +91,14 @@ public abstract class AbstractFrontendController {
         }
     }
 
+    /**
+     * Handles all requests to the frontend, serving static resources and the index page.
+     *
+     * @param req       the HttpServletRequest
+     * @param res       the HttpServletResponse
+     * @param principal the authenticated user principal
+     * @return a String indicating the view to render, or null if the response has been handled directly
+     */
     @RequestMapping(value = "/**")
     public String handler(HttpServletRequest req, HttpServletResponse res, Principal principal) {
 
@@ -152,25 +161,25 @@ public abstract class AbstractFrontendController {
             return null;
         }
 
-        // handling of index...
-        String accessToken = null;
-        String refreshToken = null;
-
-        if (StringUtils.equalsIgnoreCase(AUTH_TYPE, Constants.AUTH_TYPE_OIDC)) {
-            var oAuth2AuthorizedClientRepository = applicationContext.getBean(OAuth2AuthorizedClientRepository.class);
-            var oauth2Token = (OAuth2AuthenticationToken) principal;
-            var userInfo = (DefaultOidcUser) (oauth2Token).getPrincipal();
-            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
-                    req)).getAccessToken().getTokenValue();
-            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
-                    req)).getRefreshToken().getTokenValue();
-            log.debug("User: '{}' logged in with ID Token: '{}'", userInfo.getName(), accessToken);
-        }
-
+//        // handling of index...
+//        String accessToken = null;
+//        String refreshToken = null;
+//
+//        if (StringUtils.equalsIgnoreCase(AUTH_TYPE, Constants.AUTH_TYPE_OIDC)) {
+//            var oAuth2AuthorizedClientRepository = applicationContext.getBean(OAuth2AuthorizedClientRepository.class);
+//            var oauth2Token = (OAuth2AuthenticationToken) principal;
+//            var userInfo = (DefaultOidcUser) (oauth2Token).getPrincipal();
+//            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
+//                    req)).getAccessToken().getTokenValue();
+//            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
+//                    req)).getRefreshToken().getTokenValue();
+//            log.debug("User: '{}' logged in with ID Token: '{}'", userInfo.getName(), accessToken);
+//        }
+        
         final var values = new HashMap<String, Object>();
-        values.put(NM_HAS_TOKEN, StringUtils.isNotBlank(accessToken));
-        values.put(NM_ACCESS_TOKEN, accessToken);
-        values.put(NM_REFRESH_TOKEN, refreshToken);
+//        values.put(NM_HAS_TOKEN, StringUtils.isNotBlank(accessToken));
+//        values.put(NM_ACCESS_TOKEN, accessToken);
+//        values.put(NM_REFRESH_TOKEN, refreshToken);
         values.put(NM_FAVICON, favicon);
         values.put(NM_INDEX_JS, jsIndex);
         values.put(NM_INDEX_CSS, cssIndex);
