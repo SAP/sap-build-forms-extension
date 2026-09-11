@@ -160,26 +160,8 @@ public abstract class AbstractFrontendController {
             }
             return null;
         }
-
-//        // handling of index...
-//        String accessToken = null;
-//        String refreshToken = null;
-//
-//        if (StringUtils.equalsIgnoreCase(AUTH_TYPE, Constants.AUTH_TYPE_OIDC)) {
-//            var oAuth2AuthorizedClientRepository = applicationContext.getBean(OAuth2AuthorizedClientRepository.class);
-//            var oauth2Token = (OAuth2AuthenticationToken) principal;
-//            var userInfo = (DefaultOidcUser) (oauth2Token).getPrincipal();
-//            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
-//                    req)).getAccessToken().getTokenValue();
-//            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token,
-//                    req)).getRefreshToken().getTokenValue();
-//            log.debug("User: '{}' logged in with ID Token: '{}'", userInfo.getName(), accessToken);
-//        }
         
         final var values = new HashMap<String, Object>();
-//        values.put(NM_HAS_TOKEN, StringUtils.isNotBlank(accessToken));
-//        values.put(NM_ACCESS_TOKEN, accessToken);
-//        values.put(NM_REFRESH_TOKEN, refreshToken);
         values.put(NM_FAVICON, favicon);
         values.put(NM_INDEX_JS, jsIndex);
         values.put(NM_INDEX_CSS, cssIndex);

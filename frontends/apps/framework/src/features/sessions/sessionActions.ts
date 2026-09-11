@@ -1,4 +1,4 @@
-import { PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import { PayloadAction, SerializedError, createAsyncThunk } from "@reduxjs/toolkit"
 import { AxiosResponse } from "axios"
 
 import { apiOk, Backend, getLanguage, Message, MessageIntf } from "commons"
@@ -8,7 +8,7 @@ import { BackendJournal, JournalService } from "./journal"
 import { ElementMap, Form, FormService } from "./forms"
 import { SessionState } from "../states"
 import { AttachmentRequest } from "./attachmentActions"
-import { backend, BackendError } from "../backend"
+import { backend, BackendError, UnauthenticatedError } from "../backend"
 import { PrimitiveType } from "react-intl"
 import { se } from "date-fns/locale"
 
@@ -48,7 +48,7 @@ export const createSession = createAsyncThunk(
     async (
         { messages, state, task, formsId }: CreateSessionRequest,
         thunkAPI,
-    ): Promise<AxiosResponse<SessionResponse | BackendError | string>> => {
+    ): Promise<AxiosResponse<SessionResponse | BackendError | UnauthenticatedError | string>> => {
         let response = undefined
 
         try {
@@ -72,7 +72,16 @@ export const createSession = createAsyncThunk(
                 },
                 thunkAPI.getState() as any,
             )
-        } catch (err) {
+        } catch (err: any) {
+            // TODO(ML) Here is the place to handle the error and show a message to the user. For now we just log it to the console.
+            // debugger
+            const status = err.request?.status as number
+            if (status === 401) {
+            }
+            err = {
+                "error_code": err.request.status as number,
+                "data": JSON.parse(err.request.response)
+            } as UnauthenticatedError
             console.error(`Error: ${err}`)
             setTimeout(() => messages.fatal("session_error_creation"), 10)
             return Promise.reject(err)
@@ -81,6 +90,7 @@ export const createSession = createAsyncThunk(
         if (apiOk(response.status)) {
             return Promise.resolve(response)
         } else {
+            debugger
             console.error(`Error in createSession: ${response.status}:'${response.data}'`)
             let errorInfo: Record<string, PrimitiveType> = {}
             if (typeof response.data === "object") {
@@ -286,7 +296,7 @@ export const deleteRow = createAsyncThunk(
 export function handleSessionResponse(
     state: SessionState,
     action: PayloadAction<
-        AxiosResponse<string | BackendError | SessionResponse, any> | undefined,
+        AxiosResponse<string | BackendError | UnauthenticatedError | SessionResponse, any> | undefined,
         string,
         {
             arg: TriggerEventRequest | AttachmentRequest | CreateSessionRequest
@@ -298,6 +308,7 @@ export function handleSessionResponse(
     initSession: boolean,
 ) {
     // console.log(action.payload)
+    debugger
     if (action.payload) {
         if (action.payload.status == 410) {
             throw new Error("Session is Gone!")
@@ -357,3 +368,23 @@ export function handleSessionResponse(
         }
     }
 }
+
+// /**
+//  * 
+//  */
+// export function handleSessionError(state: SessionState,
+//     action: PayloadAction<unknown, string, {
+//         arg: CreateSessionRequest
+//         requestId: string
+//         requestStatus: "rejected"
+//         aborted: boolean
+//         condition: boolean
+//     } & ({
+//         rejectedWithValue: true
+//     } | ({
+//         rejectedWithValue: false
+//     } & {})), SerializedError>) {
+
+//     debugger
+//     console.error("Error in session action", action.error)
+// }

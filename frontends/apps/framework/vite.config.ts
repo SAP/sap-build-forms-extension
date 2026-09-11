@@ -32,5 +32,13 @@ export default defineConfig({
                 // rewrite: (path) => path.replace(/^\/api/, ""),
             },
         },
+        headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        },
+
     },
 })

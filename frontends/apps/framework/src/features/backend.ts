@@ -19,3 +19,12 @@ export interface BackendError {
     message: string
     user: string
 }
+
+/**
+ * 
+ */
+export interface UnauthenticatedError extends Error {
+    error_code: number
+    guid: string
+    data: object
+}

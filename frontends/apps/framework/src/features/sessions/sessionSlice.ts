@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit"
 
 import { FrontendJournal, ElementProp, JournalService } from "./journal"
-import { DataTypes, ElementInfo, Form, FormService, TableInfo } from "./forms"
+import { DataTypes, ElementInfo, Form, FormService } from "./forms"
 import { SessionState } from "../states"
 import { createSession, deleteRow, handleSessionResponse, triggerEvent } from "./sessionActions"
 import { DownloadAttachmentInput, deleteAttachment, uploadAttachment } from "./attachmentActions"
@@ -150,6 +150,9 @@ export const sessionSlice = createSlice({
         builder.addCase(createSession.fulfilled, (state, action) =>
             handleSessionResponse(state, action, true),
         )
+        // builder.addCase(createSession.rejected, (state, action) => {
+        //     handleSessionError(state, action)
+        // })
         builder.addCase(triggerEvent.fulfilled, (state, action) =>
             handleSessionResponse(state, action, false),
         )
