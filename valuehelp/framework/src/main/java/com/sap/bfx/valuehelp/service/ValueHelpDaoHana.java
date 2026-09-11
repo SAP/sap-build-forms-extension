@@ -2,27 +2,24 @@ package com.sap.bfx.valuehelp.service;
 
 import com.sap.bfx.valuehelp.model.ValueHelp;
 import com.sap.bfx.valuehelp.model.ValueHelpDef;
-import com.sap.bfx.valuehelp.model.ValueHelpType;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.RowMapper;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.*;
 
 /**
  * @see <a href="https://www.jackrutorial.com/2018/08/multiple-datasource-in-spring-boot.html" />
  */
+@ConditionalOnProperty(name = "forms.valuehelp.datasource.dbType", havingValue = "hana")
 @Repository("valueHelpDaoHana")
 @Qualifier("valueHelpDaoHana")
 @Slf4j
@@ -280,8 +277,8 @@ public class ValueHelpDaoHana extends AbstractValueHelpDao {
 
         final var params = ArrayUtils.addFirst(ids.toArray(new String[0]), locale);
         final String inSQL = String.join(",", Collections.nCopies(ids.size(), "?"));
-        jdbc.query(String.format("SELECT id,version FROM forms_valuehelp.forms_vh_values WHERE locale=? AND id IN(%s)", inSQL),
-                (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)), params);
+        jdbc.query(String.format("SELECT id,version FROM forms_valuehelp.forms_vh_values WHERE locale=? AND id IN(%s)",
+                inSQL), (rs, rowNum) -> result.put(rs.getString(1), rs.getLong(2)), params);
         return result;
     }
 
