@@ -1,5 +1,13 @@
 package com.sap.bfx.maven.common.services;
 
+import com.sap.bfx.definition.MetaFileElementDefinition;
+import com.sap.bfx.definition.MixinDefinition;
+import com.sap.bfx.utils.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.maven.artifact.Artifact;
+import org.apache.maven.plugin.logging.Log;
+
 import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -9,15 +17,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.plugin.logging.Log;
-
-import com.sap.bfx.definition.MetaFileElementDefinition;
-import com.sap.bfx.definition.MixinDefinition;
-import com.sap.bfx.utils.FileUtils;
 
 /**
  * Important
@@ -38,8 +37,7 @@ class MixinClasspathLoader extends MixinLoader {
     @Override
     public MixinDefinition load() throws Exception {
 
-        final var rootPath = StringSubstitutor.replace(
-                StringUtils.substring(((MetaFileElementDefinition) mixin).getPath(), 10),
+        final var rootPath = StringSubstitutor.replace(StringUtils.substring(mixin.getPath(), 10),
                 processingInfo.getParams().getMixinPaths(), "${", "}");
         log.debug("classpath is: " + rootPath);
 
@@ -55,7 +53,7 @@ class MixinClasspathLoader extends MixinLoader {
             var fName = it.getFile().getName();
             log.debug("- " + fName);
 
-            if (StringUtils.startsWithIgnoreCase(fName, rootPath)) {
+            if (it.getArtifactId().equalsIgnoreCase(rootPath)) {
                 artifcatFile = it.getFile();
                 log.debug("-> found -> breaking");
                 break;
@@ -69,10 +67,10 @@ class MixinClasspathLoader extends MixinLoader {
         log.info("Try to load mixin resources from jar file: '" + artifcatFile.getPath() + "'.");
         final var jarFile = new JarFile(artifcatFile);
 
-        final var defFilePattern = Pattern.compile("^mixin\\."
-                + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.ya?ml");
-        final var textFilePattern = Pattern.compile("^texts_(.*)\\."
-                + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.properties");
+        final var defFilePattern =
+                Pattern.compile("^mixin\\." + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.ya?ml");
+        final var textFilePattern =
+                Pattern.compile("^texts_(.*)\\." + mixin.getMixinName() + "\\." + mixin.getVersion() + "\\.properties");
 
         JarEntry mixinDefEntry = null;
         final var mixinPropEntries = new ArrayList<JarEntry>();
@@ -100,8 +98,8 @@ class MixinClasspathLoader extends MixinLoader {
             }
         }
         if (mixinDef == null) {
-            throw new RuntimeException("cannot load mixin '" + mixin.getMixinName() + "' from '"
-                    + artifcatFile.getName() + "'!");
+            throw new RuntimeException(
+                    "cannot load mixin '" + mixin.getMixinName() + "' from '" + artifcatFile.getName() + "'!");
         }
         for (var propEntry : mixinPropEntries) {
             final var matcher = textFilePattern.matcher(propEntry.getName());
