@@ -171,6 +171,8 @@ public class ElementDefinition {
                 ((MaxValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
             } else if (it instanceof FixedValidationRule) {
                 ((FixedValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
+            } else if (it instanceof RegexValidationRule) {
+                ((RegexValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
             } else if (it instanceof BeanValidationRule) {
                 ((BeanValidationRule) it).setAppContext(appContext);
             }

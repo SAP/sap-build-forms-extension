@@ -9,9 +9,12 @@ import {
     Bar,
     Button,
     Dialog,
+    FlexBox,
     Icon,
     Input,
     Label,
+    MessageStrip,
+    Popover,
     SegmentedButton,
     SegmentedButtonDomRef,
     SegmentedButtonItem,
@@ -31,6 +34,7 @@ import {
 import "@ui5/webcomponents-icons/dist/edit"
 import "@ui5/webcomponents-icons/dist/delete"
 import "@ui5/webcomponents-icons/dist/show"
+import "@ui5/webcomponents-icons/dist/sys-help.js"
 import { SegmentedButtonSelectionChangeEventDetail } from "@ui5/webcomponents/dist/SegmentedButton"
 
 import { DataType, Definition, UIElement, UserEventType } from "../../features/sessions/definitions"
@@ -41,10 +45,11 @@ import { update } from "../../features/sessions/sessionSlice"
 import { loadIntoCache } from "../../features/valuehelps/valuehelpsSlice"
 import { deleteRow, triggerEvent } from "../../features/sessions/sessionActions"
 
-import { ControlProps, getLabel, getPlaceholder, handleBrowseTable, handleChangeTablePageSize } from "./Control"
+import { ControlProps, getDoc, getLabel, getPlaceholder, handleBrowseTable, handleChangeTablePageSize } from "./Control"
 import Control from "./Control"
 import ControlGridContainer from "./ControlGridContainer"
 import { elementInfo2ValueState } from "./utils"
+import { computeValidationHints } from "./ControlFlexContainer"
 
 // Constants for different page sizes
 const PAGE_SIZES = [5, 10, 15, 20, 25]
@@ -241,6 +246,11 @@ export default function (props: ControlProps) {
     const [vhsLoaded, setVhsLoaded] = useState<boolean>(false)
     const [selectedRowIds, setSelectedRowIds] = useState<string>("")
     const [loading, setLoading] = useState<boolean>(false)
+    const [helpOpen, setHelpOpen] = useState<boolean>(false)
+
+    const validationHints = computeValidationHints(def, intl)
+    const helpIconId = "help-" + def.key
+    const showHintPopover = def.showHelp || validationHints.length > 0
 
     const mode = def.select == "single" ? "Single" : def.select == "multiple" ? "Multiple" : "None"
     const inline = def.type === "inline"
@@ -584,14 +594,42 @@ export default function (props: ControlProps) {
     return (
         <div>
             {!asTableCell && (
-                <Label
-                    id={"l" + def.key}
-                    for={def.key}
-                    required={element?.rq}
-                    style={def.showLabel === false ? { visibility: "hidden" } : undefined}
-                >
-                    {def.showLabel !== false ? getLabel(texts, def) : ""}
-                </Label>
+                <FlexBox alignItems="Center" style={{ gap: "0.25rem" }}>
+                    <Label
+                        id={"l" + def.key}
+                        for={def.key}
+                        required={element?.rq}
+                        style={def.showLabel === false ? { visibility: "hidden" } : undefined}
+                    >
+                        {def.showLabel !== false ? getLabel(texts, def) : ""}
+                    </Label>
+                    {showHintPopover && (
+                        <>
+                            <Icon
+                                id={helpIconId}
+                                name="sys-help"
+                                style={{ cursor: "pointer", fontSize: "0.5rem" }}
+                                onClick={() => setHelpOpen(true)}
+                            />
+                            <Popover
+                                opener={helpIconId}
+                                open={helpOpen}
+                                placement="End"
+                                onClose={() => setHelpOpen(false)}
+                            >
+                                <div style={{ maxWidth: "20rem" }}>
+                                    <Text>{def.showHelp && getDoc(texts, def)}</Text>
+                                    {def.showHelp && validationHints.length > 0 && (
+                                        <hr style={{ margin: "0.5rem 0", border: "none", borderTop: "1px solid var(--sapSeparatorColor)" }} />
+                                    )}
+                                    {validationHints.map((hint, i) => (
+                                        <div key={i}><Text>{hint}</Text></div>
+                                    ))}
+                                </div>
+                            </Popover>
+                        </>
+                    )}
+                </FlexBox>
             )}
             {def.toolbar && (
                 <Control
@@ -688,6 +726,14 @@ export default function (props: ControlProps) {
                     </>
                 }
             />
+            {element?.msg && (
+                <MessageStrip
+                    design={elementInfo2ValueState(element.msg) as "Negative" | "Positive" | "Critical" | "Information"}
+                    hideCloseButton
+                >
+                    {element.msg.text ?? (element.msg.key ? intl.formatMessage({ id: element.msg.key }, element.msg.params) : "")}
+                </MessageStrip>
+            )}
             {showDialog && (
                 <DetailDialog
                     {...props}

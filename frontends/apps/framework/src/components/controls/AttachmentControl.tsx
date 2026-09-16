@@ -886,6 +886,14 @@ function FileUploaderControl(props: ControlProps) {
                 )}
                 {rejectedStripFU}
             </Panel>
+            {element?.msg && (
+                <MessageStrip
+                    design={elementInfo2ValueState(element.msg) as "Negative" | "Positive" | "Critical" | "Information"}
+                    hideCloseButton
+                >
+                    {element.msg.text ?? (element.msg.key ? intl.formatMessage({ id: element.msg.key }, element.msg.params) : "")}
+                </MessageStrip>
+            )}
             {showExtendedDialog && (
                 <ExtendedUploadDialog {...props} setShowDialog={setShowExtendedDialog} />
             )}
@@ -1326,6 +1334,14 @@ function UploadCollectionControl(props: ControlProps) {
                 </MessageStrip>
             )}
             {rejectedStripUC}
+            {element?.msg && (
+                <MessageStrip
+                    design={elementInfo2ValueState(element.msg) as "Negative" | "Positive" | "Critical" | "Information"}
+                    hideCloseButton
+                >
+                    {element.msg.text ?? (element.msg.key ? intl.formatMessage({ id: element.msg.key }, element.msg.params) : "")}
+                </MessageStrip>
+            )}
 
         </ControlContainer>
     )

@@ -497,17 +497,23 @@ class SessionResponse {
                 throws IOException {
             String min = null, max = null, match = null;
             String fixedLength = null, fixedFractions = null;
+            boolean showMinHint = false, showMaxHint = false;
+            boolean showMatchHint = false, showFixedHint = false;
 
             for (ValidationRule rule : element.getValidationRules()) {
                 if (rule instanceof MinValidationRule minRule) {
                     min = minRule.getLimit();
+                    if (minRule.isShowHint()) showMinHint = true;
                 } else if (rule instanceof MaxValidationRule maxRule) {
                     max = maxRule.getLimit();
+                    if (maxRule.isShowHint()) showMaxHint = true;
                 } else if (rule instanceof FixedValidationRule fixedRule) {
                     fixedLength = String.valueOf(fixedRule.getLength());
                     fixedFractions = String.valueOf(fixedRule.getFractions());
+                    if (fixedRule.isShowHint()) showFixedHint = true;
                 } else if (rule instanceof RegexValidationRule regexRule) {
                     match = regexRule.getPattern();
+                    if (regexRule.isShowHint()) showMatchHint = true;
                 }
             }
 
@@ -518,6 +524,10 @@ class SessionResponse {
                 if (match != null) gen.writeStringField("match", match);
                 if (fixedLength != null) gen.writeStringField("fixedLength", fixedLength);
                 if (fixedFractions != null) gen.writeStringField("fixedFractions", fixedFractions);
+                if (showMinHint) gen.writeBooleanField("showMinHint", true);
+                if (showMaxHint) gen.writeBooleanField("showMaxHint", true);
+                if (showMatchHint) gen.writeBooleanField("showMatchHint", true);
+                if (showFixedHint) gen.writeBooleanField("showFixedHint", true);
                 gen.writeEndObject();
             }
         }

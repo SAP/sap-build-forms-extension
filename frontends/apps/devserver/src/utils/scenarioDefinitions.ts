@@ -79,6 +79,7 @@ export type Validation = {
     type: string | undefined
     severity: string | undefined
     messageKey: string | undefined
+    showHint?: boolean
 }
 
 export type MinMaxValidation = Validation & {

@@ -33,6 +33,9 @@ public class FixedValidationRule extends AbstractValidationRule {
      */
     @Override
     public Optional<Message> validate(String rowId, String key, Context<?> context) {
+        if (dataTypeClass != String.class && dataTypeClass != BigDecimal.class) {
+            return Optional.empty();
+        }
         var value = context.getDataApi().getValue(rowId, key);
         final var params = Map.of("length", (Object) length, "fractions", (Object) fractions);
 

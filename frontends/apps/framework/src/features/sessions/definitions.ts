@@ -66,6 +66,10 @@ export class Limitations {
     match?: string
     fixedLength?: string
     fixedFractions?: string
+    showMinHint?: boolean
+    showMaxHint?: boolean
+    showMatchHint?: boolean
+    showFixedHint?: boolean
 }
 
 export interface CategoryOption {

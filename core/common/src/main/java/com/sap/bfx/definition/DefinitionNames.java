@@ -60,6 +60,7 @@ public class DefinitionNames {
     public final static String NM_SHOW_AS_COLUMN = "showAsColumn";
     public final static String NM_SHOW_LABEL = "showLabel";
     public final static String NM_SHOW_HELP = "showHelp";
+    public final static String NM_SHOW_HINT = "showHint";
     public final static String NM_SIZE = "size";
     public final static String NM_SKIP_IN_FORM = "skipInForm";
     public final static String NM_SKIP_IN_SUMMARY = "skipInSummary";

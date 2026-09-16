@@ -236,6 +236,9 @@ class DeserializationHelper {
             };
             rule.setSeverity(ValidationRule.mapSeverity(StringUtils.left(it.get(NM_SEVERITY).asText(), 1)));
             rule.setMessageKey(it.get(NM_MESSAGE_KEY).asText());
+            if (it.get(NM_SHOW_HINT) != null) {
+                rule.setShowHint(it.get(NM_SHOW_HINT).asBoolean());
+            }
 
             if (rule instanceof MinValidationRule) {
                 ((MinValidationRule) rule).setLimit(it.get(NM_LIMIT).asText());

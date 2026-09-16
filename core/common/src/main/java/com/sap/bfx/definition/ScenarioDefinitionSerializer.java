@@ -333,6 +333,9 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 gen.writeStringField(NM_TYPE, ((AbstractValidationRule) it).getType().getIdentifier());
                 gen.writeStringField(NM_SEVERITY, ((AbstractValidationRule) it).getSeverity().getIdentifier());
                 gen.writeStringField(NM_MESSAGE_KEY, ((AbstractValidationRule) it).getMessageKey());
+                if (((AbstractValidationRule) it).isShowHint()) {
+                    gen.writeBooleanField(NM_SHOW_HINT, true);
+                }
 
                 if (it instanceof MinValidationRule) {
                     gen.writeStringField(NM_LIMIT, ((MinValidationRule) it).getLimit());

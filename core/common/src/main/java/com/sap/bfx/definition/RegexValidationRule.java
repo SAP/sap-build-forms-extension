@@ -19,6 +19,9 @@ public class RegexValidationRule extends AbstractValidationRule {
     @JsonIgnore
     private Pattern compiledPattern;
 
+    @JsonIgnore
+    private Class<?> dataTypeClass;
+
 
     public RegexValidationRule() {
         super(ValidationRuleType.REGEX);
@@ -34,6 +37,9 @@ public class RegexValidationRule extends AbstractValidationRule {
 
     @Override
     public Optional<Message> validate(final String rowId, final String key, Context<?> context) {
+        if (dataTypeClass != String.class) {
+            return Optional.empty();
+        }
         var value = context.getDataApi().getValue(rowId, key);
         if (value == null) {
             return Optional.empty();

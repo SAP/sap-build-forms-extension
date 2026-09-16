@@ -14,7 +14,7 @@ import lombok.EqualsAndHashCode;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sap.bfx.callback.Context;
-import com.sap.bfx.session.Attachment;
+import com.sap.bfx.session.Attachments;
 import com.sap.bfx.session.Table;
 
 @Data
@@ -37,7 +37,7 @@ public class MaxValidationRule extends AbstractValidationRule {
      */
     @Override
     public void postLoad() {
-        if (dataTypeClass == String.class || dataTypeClass == Table.class || dataTypeClass == Attachment.class
+        if (dataTypeClass == String.class || dataTypeClass == Table.class || dataTypeClass == Attachments.class
                 || dataTypeClass == Integer.class) {
             try {
                 compiledLimit = Integer.parseInt(limit);
@@ -75,8 +75,29 @@ public class MaxValidationRule extends AbstractValidationRule {
 
     @Override
     public Optional<Message> validate(final String rowId, final String key, Context<?> context) {
-        var value = context.getDataApi().getValue(rowId, key);
         final var params = Map.of("value", (Object) this.limit);
+
+        if (dataTypeClass == Table.class) {
+            final var rows = context.getDataApi().getRows(rowId, () -> key);
+            var len = rows == null ? 0 : rows.size();
+            var limit = (int) compiledLimit;
+            if ((inclusive && len > limit) || (!inclusive && len >= limit)) {
+                return Optional.of(new Message(this.severity, this.messageKey, params));
+            }
+            return Optional.empty();
+        }
+
+        if (dataTypeClass == Attachments.class) {
+            final var opt = context.getDataApi().getOptVal(rowId, key);
+            var len = opt.isEmpty() ? 0 : ((Attachments) opt.get()).size();
+            var limit = (int) compiledLimit;
+            if ((inclusive && len > limit) || (!inclusive && len >= limit)) {
+                return Optional.of(new Message(this.severity, this.messageKey, params));
+            }
+            return Optional.empty();
+        }
+
+        var value = context.getDataApi().getValue(rowId, key);
 
         if (value == null) {
             return Optional.empty();
@@ -94,15 +115,6 @@ public class MaxValidationRule extends AbstractValidationRule {
             if ((inclusive && v > limit) || (!inclusive && v >= limit)) {
                 return Optional.of(new Message(this.severity, this.messageKey, params));
             }
-        } else if (value instanceof Table) {
-            var len = ((Table) value).getRows().size();
-            var limit = (int) compiledLimit;
-
-            if ((inclusive && len > limit) || (!inclusive && len >= limit)) {
-                return Optional.of(new Message(this.severity, this.messageKey, params));
-            }
-        } else if (value instanceof Attachment) {
-            // TODO(ML): Add here handling for attachments
         } else if (value instanceof BigDecimal) {
             var v = (BigDecimal) value;
             var limit = (BigDecimal) compiledLimit;
