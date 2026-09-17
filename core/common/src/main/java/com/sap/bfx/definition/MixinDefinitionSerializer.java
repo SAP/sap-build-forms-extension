@@ -72,7 +72,25 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
         gen.writeStringField(NM_REQUIRED, ed.getRequired());
         gen.writeStringField(NM_COL, ed.getCol());
         gen.writeBooleanField(NM_SHOW_AS_COLUMN, ed.isShowAsColumn());
+        gen.writeStringField(NM_CSS, ed.getCss());
+        gen.writeBooleanField(NM_SHOW_LABEL, ed.isShowLabel());
+        gen.writeBooleanField(NM_SHOW_HELP, ed.isShowHelp());
         gen.writeBooleanField(NM_LINE_BREAK, ed.isLineBreak());
+
+        if (ed.getWizardFormatOptions() != null) {
+            gen.writeObjectFieldStart(NM_WIZARD_FORMAT_OPTIONS);
+            gen.writeBooleanField(NM_SKIP_IN_SUMMARY, ed.getWizardFormatOptions().isSkipInSummary());
+            gen.writeBooleanField(NM_SKIP_IN_FORM, ed.getWizardFormatOptions().isSkipInForm());
+            gen.writeEndObject();
+        }
+
+        if (ed.getColumnOptions() != null) {
+            gen.writeObjectFieldStart(NM_COLUMN_OPTIONS);
+            gen.writeStringField(NM_MIN_COLUMN_WIDTH, ed.getColumnOptions().getMinColumnWidth());
+            gen.writeStringField(NM_MAX_COLUMN_WIDTH, ed.getColumnOptions().getMaxColumnWidth());
+            gen.writeEndObject();
+        }
+
         serializeValidationRules(ed, gen);
         if (includeKeys) {
             gen.writeStringField(NM_KEY, ed.getKey());
@@ -83,34 +101,82 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeStringField(NM_DESIGN, ((AlertElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((AlertElementDefinition) ed).getIcon());
                 break;
+            case Attachment:
+                gen.writeStringField(NM_ADAPTER, ((AttachmentElementDefinition) ed).getAdapter());
+                gen.writeBooleanField(NM_HAS_DESCRIPTION, ((AttachmentElementDefinition) ed).isHasDescription());
+                gen.writeStringField(NM_CARDINALITY,
+                        ((AttachmentElementDefinition) ed).getCardinality().getIdentifier());
+                gen.writeStringField(NM_FILE_TYPES, ((AttachmentElementDefinition) ed).getFileTypes());
+                gen.writeStringField(NM_DESIGN, ((AttachmentElementDefinition) ed).getDesign().getIdentifier());
+                gen.writeStringField(NM_SELECT, ((AttachmentElementDefinition) ed).getSelect().getIdentifier());
+
+                gen.writeArrayFieldStart(NM_CATEGORIES);
+                for (CategoryOptions categoryOptions : ((AttachmentElementDefinition) ed).getCategories()) {
+                    gen.writeStartObject();
+                    gen.writeStringField(NM_LABEL, categoryOptions.getLabel());
+                    gen.writeObjectFieldStart(NM_HV_OPT);
+                    gen.writeStringField(NM_NAME, categoryOptions.getHvOpt().getName());
+                    gen.writeBooleanField(NM_VALIDATE, categoryOptions.getHvOpt().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION, categoryOptions.getHvOpt().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT, categoryOptions.getHvOpt().getDisplayFormat());
+                    gen.writeEndObject();
+                    gen.writeEndObject();
+                }
+                gen.writeEndArray();
+
+                if (((AttachmentElementDefinition) ed).getValueHelp() != null) {
+                    gen.writeObjectFieldStart(NM_VALUE_HELP);
+                    gen.writeStringField(NM_NAME, ((AttachmentElementDefinition) ed).getValueHelp().getName());
+                    gen.writeBooleanField(NM_VALIDATE, ((AttachmentElementDefinition) ed).getValueHelp().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((AttachmentElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((AttachmentElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeEndObject();
+                }
+                break;
             case Button:
                 gen.writeStringField(NM_DESIGN, ((ButtonElementDefinition) ed).getDesign().getIdentifier());
                 gen.writeStringField(NM_ICON, ((ButtonElementDefinition) ed).getIcon());
-                if (((ButtonElementDefinition) ed).getTooltip() != null && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
+                if (((ButtonElementDefinition) ed).getTooltip() != null
+                        && !((ButtonElementDefinition) ed).getTooltip().isEmpty()) {
                     gen.writeStringField(NM_TOOLTIP, ((ButtonElementDefinition) ed).getTooltip());
+                }
+                if (((ButtonElementDefinition) ed).getLinkHRef() != null
+                        && !((ButtonElementDefinition) ed).getLinkHRef().isEmpty()) {
+                    gen.writeStringField(NM_LINK_HREF, ((ButtonElementDefinition) ed).getLinkHRef());
                 }
                 if (((ButtonElementDefinition) ed).getShortcut() != null && !((ButtonElementDefinition) ed).getShortcut().isEmpty()) {
                     gen.writeStringField(NM_SHORTCUT, ((ButtonElementDefinition) ed).getShortcut());
                 }
                 break;
             case Currency:
-                gen.writeObjectFieldStart(NM_VALUE_HELP);
-                gen.writeStringField(NM_NAME, ((CurrencyElementDefinition) ed).getValueHelp().getName());
-                gen.writeBooleanField(NM_VALIDATE, ((CurrencyElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION,
-                        ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT,
-                        ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
-                gen.writeEndObject();
+                if (((CurrencyElementDefinition) ed).getValueHelp() != null) {
+                    gen.writeObjectFieldStart(NM_VALUE_HELP);
+                    gen.writeStringField(NM_NAME, ((CurrencyElementDefinition) ed).getValueHelp().getName());
+                    gen.writeBooleanField(NM_VALIDATE, ((CurrencyElementDefinition) ed).getValueHelp().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((CurrencyElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((CurrencyElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeEndObject();
+                }
                 break;
             case Dialog:
-                if (((DialogElementDefinition) ed).getSize() != null) {
+                Dimension size = ((DialogElementDefinition) ed).getSize();
+                if (size != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
                     gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
                     gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
                     gen.writeEndObject();
                 }
+
                 this.serializeElementWithName(NM_FOOTER, ((DialogElementDefinition) ed).getFooter(), gen, provider);
+                break;
+            case DocForm:
+                this.serializeElementWithName(NM_HEADER_SEGMENT, ((DocFormElementDefinition) ed).getHeaderSegment(),
+                        gen, provider);
+                this.serializeElementWithName(NM_FOOTER, ((DocFormElementDefinition) ed).getFooter(), gen, provider);
                 break;
             case Form:
                 this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
@@ -119,40 +185,56 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 break;
             case Icon:
                 gen.writeStringField(NM_ICON, ((IconElementDefinition) ed).getIcon());
-                if (((IconElementDefinition) ed).getTooltip() != null && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
+                if (((IconElementDefinition) ed).getTooltip() != null
+                        && !((IconElementDefinition) ed).getTooltip().isEmpty()) {
                     gen.writeStringField(NM_TOOLTIP, ((IconElementDefinition) ed).getTooltip());
                 }
                 break;
             case Image:
-                if (((DialogElementDefinition) ed).getSize() != null) {
+                if (((ImageElementDefinition) ed).getSize() != null) {
                     gen.writeObjectFieldStart(NM_SIZE);
-                    gen.writeStringField(NM_HEIGHT, ((DialogElementDefinition) ed).getSize().getHeight());
-                    gen.writeStringField(NM_WIDTH, ((DialogElementDefinition) ed).getSize().getWidth());
+                    gen.writeStringField(NM_HEIGHT, ((ImageElementDefinition) ed).getSize().getHeight());
+                    gen.writeStringField(NM_WIDTH, ((ImageElementDefinition) ed).getSize().getWidth());
                     gen.writeEndObject();
                 }
                 break;
             case Input:
                 gen.writeStringField(NM_INPUT_TYPE, ((InputElementDefinition) ed).getInputType().getIdentifier());
                 break;
+            case Link:
+                if (((LinkElementDefinition) ed).getLinkData() != null) {
+                    LinkData linkData = ((LinkElementDefinition) ed).getLinkData();
+                    if (linkData.getText() != null && !linkData.getText().isEmpty()) {
+                        gen.writeStringField(NM_LINK_TEXT, linkData.getText());
+                    }
+                    if (linkData.getHRef() != null && !linkData.getHRef().isEmpty()) {
+                        gen.writeStringField(NM_LINK_HREF, linkData.getHRef());
+                    }
+                }
+                break;
             case MultiSelect:
-                gen.writeObjectFieldStart(NM_VALUE_HELP);
-                gen.writeStringField(NM_NAME, ((MultiSelectElementDefinition) ed).getValueHelp().getName());
-                gen.writeBooleanField(NM_VALIDATE, ((MultiSelectElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION,
-                        ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT,
-                        ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
-                gen.writeEndObject();
+                if (((MultiSelectElementDefinition) ed).getValueHelp() != null) {
+                    gen.writeObjectFieldStart(NM_VALUE_HELP);
+                    gen.writeStringField(NM_NAME, ((MultiSelectElementDefinition) ed).getValueHelp().getName());
+                    gen.writeBooleanField(NM_VALIDATE, ((MultiSelectElementDefinition) ed).getValueHelp().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((MultiSelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((MultiSelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeEndObject();
+                }
                 break;
             case Radio:
-                gen.writeObjectFieldStart(NM_VALUE_HELP);
-                gen.writeStringField(NM_NAME, ((RadioElementDefinition) ed).getValueHelp().getName());
-                gen.writeBooleanField(NM_VALIDATE, ((RadioElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION,
-                        ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT,
-                        ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
-                gen.writeEndObject();
+                if (((RadioElementDefinition) ed).getValueHelp() != null) {
+                    gen.writeObjectFieldStart(NM_VALUE_HELP);
+                    gen.writeStringField(NM_NAME, ((RadioElementDefinition) ed).getValueHelp().getName());
+                    gen.writeBooleanField(NM_VALIDATE, ((RadioElementDefinition) ed).getValueHelp().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((RadioElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((RadioElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeEndObject();
+                }
                 break;
             case SearchHelp:
                 if (((SearchHelpElementDefinition) ed).getSize() != null) {
@@ -164,14 +246,16 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 this.serializeElementWithName(NM_FOOTER, ((SearchHelpElementDefinition) ed).getFooter(), gen, provider);
                 break;
             case Select:
-                gen.writeObjectFieldStart(NM_VALUE_HELP);
-                gen.writeStringField(NM_NAME, ((SelectElementDefinition) ed).getValueHelp().getName());
-                gen.writeBooleanField(NM_VALIDATE, ((SelectElementDefinition) ed).getValueHelp().isValidate());
-                gen.writeBooleanField(NM_EMPTY_SELECTION,
-                        ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
-                gen.writeStringField(NM_DISPLAY_FORMAT,
-                        ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
-                gen.writeEndObject();
+                if (((SelectElementDefinition) ed).getValueHelp() != null) {
+                    gen.writeObjectFieldStart(NM_VALUE_HELP);
+                    gen.writeStringField(NM_NAME, ((SelectElementDefinition) ed).getValueHelp().getName());
+                    gen.writeBooleanField(NM_VALIDATE, ((SelectElementDefinition) ed).getValueHelp().isValidate());
+                    gen.writeBooleanField(NM_EMPTY_SELECTION,
+                            ((SelectElementDefinition) ed).getValueHelp().isEmptySelection());
+                    gen.writeStringField(NM_DISPLAY_FORMAT,
+                            ((SelectElementDefinition) ed).getValueHelp().getDisplayFormat());
+                    gen.writeEndObject();
+                }
                 break;
             case Mixin:
                 gen.writeStringField(NM_MIXIN_NAME, ((MetaFileElementDefinition) ed).getMixinName());
@@ -202,7 +286,7 @@ public class MixinDefinitionSerializer extends StdSerializer<MixinDefinition> {
                 gen.writeEndArray();
                 break;
             case Wizard:
-                this.serializeElementWithName(NM_FOOTER, ((FormElementDefinition) ed).getFooter(), gen, provider);
+                this.serializeElementWithName(NM_FOOTER, ((WizardElementDefinition) ed).getFooter(), gen, provider);
                 break;
         }
 
