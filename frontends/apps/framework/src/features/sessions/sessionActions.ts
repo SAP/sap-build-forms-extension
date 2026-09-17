@@ -74,9 +74,11 @@ export const createSession = createAsyncThunk(
             )
         } catch (err: any) {
             // TODO(ML) Here is the place to handle the error and show a message to the user. For now we just log it to the console.
-            // debugger
+            debugger
             const status = err.request?.status as number
             if (status === 401) {
+                messages.login()
+                return Promise.reject(undefined)
             }
             err = {
                 "error_code": err.request.status as number,
@@ -308,12 +310,7 @@ export function handleSessionResponse(
     initSession: boolean,
 ) {
     // console.log(action.payload)
-    debugger
     if (action.payload) {
-        if (action.payload.status == 410) {
-            throw new Error("Session is Gone!")
-        }
-
         const data: SessionResponse = action.payload.data as SessionResponse
         if (!initSession && data.id !== state.id) {
             throw new Error("Session-Id does not match!")
@@ -370,7 +367,7 @@ export function handleSessionResponse(
 }
 
 // /**
-//  * 
+//  *
 //  */
 // export function handleSessionError(state: SessionState,
 //     action: PayloadAction<unknown, string, {

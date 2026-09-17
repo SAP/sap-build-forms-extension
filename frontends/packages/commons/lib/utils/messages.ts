@@ -88,6 +88,7 @@ export enum MessageOption {
  * optional parameters.
  * - block: A method for blocking or unblocking user interaction. It takes a boolean value indicating whether to 
  * block (true) or unblock (false) interaction.   
+ * - login: A method for triggering the login process.
  */
 export interface MessageIntf {
     fatal: (key: string, values?: Record<string, PrimitiveType>) => void
@@ -99,6 +100,7 @@ export interface MessageIntf {
     ) => Promise<MessageOption>
     toast: (severity: Severity, key: string, params?: Record<string, PrimitiveType>) => void
     block: (show: boolean) => void
+    login: () => void
 }
 
 export type MessageResolver = (value: MessageOption | PromiseLike<MessageOption>) => void

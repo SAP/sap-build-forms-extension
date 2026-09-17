@@ -46,4 +46,6 @@ export default {
   common_name_sub_title: "Untertitel",
   common_name_description: "Beschreibung",
   common_name_values: "Werte",
+
+  common_login_title: "Anmeldung"
 }

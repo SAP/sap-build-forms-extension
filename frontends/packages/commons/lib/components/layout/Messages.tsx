@@ -5,6 +5,7 @@ import { useIntl } from "react-intl"
 import { PrimitiveType } from "intl-messageformat"
 
 import {
+    Bar,
     Dialog,
     IllustratedMessage,
     MessageBox,
@@ -38,6 +39,8 @@ const Context = createContext<MessageIntf>({
     toast: (msg: Message[]) => {},
     // @ts-ignore
     block: (show: boolean) => {},
+    // @ts-ignore
+    login: () => {},
 })
 
 /**
@@ -117,7 +120,7 @@ function MessagesProvider(props: { children: ReactNode }) {
     const intl = useIntl()
     const resolverRef = useRef<MessageResolver | undefined>(undefined)
 
-    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | undefined>()
+    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" |undefined>()
     const [messages, setMessages] = useState<Message[]>([])
     const [opts, setOpts] = useState<MessageOption[]>([])
 
@@ -180,6 +183,15 @@ function MessagesProvider(props: { children: ReactNode }) {
      */
     const block = (show: boolean) => {
         setType(show ? "block" : undefined)
+    }
+
+    /**
+     * Triggers the login process. This method can be used to prompt the user to log in when authentication is 
+     * required.
+     */
+    const login = () => {
+        // Implement the login logic here
+        setType("login")
     }
 
     /**
@@ -253,10 +265,12 @@ function MessagesProvider(props: { children: ReactNode }) {
         actions.push(MessageBoxAction.OK)
     }
 
+
+
     // console.log(`Messages type: ${type}`)
 
     return (
-        <Context.Provider value={{ fatal, dialog, toast, block }}>
+        <Context.Provider value={{ fatal, dialog, toast, block, login }}>
             <>
                 {ReactDOM.createPortal(
                     <MessageBox
@@ -349,7 +363,21 @@ function MessagesProvider(props: { children: ReactNode }) {
                             {intl.formatMessage({ id: messages[0].key }, messages[0].params)}
                         </Toast>,
                         document.body,
-                    )}
+                    )
+                }
+                {ReactDOM.createPortal(
+                    <Dialog
+                        headerText={intl.formatMessage({id: "common_login_title",})}
+                        open={type == "login"}
+                        stretch={true}
+                        footer={<Bar design="Footer"></Bar>}
+                    >
+                        <div style={{ width: "100%", height: "100%" }}>
+                            <iframe width="100%" height="100%" src="/oauth2/authorize/ias" style={{ border: "none" }}/>
+                        </div>
+                    </Dialog>,
+                    document.body,
+                )}
             </>
             {props.children}
         </Context.Provider>

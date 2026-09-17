@@ -4,7 +4,6 @@ import com.sap.bfx.config.IasConnectionConfig;
 import com.sap.bfx.security.session.RedisAuthorizationRequestRepository;
 import com.sap.bfx.security.session.RedisRequestCache;
 import com.sap.bfx.security.session.SecuritySessionService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +23,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.util.StringUtils;
 
 /**
  * Security configuration for the application.
@@ -60,24 +58,29 @@ public class IasWebSecurityConfig {
     }
 
     /**
-     * Creates a client-registration with name "ias" that should point to an IAS for authentication and
-     * authorization.
+     * Creates a client-registration with name "ias" that should point to an IAS for authentication and authorization.
      *
      * @return ClientRegistration instance
      */
     @Bean
     public ClientRegistration iasClientRegistration() {
-        final var result = ClientRegistration.withRegistrationId("ias").clientId(idpConfig.getOidcClientId())
-                                             .clientSecret(idpConfig.getOidcClientSecret())
-                                             .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                                             .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                                             .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
-                                             .scope("openid", "profile", "email")
-                                             .authorizationUri(idpConfig.getUrl() + "/oauth2/authorize")
-                                             .tokenUri(idpConfig.getUrl() + "/oauth2/token")
-                                             .userInfoUri(idpConfig.getUrl() + "/oauth2/userinfo")
-                                             .userNameAttributeName(IdTokenClaimNames.SUB).issuerUri(idpConfig.getUrl())
-                                             .jwkSetUri(idpConfig.getUrl() + "/oauth2/certs").clientName("ias").build();
+// @formatter:off
+        final var result = ClientRegistration
+            .withRegistrationId("ias")
+                .clientId(idpConfig.getOidcClientId())
+                .clientSecret(idpConfig.getOidcClientSecret())
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
+                .scope("openid", "profile", "email")
+                .authorizationUri(idpConfig.getUrl() + "/oauth2/authorize")
+                .tokenUri(idpConfig.getUrl() + "/oauth2/token")
+                .userInfoUri(idpConfig.getUrl() + "/oauth2/userinfo")
+                .userNameAttributeName(IdTokenClaimNames.SUB).issuerUri(idpConfig.getUrl())
+                .jwkSetUri(idpConfig.getUrl() + "/oauth2/certs")
+                .clientName("ias")
+            .build();
+// @formatter:on
 
         log.debug("IAS Client Registration: '{}' with Issuer-Uri: '{}'", result, idpConfig.getUrl());
         return result;
@@ -132,21 +135,37 @@ public class IasWebSecurityConfig {
                 .requestCache(Customizer.withDefaults()).requestCache(config -> config
                         .requestCache(requestCache))
 
+                // add filter around everything from Spring Security
+//                .addFilterBefore(new OncePerRequestFilter() {
+//                    @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)throws ServletException, IOException {
+//
+//                        filterChain.doFilter(request, response);
+//
+//                        if (response.getStatus() == HttpServletResponse.SC_FOUND &&
+//                                StringUtils.startsWithIgnoreCase(request.getRequestURI(), "/api/")) {
+//
+//                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                            response.setContentType("application/json");
+//                            response.getWriter().write("{\"loginUrl\": \"/oauth2/authorize/ias\"}");
+//                        }
+//                    }}, SecurityContextHolderFilter.class)
+
+
                 // this filter reaads the JWT token from Cookie and uses it to provide user information
-                .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
                 // change result in case of api calls
-               .exceptionHandling(config ->
-                       config.authenticationEntryPoint((request, response, authException) -> {
-                           if (StringUtils.startsWithIgnoreCase(request.getRequestURI(), "/api/")) {
-                               log.debug("API request without authentication: {}", request.getRequestURI());
-
-                               response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                               response.setContentType("application/json");
-                               response.getWriter().write("{\"loginUrl\": \"/oauth2/authorize/ias\"}");
-                           }
-                       })
-               );
+//               http.exceptionHandling(config ->
+//                       config.authenticationEntryPoint((request, response, authException) -> {
+//                           if (StringUtils.startsWithIgnoreCase(request.getRequestURI(), "/api/")) {
+//                               log.debug("API request without authentication: {} ->", request.getRequestURI());
+//
+//                               response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                               response.setContentType("application/json");
+//                               response.getWriter().write("{\"loginUrl\": \"/oauth2/authorize/ias\"}");
+//                           }
+//                       })
+//               );
 
         return http.build();
 // @formatter:on

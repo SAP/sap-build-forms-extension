@@ -31,6 +31,11 @@ export default defineConfig({
                 secure: false,
                 // rewrite: (path) => path.replace(/^\/api/, ""),
             },
+            "/oauth2/*": {
+                target: "http://localhost:8080/oauth2/authorize/ias",
+                changeOrigin: true,
+                secure: false,
+            }
         },
         headers: {
             "Access-Control-Allow-Origin": "*",

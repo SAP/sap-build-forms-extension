@@ -18,8 +18,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * A filter that intercepts incoming HTTP requests to extract and validate JWT tokens from cookies.
- * If a valid token is found, it reconstructs the Spring Security Authentication context for the request.
+ * A filter that intercepts incoming HTTP requests to extract and validate JWT tokens from cookies. If a valid token is
+ * found, it reconstructs the Spring Security Authentication context for the request.
  */
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -45,6 +45,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 // Handle token decoding/validation errors if necessary
                 log.error("Failed to decode JWT token", e);
+            }
+        }
+
+        // TODO(ML) this must be extracted to a bean and handled differently if security is enabled or not.
+        if (SecurityContextHolder.getContext().getAuthentication() == null ||
+                !SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+            // not-authenticated, avoid the redirect and return a 401 for API calls
+            if (StringUtils.startsWithIgnoreCase(request.getRequestURI(), "/api")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"loginUrl\": \"/oauth2/authorize/ias\"}");
+                return;
             }
         }
 

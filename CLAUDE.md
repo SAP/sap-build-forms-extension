@@ -126,6 +126,52 @@ The shared library (`frontends/packages/commons`) is consumed by all apps. Key e
 
 The `integration/sbpa-taskui/` module packages the app as an MTA (Multi-Target Application) for Cloud Foundry on SAP BTP, binding to xsuaa, HTML5 repository, and destination services.
 
+## Java Backend Architecture
+
+`frontends/CLAUDE.md` covers the frontend internals. This section covers the Java side.
+
+### Consumer Integration Model
+
+Downstream apps integrate by adding `core-framework` (or `core-workflow-sbpa`) as a Maven dependency and providing:
+
+1. **A form definition** — loaded by `DefinitionService` from classpath. The root object is `ScenarioDefinition`, which holds a tree of `ElementDefinition` subclasses (one per `UIElementType`: Input, Table, Checkbox, Dialog, Wizard, …). Element visibility/editability/required state are SpEL expressions evaluated at runtime.
+
+2. **Event handlers** — Spring beans implementing `EventHandler<AC extends AccessClass>`. The framework discovers them via `CallbackService` and dispatches based on `match(key, eventType, version)`. `BaseEventHandler` is the convenient base class. Handlers receive a typed `AccessClass` generated from the form metadata — it provides getters/setters for each field without raw map access.
+
+3. **Lifecycle hooks** — beans implementing `LifecycleHook`, keyed by `LifecycleHookType` (e.g. session create, submit). Registered alongside event handlers in `CallbackService`.
+
+4. **Adapters** — `PersistenceAdapter` (custom storage), `AttachmentAdapter` (file storage), `WorkflowAdapter` (workflow system integration), `ConfigurationService` (destination names).
+
+### Session Lifecycle
+
+`SessionController` (`/api/v1/sessions`) is the main API surface:
+- `POST /api/v1/sessions` — creates a session; calls `DefinitionService` to resolve the scenario, `SessionService` to create/store in Redis, then fires `ON_LOAD` lifecycle hooks and returns a `SessionResponse` (full form definition + current values).
+- `POST /api/v1/sessions/{id}/events/{key}` — triggers a named event; dispatched through `CallbackService` to matching `EventHandler` beans; returns updated `SessionResponse`.
+- `POST /api/v1/sessions/{id}/submit` — fires `ON_SUBMIT` hooks, calls `WorkflowService`, persists via `PersistenceAdapter`.
+- `GET/POST /api/v1/valuehelp` — delegated to `ValueHelpController`; results cached.
+- `POST /api/v1/sessions/{id}/attachments` — handled by `AttachmentController` → `AttachmentAdapter`.
+
+Sessions are stored in Redis between requests. `FormsService` holds the in-memory form value map per session.
+
+### Security Modes (local dev)
+
+Three Spring condition-gated modes; only one activates per deployment:
+- **`XsuaaSecurity`** — production; validates SAP XSUAA JWT tokens.
+- **`LocalXsuaaToken`** — local dev against a real BTP tenant; reads a token from a local file.
+- **`PublicSecurity`** — fully open, no auth; useful for local dev without BTP.
+
+Active mode is selected via Spring profile / properties. See `core/common/.../security/` for the conditions.
+
+### `copy_frontends` Detail
+
+`make copy_frontends` uses `rsync --delete` to sync only `dist/assets/` into each Java module's `src/main/resources/frontend/assets/`. The `index.html.ftlh` template in each Java module is **not** overwritten — it is maintained manually and references the hashed asset filenames injected by Vite.
+
+### Release
+
+```bash
+make release_version   # strips -SNAPSHOT from pom.xml using build-helper + versions plugin
+```
+
 ## Coding Instructions
 
 - Act as a senior typescript and react developer
