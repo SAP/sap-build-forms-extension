@@ -450,6 +450,7 @@ export interface ControlProps {
     vhs: Record<string, number>
     design?: string
     onAfterAction?: () => Promise<void> | void
+    insideToolbar?: boolean
 }
 
 /**
