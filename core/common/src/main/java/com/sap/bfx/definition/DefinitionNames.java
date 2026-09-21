@@ -23,6 +23,7 @@ public class DefinitionNames {
     public final static String NM_EMPTY_SELECTION = "emptySelection";
     public final static String NM_EXPRESSION = "expression";
     public final static String NM_FILE_TYPES = "fileTypes";
+    public final static String NM_FLOATING = "floating";
     public final static String NM_FOOTER = "footer";
     public final static String NM_FRACTIONS = "fractions";
     public final static String NM_HAS_DESCRIPTION = "hasDescription";

@@ -119,7 +119,7 @@ public class ElementDefinition {
      */
     public static Class<?> getDataTypeClass(final ElementDefinition ed) {
         return switch (ed.getType()) {
-            case Alert, Button, Dialog, Form, Icon, Image, MultiSelect, Radio, SearchHelp, Select,
+            case Alert, Button, Dialog, Form, Icon, Image, MultiSelect, PdfViewer, Radio, SearchHelp, Select,
                  Text, TextEdit, Wizard -> String.class;
             case Attachment -> Attachments.class;
             case DateRangePicker -> DateRange.class;

@@ -1290,7 +1290,8 @@ export default function StructureTabTree(props: Props) {
 
                             {(props.el?.type == "image" ||
                                 props.el?.type == "searchhelp" ||
-                                props.el?.type == "dialog") && (
+                                props.el?.type == "dialog" ||
+                                props.el?.type == "pdfviewer") && (
                                     <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_size" })}</Label>}>
                                         <Form
                                             layout="S1 M1 L2 XL1"
@@ -1334,6 +1335,20 @@ export default function StructureTabTree(props: Props) {
                                         </Form>
                                     </FormItem>
                                 )}
+
+                            {props.el?.type == "pdfviewer" && (
+                                <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_floating" })}</Label>}>
+                                    <CheckBox
+                                        checked={props.el.floating}
+                                        onChange={(e) => {
+                                            props.setNewEl({
+                                                ...props.el,
+                                                floating: e.target.checked!,
+                                            })
+                                        }}
+                                    />
+                                </FormItem>
+                            )}
 
                             {(props.el?.type == "input" ||
                                 props.el?.type == "alert" ||

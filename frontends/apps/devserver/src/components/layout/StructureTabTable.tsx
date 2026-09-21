@@ -2463,7 +2463,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {["searchhelp", "dialog", "image"].includes(
+                            {["searchhelp", "dialog", "image", "pdfviewer"].includes(
                                 getElemByIndex(instance.row.original.index)?.type!,
                             ) && (
                                     <Input
@@ -2499,7 +2499,7 @@ export default function StructureTabTable(props: Props) {
                 Cell: (instance: any) => {
                     return (
                         <FlexBox style={{ width: "100%" }}>
-                            {["searchhelp", "dialog", "image"].includes(
+                            {["searchhelp", "dialog", "image", "pdfviewer"].includes(
                                 getElemByIndex(instance.row.original.index)?.type!,
                             ) && (
                                     <Input
@@ -2520,6 +2520,35 @@ export default function StructureTabTable(props: Props) {
                                         }}
                                     />
                                 )}
+                        </FlexBox>
+                    )
+                },
+            },
+            {
+                Header: "Floating",
+                accessor: (originalRow: Record<string, any>) => {
+                    return getElemByIndex(originalRow.index)?.floating
+                },
+                disableFilters: true,
+                disableSortBy: true,
+                width: 100,
+                Cell: (instance: any) => {
+                    return (
+                        <FlexBox style={{ width: "100%" }}>
+                            {getElemByIndex(instance.row.original.index)?.type === "pdfviewer" && (
+                                <CheckBox
+                                    checked={getElemByIndex(instance.row.original.index)?.floating}
+                                    onChange={(e) => {
+                                        var v = getElemByIndex(instance.row.original.index)
+                                        if (v != undefined) {
+                                            updateEl({
+                                                ...v,
+                                                floating: e.target.checked!,
+                                            })
+                                        }
+                                    }}
+                                />
+                            )}
                         </FlexBox>
                     )
                 },

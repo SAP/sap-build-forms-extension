@@ -20,6 +20,7 @@ public final class Constants {
     public static final String TYPE_LINK = "link";
     public static final String TYPE_MIXIN = "mixin";
     public static final String TYPE_MULTI_SELECT = "multiselect";
+    public static final String TYPE_PDF_VIEWER = "pdfviewer";
     public static final String TYPE_RADIO = "radio";
     public static final String TYPE_SEARCH_HELP = "searchhelp";
     public static final String TYPE_SEGMENT = "segment";

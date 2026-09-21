@@ -111,6 +111,10 @@ class DeserializationHelper {
             case MultiSelect:
                 readValueHelpOptions(node, element);
                 break;
+            case PdfViewer:
+                readDimension(node, element);
+                setBooleanProp(node, element, NM_FLOATING, false);
+                break;
             case Radio:
                 readValueHelpOptions(node, element);
                 break;
@@ -195,6 +199,7 @@ class DeserializationHelper {
             case Constants.TYPE_MIXIN -> new MetaFileElementDefinition();
             case Constants.TYPE_INPUT -> new InputElementDefinition();
             case Constants.TYPE_MULTI_SELECT -> new MultiSelectElementDefinition();
+            case Constants.TYPE_PDF_VIEWER -> new PdfViewerElementDefinition();
             case Constants.TYPE_RADIO -> new RadioElementDefinition();
             case Constants.TYPE_SEARCH_HELP -> new SearchHelpElementDefinition();
             case Constants.TYPE_SEGMENT -> new SegmentElementDefinition();

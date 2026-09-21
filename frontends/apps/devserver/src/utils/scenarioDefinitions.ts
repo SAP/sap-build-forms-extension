@@ -54,6 +54,7 @@ export type Elem = {
     version?: number
     adapter?: string
     hasDescription?: boolean
+    floating?: boolean
     elements: Elem[]
     footer?: Elem
     headerSegment?: Elem

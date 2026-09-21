@@ -20,6 +20,7 @@ export enum UIElement {
     Input = "input",
     Link = "link",
     MultiSelect = "multiselect",
+    PdfViewer = "pdfviewer",
     RadioButtons = "radio",
     SearchHelp = "searchhelp",
     Segment = "segment",
@@ -136,6 +137,7 @@ export interface Definition {
     categories?: CategoryOption[]
     columnOptions?: { minColumnWidth?: string; maxColumnWidth?: string }
     size?: { height: string; width: string }
+    floating?: boolean
     inputType?: string
     shortcut?: string
 }

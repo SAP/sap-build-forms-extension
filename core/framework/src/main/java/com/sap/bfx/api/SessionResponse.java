@@ -421,6 +421,18 @@ class SessionResponse {
                         gen.writeEndObject();
                     }
                     break;
+                case PdfViewer:
+                    Dimension pdfSize = ((PdfViewerElementDefinition) element).getSize();
+                    if (pdfSize != null) {
+                        gen.writeObjectFieldStart(NM_SIZE);
+                        gen.writeStringField(NM_HEIGHT, pdfSize.getHeight());
+                        gen.writeStringField(NM_WIDTH, pdfSize.getWidth());
+                        gen.writeEndObject();
+                    }
+                    if (((PdfViewerElementDefinition) element).isFloating()) {
+                        gen.writeBooleanField(NM_FLOATING, true);
+                    }
+                    break;
                 case Input:
                     if (((InputElementDefinition) element).getInputType() != null) {
                         gen.writeStringField(NM_INPUT_TYPE,

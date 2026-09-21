@@ -43,6 +43,7 @@ import IconControl from "./IconControl"
 import ImageControl from "./ImageControl"
 import LinkControl from "./LinkControl"
 import DocFormControl from "./DocFormControl"
+import PdfViewerControl from "./PdfViewerControl"
 import { ValuehelpsService, ValueName } from "../../features/valuehelps/logic"
 
 /**
@@ -470,6 +471,11 @@ export default function (props: ControlProps) {
     // console.log(`def.uiElement === ${def.uiElement}, visible == '${element?.vi}'`)
     // }
 
+    // Floating PdfViewers are rendered at the FormControl level to persist across tab changes — skip here
+    if (def.uiElement === UIElement.PdfViewer && def.floating) {
+        return <></>
+    }
+
     if (element && element.vi) {
         // only visible elements are created
         if (def.uiElement === UIElement.Alert) {
@@ -506,6 +512,8 @@ export default function (props: ControlProps) {
             return <InputControl {...props} />
         } else if (def.uiElement === UIElement.MultiSelect) {
             return <MultiSelectControl {...props} />
+        } else if (def.uiElement === UIElement.PdfViewer) {
+            return <PdfViewerControl {...props} />
         } else if (def.uiElement === UIElement.RadioButtons) {
             return <RadioButtonsControl {...props} />
         } else if (def.uiElement === UIElement.SearchHelp) {

@@ -134,6 +134,7 @@ export default {
     element_label_column_min_width: "Minimale Spaltenbreite",
     element_label_column_max_width: "Maximale Spaltenbreite",
     element_label_show_as_column: "Als Spalte anzeigen",
+    element_label_floating: "Schwebend",
     element_label_validation: "Validierung",
     element_errors_prefix: "Fehler:",
 
