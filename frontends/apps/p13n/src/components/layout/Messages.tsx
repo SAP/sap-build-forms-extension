@@ -198,7 +198,7 @@ function MessagesProvider(props: { children: ReactNode }) {
         actions.push(MessageBoxAction.OK)
     }
 
-    console.log(`Messages type: ${type}`)
+    //console.log(`Messages type: ${type}`)
 
     return (
         <Context.Provider value={{ fatal, dialog, toast, block }}>

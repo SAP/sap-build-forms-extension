@@ -146,6 +146,8 @@ export default function StructureTabTable(props: Props) {
 
     const elementsTableRef = useRef(elementsTable)
     const treeItemsRef = useRef(props.treeItemsShown)
+    const prevScenarioMixinNameRef = useRef(props.scenarioMixinName)
+    const prevVersionRef = useRef(props.version)
 
     const [validationDialogOpen, setValidationDialogOpen] = useState<boolean>(false)
     const [categoriesDialogOpen, setCategoriesDialogOpen] = useState<boolean>(false)
@@ -240,13 +242,18 @@ export default function StructureTabTable(props: Props) {
 
 
     useEffect(() => {
+        const scenarioChanged =
+            prevScenarioMixinNameRef.current !== props.scenarioMixinName ||
+            prevVersionRef.current !== props.version
+        prevScenarioMixinNameRef.current = props.scenarioMixinName
+        prevVersionRef.current = props.version
         treeItemsRef.current = props.treeItemsShown
         if (props.treeItemsShown?.elements) {
             var preparedItems = prepareItems(props.treeItemsShown.elements, undefined, "")
             var flattenedItems = constructTree(preparedItems)
             elementsTableRef.current = flattenedItems
             setElementsTable(flattenedItems)
-            if (preparedItems.length != elementsTableShown.length) {
+            if (scenarioChanged || preparedItems.length != elementsTableShown.length) {
                 setElementsTableShown(preparedItems)
             }
         }

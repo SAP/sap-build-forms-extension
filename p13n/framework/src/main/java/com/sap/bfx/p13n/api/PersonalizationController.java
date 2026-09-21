@@ -253,6 +253,13 @@ public class PersonalizationController {
         }
     }
 
+    @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Map<String, String> me(AbstractAuthenticationToken token) {
+        return Map.of("username", getTokenUsername(token));
+    }
+
     //Admin Functionalities
 
     @GetMapping(value = "/admin/user", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -358,9 +365,9 @@ public class PersonalizationController {
         if (StringUtils.isBlank(application)) {
             throw new BadRequestException("Missing application");
         }
-        if (username.equals("_") && application.equals("_")) {
-            throw new BadRequestException("User '_' and application '_' cannot be deleted");
-        }
+//        if (username.equals("_") && application.equals("_")) {
+//            throw new BadRequestException("User '_' and application '_' cannot be deleted");
+//        }
         securityService.ensureAuthorized(token, null, Boolean.TRUE, P13NRoles.P13NEdit);
 
         if (ids == null) {

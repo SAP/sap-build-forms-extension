@@ -116,7 +116,7 @@ export default function (props: ControlProps) {
             icon={def.icon}
             tooltip={def.tooltip}
             onClick={handleClick}
-            style={{ width: "100%" }}
+            style={withContainer ? { width: "100%"} : { minWidth: "100px" }}
         >
             {getLabel(texts, def)}
         </Button>
