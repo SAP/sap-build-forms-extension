@@ -1,4 +1,5 @@
 import { PrimitiveType } from "intl-messageformat"
+import { UnauthenticatedError } from "./backend"
 
 /**
  * Defines the severity levels for messages. Each severity level is represented by a single character:
@@ -100,7 +101,7 @@ export interface MessageIntf {
     ) => Promise<MessageOption>
     toast: (severity: Severity, key: string, params?: Record<string, PrimitiveType>) => void
     block: (show: boolean) => void
-    login: () => void
+    login: (err: UnauthenticatedError) => void
 }
 
 export type MessageResolver = (value: MessageOption | PromiseLike<MessageOption>) => void

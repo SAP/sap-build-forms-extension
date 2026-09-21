@@ -1,11 +1,13 @@
 import { createContext, ReactNode, useContext, useRef, useState } from "react"
 import ReactDOM from "react-dom"
+import { UnauthenticatedError } from "../../utils/backend"
 
 import { useIntl } from "react-intl"
 import { PrimitiveType } from "intl-messageformat"
 
 import {
     Bar,
+    Button,
     Dialog,
     IllustratedMessage,
     MessageBox,
@@ -30,17 +32,17 @@ import {
  */
 const Context = createContext<MessageIntf>({
     // @ts-ignore
-    fatal: (key: string, values?: Record<string, PrimitiveType>) => {},
+    fatal: (key: string, values?: Record<string, PrimitiveType>) => { },
     // @ts-ignore
     dialog: (msg: Message[], options?: MessageOption[]): Promise<MessageOption> => {
         return Promise.reject()
     },
     // @ts-ignore
-    toast: (msg: Message[]) => {},
+    toast: (msg: Message[]) => { },
     // @ts-ignore
-    block: (show: boolean) => {},
+    block: (show: boolean) => { },
     // @ts-ignore
-    login: () => {},
+    login: (err: UnauthenticatedError) => { },
 })
 
 /**
@@ -120,9 +122,10 @@ function MessagesProvider(props: { children: ReactNode }) {
     const intl = useIntl()
     const resolverRef = useRef<MessageResolver | undefined>(undefined)
 
-    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" |undefined>()
+    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" | undefined>()
     const [messages, setMessages] = useState<Message[]>([])
     const [opts, setOpts] = useState<MessageOption[]>([])
+    const [loginUrl, setLoginUrl] = useState<string | undefined>(undefined)
 
     /**
      * Displays a fatal error message in a dialog. This type of message is used for critical errors that require immediate
@@ -189,8 +192,9 @@ function MessagesProvider(props: { children: ReactNode }) {
      * Triggers the login process. This method can be used to prompt the user to log in when authentication is 
      * required.
      */
-    const login = () => {
-        // Implement the login logic here
+    const login = (err: UnauthenticatedError) => {
+        setLoginUrl(err.data)
+        setLoginUrl("/login.html")
         setType("login")
     }
 
@@ -295,7 +299,7 @@ function MessagesProvider(props: { children: ReactNode }) {
                             headerText={intl.formatMessage({ id: "common_fatal_title" })}
                             open={type == "fatal"}
                             onBeforeClose={(e) => e.preventDefault()}
-                            onClose={() => {}}
+                            onClose={() => { }}
                             state="Negative"
                         >
                             <IllustratedMessage
@@ -365,15 +369,25 @@ function MessagesProvider(props: { children: ReactNode }) {
                         document.body,
                     )
                 }
-                {ReactDOM.createPortal(
+                {(type == "login") && ReactDOM.createPortal(
                     <Dialog
-                        headerText={intl.formatMessage({id: "common_login_title",})}
+                        headerText={intl.formatMessage({ id: "common_login_title", })}
                         open={type == "login"}
                         stretch={true}
-                        footer={<Bar design="Footer"></Bar>}
+                        onClose={() => setType(undefined)}
+                        footer={<Bar
+                            design="Footer"
+                            endContent={
+                                <Button
+                                    data-sap-ui-fastnavgroup="true"
+                                    onClick={() => setType(undefined)}
+                                >
+                                    {intl.formatMessage({ id: "common_close" })}
+                                </Button>}
+                        />}
                     >
                         <div style={{ width: "100%", height: "100%" }}>
-                            <iframe width="100%" height="100%" src="/oauth2/authorize/ias" style={{ border: "none" }}/>
+                            <iframe width="100%" height="100%" src={loginUrl} style={{ border: "none" }} />
                         </div>
                     </Dialog>,
                     document.body,

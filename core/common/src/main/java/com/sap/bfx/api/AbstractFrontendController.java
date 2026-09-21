@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -118,10 +119,8 @@ public abstract class AbstractFrontendController {
         var mimeType = "";
         var path = "";
 
-        // because there could be prefixes, e.g. from k8s ingress we need to filter
-        // these. The rule is, that
-        // the path needs to start with "assets", any other resource can don't have and
-        // cannot return
+        // because there could be prefixes, e.g. from k8s ingress we need to filter these. The rule is, that
+        // the path needs to start with "assets", any other resource can don't have and cannot return
         final var m = resourcePathPattern.matcher(req.getRequestURI());
         if (m.matches()) {
             path = m.group(1);
@@ -160,7 +159,11 @@ public abstract class AbstractFrontendController {
             }
             return null;
         }
-        
+
+        // if not explicitly requested, we serve the index.html page, which will load the SPA
+        final var resName =
+                (Strings.CS.endsWith(req.getRequestURI(), "login.html")) ? "login.html.ftlh" : "index.html.ftlh";
+
         final var values = new HashMap<String, Object>();
         values.put(NM_FAVICON, favicon);
         values.put(NM_INDEX_JS, jsIndex);
@@ -168,7 +171,7 @@ public abstract class AbstractFrontendController {
         values.put(NM_CONTEXT_PATH, StringUtils.isBlank(contextPath) ? "/" : contextPath);
 
         try (final var out = new OutputStreamWriter(res.getOutputStream())) {
-            final var template = templateCfg.getTemplate("index.html.ftlh");
+            final var template = templateCfg.getTemplate(resName);
             res.setContentType(MediaType.TEXT_HTML_VALUE);
             res.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
             res.setHeader("Pragma", "no-cache");

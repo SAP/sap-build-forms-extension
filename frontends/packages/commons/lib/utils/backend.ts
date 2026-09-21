@@ -270,3 +270,22 @@ export class Backend<TResponse> {
     }
   }
 }
+
+/**
+ *  
+ */
+export interface BackendError {
+  error_code: number
+  guid: string
+  message: string
+  user: string
+}
+
+/**
+ * 
+ */
+export interface UnauthenticatedError extends Error {
+  error_code: number
+  guid: string
+  data: string
+}

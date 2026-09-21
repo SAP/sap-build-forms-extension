@@ -73,18 +73,7 @@ export const createSession = createAsyncThunk(
                 thunkAPI.getState() as any,
             )
         } catch (err: any) {
-            // TODO(ML) Here is the place to handle the error and show a message to the user. For now we just log it to the console.
-            debugger
-            const status = err.request?.status as number
-            if (status === 401) {
-                messages.login()
-                return Promise.reject(undefined)
-            }
-            err = {
-                "error_code": err.request.status as number,
-                "data": JSON.parse(err.request.response)
-            } as UnauthenticatedError
-            console.error(`Error: ${err}`)
+            console.error(`(1) Error: ${err}`)
             setTimeout(() => messages.fatal("session_error_creation"), 10)
             return Promise.reject(err)
         }
@@ -195,10 +184,21 @@ export const triggerEvent = createAsyncThunk(
                         },
                         session,
                     )
-                } catch (err) {
-                    console.error(`Error: ${err}`)
-                    setTimeout(() => messages.fatal("session_error_generic"), 10)
-                    return Promise.reject(err)
+                } catch (err: any) {
+                    // TODO(ML) Here is the place to handle the error and show a message to the user. For now we just log it to the console.
+                    console.error(`(2) Error: ${err}`)
+                    const status = err.request?.status as number
+                    if (status === 401) {
+                        err = {
+                            "error_code": err.request.status as number,
+                            "data": JSON.parse(err.request.response)?.loginUrl
+                        } as UnauthenticatedError
+                        messages.login(err)
+                        return Promise.reject(err)
+                    } else {
+                        setTimeout(() => messages.fatal("session_error_generic"), 10)
+                        return Promise.reject(err)
+                    }
                 }
 
                 if (apiOk(response.status)) {
