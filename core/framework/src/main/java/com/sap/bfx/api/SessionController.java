@@ -186,6 +186,10 @@ public class SessionController {
         });
 
         final var response = new SessionResponse(session.getId(), result, session.getForm(), session.getJournal());
+        final var locale = context.getLocale();
+        if (locale != null && sd != null && sd.getTexts() != null) {
+            response.setMsgTexts(sd.getTexts().get(locale));
+        }
         var jsonResponse = utils.createSessionResult(response);
 
         // wait until session is stored...

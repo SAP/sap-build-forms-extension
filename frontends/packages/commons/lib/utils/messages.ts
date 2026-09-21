@@ -88,6 +88,8 @@ export enum MessageOption {
  * optional parameters.
  * - block: A method for blocking or unblocking user interaction. It takes a boolean value indicating whether to 
  * block (true) or unblock (false) interaction.   
+ * - readonlyDialog: A method for displaying a readonly message with no option to close ist. It takes 
+ * two string variables for type and a message text
  */
 export interface MessageIntf {
     fatal: (key: string, values?: Record<string, PrimitiveType>) => void
@@ -99,6 +101,8 @@ export interface MessageIntf {
     ) => Promise<MessageOption>
     toast: (severity: Severity, key: string, params?: Record<string, PrimitiveType>) => void
     block: (show: boolean) => void
+    readonlyDialog: (type: string, text: string) => void
+    closeReadonlyDialog: () => void
 }
 
 export type MessageResolver = (value: MessageOption | PromiseLike<MessageOption>) => void

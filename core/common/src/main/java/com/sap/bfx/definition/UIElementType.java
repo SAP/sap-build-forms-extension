@@ -22,6 +22,7 @@ public enum UIElementType implements Identifier {
     Mixin(Constants.TYPE_MIXIN),
     Input(Constants.TYPE_INPUT),
     MultiSelect(Constants.TYPE_MULTI_SELECT),
+    PdfViewer(Constants.TYPE_PDF_VIEWER),
     Radio(Constants.TYPE_RADIO),
     SearchHelp(Constants.TYPE_SEARCH_HELP),
     Select(Constants.TYPE_SELECT),

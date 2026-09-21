@@ -152,7 +152,8 @@ export function elementInfo2ValueStateText(
     ei?: boolean | ElementInfo,
 ): UI5WCSlotsNode {
     if (ei && typeof ei === "object" && ei.key && typeof ei.key === "string") {
-        return <Text>{intl.formatMessage({ id: ei.key }, ei?.params)}</Text>
+        const message = ei.text ?? intl.formatMessage({ id: ei.key }, ei?.params)
+        return <Text>{message}</Text>
     }
     return <></>
 }

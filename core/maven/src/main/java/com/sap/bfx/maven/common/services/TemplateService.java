@@ -502,7 +502,7 @@ public class TemplateService extends AbstractProcessor {
      */
     private DataTypeInfo getDataTypeClassName(final String accessClassName, final ElementDefinition ed) {
         return switch (ed.getType()) {
-            case Select, MultiSelect, Radio, Button, Text, TextEdit -> DATA_TYPE_INFO_STRING;
+            case Select, MultiSelect, Radio, Button, Text, TextEdit, Image, PdfViewer -> DATA_TYPE_INFO_STRING;
             case Attachment -> DATA_TYPE_INFO_ATTACHMENT;
             case DateRangePicker -> DATA_TYPE_INFO_DATERANGE;
             case Input -> switch (ed.getDataType()) {

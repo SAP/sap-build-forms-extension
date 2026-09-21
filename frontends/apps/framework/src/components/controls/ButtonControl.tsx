@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Button, Label } from "@ui5/webcomponents-react"
+import { Button, Label, ToolbarButton } from "@ui5/webcomponents-react"
 
 import { Severity, useMessages } from "commons"
 
@@ -40,7 +40,7 @@ function mapDesign(
  * @returns
  */
 export default function (props: ControlProps) {
-    const { def, globalEd, rowId, texts, withContainer, onAfterAction } = props
+    const { def, globalEd, rowId, texts, withContainer, insideToolbar, onAfterAction } = props
     const dispatch = useAppDispatch()
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
@@ -83,6 +83,31 @@ export default function (props: ControlProps) {
         return () => document.removeEventListener("keydown", handler, true)
     }, [def, element?.ed, globalEd, rowId, messages, onAfterAction, dispatch])
 
+    const handleClick = async (e: any) => {
+        if (def.linkHRef && def.linkHRef.trim() !== "") {
+            e.preventDefault?.()
+            window.open(def.linkHRef, "_blank")
+            return
+        }
+        await dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
+        if (onAfterAction) {
+            await onAfterAction()
+        }
+    }
+
+    if (insideToolbar) {
+        return (
+            <ToolbarButton
+                id={def.key}
+                design={mapDesign(def.design)}
+                disabled={!element?.ed || !globalEd}
+                icon={def.icon}
+                tooltip={def.tooltip}
+                text={getLabel(texts, def) ?? ""}
+                onClick={handleClick}
+            />
+        )
+    }
     const button = (
         <Button
             id={def.key}
@@ -90,18 +115,7 @@ export default function (props: ControlProps) {
             disabled={!element?.ed || !globalEd}
             icon={def.icon}
             tooltip={def.tooltip}
-            onClick={async (e: any) => {
-
-                if (def.linkHRef && def.linkHRef.trim() !== "") {
-                    e.preventDefault?.()
-                    window.open(def.linkHRef, "_blank")
-                    return
-                }
-                await dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
-                if (onAfterAction) {
-                    await onAfterAction()
-                }
-            }}
+            onClick={handleClick}
             style={withContainer ? { width: "100%"} : { minWidth: "100px" }}
         >
             {getLabel(texts, def)}
