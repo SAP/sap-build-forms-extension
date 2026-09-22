@@ -88,7 +88,9 @@ export enum MessageOption {
  * - toast: A method for displaying a message as a toast notification. It takes the severity, message key, and 
  * optional parameters.
  * - block: A method for blocking or unblocking user interaction. It takes a boolean value indicating whether to 
- * block (true) or unblock (false) interaction.   
+ * block (true) or unblock (false) interaction.
+ * - readonlyDialog: A method for displaying a readonly message with no option to close ist. It takes two string
+ * variables for type and a message text
  * - login: A method for triggering the login process.
  */
 export interface MessageIntf {
@@ -102,6 +104,8 @@ export interface MessageIntf {
     toast: (severity: Severity, key: string, params?: Record<string, PrimitiveType>) => void
     block: (show: boolean) => void
     login: (err: UnauthenticatedError) => void
+    readonlyDialog: (type: string, text: string) => void
+    closeReadonlyDialog: () => void
 }
 
 export type MessageResolver = (value: MessageOption | PromiseLike<MessageOption>) => void

@@ -1,12 +1,13 @@
+import React from "react"
 import { useIntl } from "react-intl"
-import { useRef, useEffect } from "react"
+import { useRef, useState } from "react"
 
-import { DatePicker, DateTimePicker, Input, TimePicker } from "@ui5/webcomponents-react"
+import { DatePicker, DateTimePicker, Input, Text, TimePicker } from "@ui5/webcomponents-react"
 
 import { getLanguage, useMessages } from "commons"
 
 import { DataType } from "../../features/sessions/definitions"
-import { Element, FormService } from "../../features/sessions/forms"
+import { FormService } from "../../features/sessions/forms"
 import { useAppDispatch, useAppSelector } from "../../features/store"
 import {
     toInternalDate,
@@ -20,11 +21,6 @@ import { ControlProps, handleChange, handleEnterFocus, handleLeaveFocus, getPlac
 import ControlContainer from "./ControlFlexContainer"
 import { elementInfo2ValueState, elementInfo2ValueStateText } from "./utils"
 
-/**
- *
- * @param props
- * @returns
- */
 export default function (props: ControlProps) {
     const { def, globalEd, rowId, texts } = props
     const dispatch = useAppDispatch()
@@ -33,23 +29,52 @@ export default function (props: ControlProps) {
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
 
-    // Refs to access Date values directly from UI5 components
-    const datePickerRef = useRef<any>(null)
-    const dateTimePickerRef = useRef<any>(null)
-    const timePickerRef = useRef<any>(null)
+    const pickerRef = useRef<any>(null)
+    const [localViolation, setLocalViolation] = useState<string | undefined>()
 
-    // if (element?.er && typeof element?.er === "object") {
-    //     console.log(`InputControl for ${def.id} with info ${(element?.er as ElementInfo).severity}`)
-    // }
+    const isString = def.dataType === DataType.String || def.dataType === undefined
+    const isNumeric = def.dataType === DataType.Int || def.dataType === DataType.Decimal
+    const min = def.limits?.min
+    const max = def.limits?.max
+    const readonly = !element?.ed || !globalEd
 
-    const convertInput = (e?: Element): string => {
-        if (typeof element?.va === "string") {
-            return element.va
+    const valueState = element?.msg ? elementInfo2ValueState(element.msg) : localViolation ? "Negative" : "None"
+    const valueStateMessage = element?.msg
+        ? elementInfo2ValueStateText(intl, element.msg)
+        : localViolation ? <Text>{localViolation}</Text> : <></>
+
+    const inputValue =
+        typeof element?.va === "string" ? element.va :
+        element?.va == null ? "" : String(element.va)
+
+    const onFocus = () => handleEnterFocus(dispatch, def, rowId, messages)
+    const onBlur = () => {
+        handleLeaveFocus(dispatch, def, rowId, messages)
+    }
+
+    // Resolves the correct UI5 Input `type` attribute.
+    const inputType = (() => {
+        if (isNumeric) return "Number"
+        switch (def.inputType) {
+            case "password":  return "Password"
+            case "email":     return "Email"
+            case "number":    return "Number"
+            case "telephone": return "Tel"
+            default:          return "Text"
         }
-        if (element?.va === undefined || element?.va === null) {
-            return ""
-        }
-        return element.va.toString()
+    })()
+
+    // Common props shared by all controls
+    const commonProps = {
+        id: def.key,
+        placeholder: getPlaceholder(texts, def),
+        onFocus,
+        onBlur,
+        readonly,
+        required: element?.rq,
+        valueState,
+        valueStateMessage,
+        style: { width: "100%" },
     }
 
     let control = <></>
@@ -57,139 +82,75 @@ export default function (props: ControlProps) {
         case DataType.Date:
             control = (
                 <DatePicker
-                    ref={datePickerRef}
-                    id={def.key}
+                    {...commonProps}
+                    ref={pickerRef}
                     value={(element?.va as string) ?? ""}
                     displayFormat="short"
-                    value-format='yyyy-MM-dd'
-                    placeholder={getPlaceholder(texts, def)}
-                    onChange={(e) => {
-                        const dateValue = (datePickerRef.current as any)?.dateValue
-                        if (dateValue) {
-                            handleChange(
-                                dispatch,
-                                def,
-                                rowId,
-                                messages,
-                                toInternalDate(dateValue, getLanguage()!),
-                            )
-                        }
-                    }}
-                    onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
-                    onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
-                    readonly={!element?.ed || !globalEd}
-                    required={element?.rq}
-                    valueState={elementInfo2ValueState(element?.msg)}
-                    valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
+                    value-format="yyyy-MM-dd"
                     primaryCalendarType="Gregorian"
-                    style={{ width: "100%" }}
+                    minDate={min}
+                    maxDate={max}
+                    onChange={() => {
+                        const dateValue = pickerRef.current?.dateValue
+                        if (dateValue) handleChange(dispatch, def, rowId, messages, toInternalDate(dateValue, getLanguage()!))
+                    }}
                 />
             )
             break
         case DataType.DateTime:
-            // console.log(`date-time`)
             control = (
                 <DateTimePicker
-                    ref={dateTimePickerRef}
-                    id={def.key}
-                    value={element?.va ? fromInternalDateTime((element.va as string), getLanguage()!) : ""}
+                    {...commonProps}
+                    ref={pickerRef}
+                    value={element?.va ? fromInternalDateTime(element.va as string, getLanguage()!) : ""}
                     displayFormat="short"
-                    valueFormat='yyyy-MM-ddTHH:mm:ss'
-                    placeholder={getPlaceholder(texts, def)}
-                    onChange={(e) => {
-                        console.log(`DateTimePicker onChange triggered with value: ${e.target.value}`)
-                        const dateValue = (dateTimePickerRef.current as any)?.dateValue
-                        if (dateValue) {
-                            handleChange(
-                                dispatch,
-                                def,
-                                rowId,
-                                messages,
-                                toInternalDateTime(dateValue, getLanguage()!),
-                            )
-                        }
-                    }}
-                    onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
-                    onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
-                    readonly={!element?.ed || !globalEd}
-                    required={element?.rq}
-                    valueState={elementInfo2ValueState(element?.msg)}
-                    valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
-                    onInput={function () {}}
+                    valueFormat="yyyy-MM-ddTHH:mm:ss"
                     primaryCalendarType="Gregorian"
-                    style={{ width: "100%" }}
+                    minDate={min}
+                    maxDate={max}
+                    onChange={() => {
+                        const dateValue = pickerRef.current?.dateValue
+                        if (dateValue) handleChange(dispatch, def, rowId, messages, toInternalDateTime(dateValue, getLanguage()!))
+                    }}
                 />
             )
             break
         case DataType.Time:
             control = (
                 <TimePicker
-                    ref={timePickerRef}
-                    id={def.key}
-                    value={element?.va ? fromInternalTime((element.va as string), getLanguage()!) : ""}
+                    {...commonProps}
+                    ref={pickerRef}
+                    value={element?.va ? fromInternalTime(element.va as string, getLanguage()!) : ""}
                     displayFormat="medium"
                     valueFormat="HH:mm:ss"
-                    placeholder={getPlaceholder(texts, def)}
                     onChange={(e) => {
-                        const timeValue = (timePickerRef.current as any)?.dateValue
+                        const timeValue = pickerRef.current?.dateValue
                         if (timeValue) {
-                            handleChange(
-                                dispatch,
-                                def,
-                                rowId,
-                                messages,
-                                toInternalTime(timeValue, getLanguage()!),
-                            )
+                            handleChange(dispatch, def, rowId, messages, toInternalTime(timeValue, getLanguage()!))
                         } else if (e.target.value.length === 0) {
                             handleChange(dispatch, def, rowId, messages, undefined)
                         }
                     }}
-                    onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
-                    onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
-                    readonly={!element?.ed || !globalEd}
-                    required={element?.rq}
-                    valueState={elementInfo2ValueState(element?.msg)}
-                    valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
-                    onInput={function ka() {}}
-                    style={{ width: "100%" }}
                 />
             )
             break
         default:
             control = (
                 <Input
-                    id={def.key}
-                    value={convertInput(element)}
-                    placeholder={getPlaceholder(texts, def)}
+                    {...commonProps}
+                    value={inputValue}
+                    type={inputType}
+                    maxlength={isString && max ? parseInt(max) : undefined}
+                    min={isNumeric ? min : undefined}
+                    max={isNumeric ? max : undefined}
                     onChange={(e) => {
-                        let value: string | number = e.target.value ?? ""
-                        if (def.dataType === DataType.Int) {
-                            value = parseInt(value)
-                        } else if (def.dataType === DataType.Decimal) {
-                            value = parseFloat(value)
-                        }
+                        const raw = e.target.value ?? ""
+                        const value =
+                            def.dataType === DataType.Int ? parseInt(raw) :
+                            def.dataType === DataType.Decimal ? parseFloat(raw) :
+                            raw
                         handleChange(dispatch, def, rowId, messages, value)
                     }}
-                    onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
-                    onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
-                    readonly={!element?.ed || !globalEd}
-                    required={element?.rq}
-                    valueState={elementInfo2ValueState(element?.msg)}
-                    valueStateMessage={elementInfo2ValueStateText(intl, element?.msg)}
-                    style={{ width: "100%" }}
-                    type={
-                        def.dataType === DataType.Int || def.dataType === DataType.Decimal
-                            ? "Number"
-                            : def.inputType === "password"
-                              ? "Password"
-                              : def.inputType === "email"
-                                ? "Email"
-                                : def.inputType === "number"
-                                  ? "Number"
-                                  : def.inputType === "telephone"
-                                    ? "Tel"
-                                    : "Text"
-                    }
                 />
             )
     }

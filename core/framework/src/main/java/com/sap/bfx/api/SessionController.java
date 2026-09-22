@@ -25,7 +25,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -92,8 +91,8 @@ public class SessionController {
     }
 
     /**
-     * Patch an existing session with new data from the client. This method processes the incoming JSON payload,
-     * applies changes to the session, and executes any associated event handlers.
+     * Patch an existing session with new data from the client. This method processes the incoming JSON payload, applies
+     * changes to the session, and executes any associated event handlers.
      *
      * @param node JSON payload containing session ID, command, source row ID, and source key
      * @return ResponseEntity containing the updated session data
@@ -190,6 +189,10 @@ public class SessionController {
         });
 
         final var response = new SessionResponse(session.getId(), result, session.getForm(), session.getJournal());
+        final var locale = context.getLocale();
+        if (locale != null && sd != null && sd.getTexts() != null) {
+            response.setMsgTexts(sd.getTexts().get(locale));
+        }
         var jsonResponse = ControllerUtils.createSessionResult(response);
 
         // wait until session is stored...
@@ -200,10 +203,9 @@ public class SessionController {
     }
 
     /**
-     * Create a new session for a given scenario definition and form. This method initializes the session, applies
-     * any necessary callbacks, and returns the session data to the client.
+     * Create a new session for a given scenario definition and form. This method initializes the session, applies any
+     * necessary callbacks, and returns the session data to the client.
      *
-     * @param token     the authentication token of the user
      * @param principal the principal representing the authenticated user
      * @param request   the request payload containing state, task ID, locale, and forms ID
      * @return ResponseEntity containing the newly created session data
@@ -211,8 +213,8 @@ public class SessionController {
      */
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
-    ResponseEntity<byte[]> createSession(AbstractAuthenticationToken token, Principal principal,
-                                         @RequestBody CreateSessionRequest request) throws Exception {
+    ResponseEntity<byte[]> createSession(Principal principal, @RequestBody CreateSessionRequest request)
+            throws Exception {
         log.info("Create-session called with {} for user {}", request.toString(),
                 principal == null ? "Anonymous" : principal.getName());
 

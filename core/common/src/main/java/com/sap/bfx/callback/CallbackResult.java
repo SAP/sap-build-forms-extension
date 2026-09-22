@@ -1,5 +1,6 @@
 package com.sap.bfx.callback;
 
+import com.sap.bfx.callback.operation.FrontendOperation;
 import com.sap.bfx.definition.Severity;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -26,6 +27,7 @@ public class CallbackResult {
     private Collection<Message> messages = new LinkedList<>();
     @Setter(AccessLevel.NONE)
     private Map<String, Map<String, String>> valueHelps = new HashMap<>();
+    private FrontendOperation operation;
 
     /**
      * Adds a message to the messages collection. The message will be displayed in the UI with the specified style and

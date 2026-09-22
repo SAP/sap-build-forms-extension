@@ -12,6 +12,7 @@ import {
     IllustratedMessage,
     MessageBox,
     MessageBoxAction,
+    Text,
     Toast,
 } from "@ui5/webcomponents-react"
 // @ts-ignore
@@ -43,6 +44,10 @@ const Context = createContext<MessageIntf>({
     block: (show: boolean) => { },
     // @ts-ignore
     login: (err: UnauthenticatedError) => { },
+    // @ts-ignore
+    readonlyDialog: (type: string, text: string) => { },
+    // @ts-ignore
+    closeReadonlyDialog: () => { },
 })
 
 /**
@@ -111,6 +116,24 @@ function severityFormatName(severity: Severity): "Warning" | "Information" | "Er
 }
 
 /**
+ *  Maps severity to a ValueState string accepted by the UI5 Dialog "state" prop.
+ */
+function severity2ValueState(severity: Severity): "Negative" | "Critical" | "Information" | "Positive" | "None" {
+    switch (severity) {
+        case Severity.Error:
+            return "Negative"
+        case Severity.Warning:
+            return "Critical"
+        case Severity.Info:
+            return "Information"
+        case Severity.Success:
+            return "Positive"
+        default:
+            return "None"
+    }
+}
+
+/**
  *  Provider component that manages the state and display of messages (dialogs, toasts, blocking screen, fatal errors)
  *  in the application. It uses React context to provide functions for displaying messages to the rest of
  *  the application.
@@ -122,7 +145,7 @@ function MessagesProvider(props: { children: ReactNode }) {
     const intl = useIntl()
     const resolverRef = useRef<MessageResolver | undefined>(undefined)
 
-    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" | undefined>()
+    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" | "readonly" | undefined>()
     const [messages, setMessages] = useState<Message[]>([])
     const [opts, setOpts] = useState<MessageOption[]>([])
     const [loginUrl, setLoginUrl] = useState<string | undefined>(undefined)
@@ -189,13 +212,38 @@ function MessagesProvider(props: { children: ReactNode }) {
     }
 
     /**
-     * Triggers the login process. This method can be used to prompt the user to log in when authentication is 
+     * Triggers the login process. This method can be used to prompt the user to log in when authentication is
      * required.
      */
     const login = (err: UnauthenticatedError) => {
         setLoginUrl(err.data)
         setLoginUrl("/login.html")
         setType("login")
+    }
+
+    /**
+     *
+     * @param typeStr
+     * @param text
+     */
+    const readonlyDialog = (typeStr: string, text: string) => {
+        const severityMap: Record<string, Severity> = {
+            e: Severity.Error,
+            w: Severity.Warning,
+            i: Severity.Info,
+            s: Severity.Success,
+        }
+        const severity = severityMap[typeStr] ?? Severity.Info
+        setType("readonly")
+        setMessages([{ style: "dialog", severity, key: "", params: { text } }])
+    }
+
+    /**
+     *
+     */
+    const closeReadonlyDialog = () => {
+        setType(undefined)
+        setMessages([])
     }
 
     /**
@@ -269,12 +317,10 @@ function MessagesProvider(props: { children: ReactNode }) {
         actions.push(MessageBoxAction.OK)
     }
 
-
-
     // console.log(`Messages type: ${type}`)
 
     return (
-        <Context.Provider value={{ fatal, dialog, toast, block, login }}>
+        <Context.Provider value={{ fatal, dialog, toast, block, login, readonlyDialog, closeReadonlyDialog }}>
             <>
                 {ReactDOM.createPortal(
                     <MessageBox
@@ -294,10 +340,11 @@ function MessagesProvider(props: { children: ReactNode }) {
                 )}
                 {messages &&
                     messages.length > 0 &&
+                    type === "fatal" &&
                     ReactDOM.createPortal(
                         <Dialog
                             headerText={intl.formatMessage({ id: "common_fatal_title" })}
-                            open={type == "fatal"}
+                            open={true}
                             onBeforeClose={(e) => e.preventDefault()}
                             onClose={() => { }}
                             state="Negative"
@@ -310,6 +357,23 @@ function MessagesProvider(props: { children: ReactNode }) {
                                 )}
                                 subtitleText={intl.formatMessage({ id: "common_fatal_subtitle" })}
                             />
+                        </Dialog>,
+                        document.body,
+                    )}
+                {messages &&
+                    messages.length > 0 &&
+                    type === "readonly" &&
+                    ReactDOM.createPortal(
+                        <Dialog
+                            headerText={intl.formatMessage({
+                                id: severity2MessageBoxTitle(messages[0].severity),
+                            })}
+                            open={true}
+                            onBeforeClose={(e) => e.preventDefault()}
+                            onClose={() => { }}
+                            state={severity2ValueState(messages[0].severity)}
+                        >
+                            <Text>{messages[0].params?.text as string}</Text>
                         </Dialog>,
                         document.body,
                     )}

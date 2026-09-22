@@ -119,7 +119,7 @@ public class ElementDefinition {
      */
     public static Class<?> getDataTypeClass(final ElementDefinition ed) {
         return switch (ed.getType()) {
-            case Alert, Button, Dialog, Form, Icon, Image, MultiSelect, Radio, SearchHelp, Select,
+            case Alert, Button, Dialog, Form, Icon, Image, MultiSelect, PdfViewer, Radio, SearchHelp, Select,
                  Text, TextEdit, Wizard -> String.class;
             case Attachment -> Attachments.class;
             case DateRangePicker -> DateRange.class;
@@ -171,6 +171,8 @@ public class ElementDefinition {
                 ((MaxValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
             } else if (it instanceof FixedValidationRule) {
                 ((FixedValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
+            } else if (it instanceof RegexValidationRule) {
+                ((RegexValidationRule) it).setDataTypeClass(getDataTypeClass(ed));
             } else if (it instanceof BeanValidationRule) {
                 ((BeanValidationRule) it).setAppContext(appContext);
             }

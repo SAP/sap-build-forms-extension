@@ -20,6 +20,7 @@ export enum UIElement {
     Input = "input",
     Link = "link",
     MultiSelect = "multiselect",
+    PdfViewer = "pdfviewer",
     RadioButtons = "radio",
     SearchHelp = "searchhelp",
     Segment = "segment",
@@ -64,6 +65,12 @@ export class Limitations {
     min?: string
     max?: string
     match?: string
+    fixedLength?: string
+    fixedFractions?: string
+    showMinHint?: boolean
+    showMaxHint?: boolean
+    showMatchHint?: boolean
+    showFixedHint?: boolean
 }
 
 export interface CategoryOption {
@@ -130,6 +137,7 @@ export interface Definition {
     categories?: CategoryOption[]
     columnOptions?: { minColumnWidth?: string; maxColumnWidth?: string }
     size?: { height: string; width: string }
+    floating?: boolean
     inputType?: string
     shortcut?: string
 }
