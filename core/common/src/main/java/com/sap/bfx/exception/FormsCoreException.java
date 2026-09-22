@@ -51,7 +51,7 @@ public class FormsCoreException extends RuntimeException {
     public FormsCoreException(String message, Throwable base) {
         super(message == null ? "" : message, base);
 
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
             user = SecurityContextHolder.getContext().getAuthentication().getName();
         }
         id = UUID.randomUUID().toString();
