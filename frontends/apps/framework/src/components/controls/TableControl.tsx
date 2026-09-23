@@ -583,14 +583,13 @@ export default function (props: ControlProps) {
 
     return (
         <div>
-            {!asTableCell && (
+            {!asTableCell && def.showLabel && (
                 <Label
                     id={"l" + def.key}
                     for={def.key}
                     required={element?.rq}
-                    style={def.showLabel === false ? { visibility: "hidden" } : undefined}
                 >
-                    {def.showLabel !== false ? getLabel(texts, def) : ""}
+                    {getLabel(texts, def)}
                 </Label>
             )}
             {def.toolbar && (

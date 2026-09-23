@@ -116,6 +116,12 @@ public class MixinService extends AbstractProcessor {
                     if (it.getElements() != null && !it.getElements().isEmpty()) {
                         queue.add(it.getElements());
                     }
+                    if (it instanceof FormElementDefinition fed && fed.getHeaderSegment() != null) {
+                        var headerElements = fed.getHeaderSegment().getElements();
+                        if (headerElements != null && !headerElements.isEmpty()) {
+                            queue.add(headerElements);
+                        }
+                    }
                     try {
                         handled = this.resolveMixin(processingInfo, it, elements) || handled;
                     } catch (Exception e) {
