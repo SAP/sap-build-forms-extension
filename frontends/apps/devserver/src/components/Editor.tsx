@@ -881,12 +881,12 @@ export default function () {
                                 var oldName = toPascalCase(indexesDelete!.name)
 
                                 Object.keys(texts).forEach((key) => {
-                                    if (texts![key][`${oldName}.short` as any] != undefined) {
-                                        delete texts![key][`${oldName}.short`]
-                                    }
-                                    if (texts![key][`${oldName}.long` as any] != undefined) {
-                                        delete texts![key][`${oldName}.long`]
-                                    }
+                                    // if (texts![key][`${oldName}.short` as any] != undefined) {
+                                    //     delete texts![key][`${oldName}.short`]
+                                    // }
+                                    // if (texts![key][`${oldName}.long` as any] != undefined) {
+                                    //     delete texts![key][`${oldName}.long`]
+                                    // }
                                     if (texts![key][`${oldName}.title` as any] != undefined) {
                                         delete texts![key][`${oldName}.title`]
                                     }

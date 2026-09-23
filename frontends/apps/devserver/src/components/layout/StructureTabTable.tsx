@@ -496,8 +496,8 @@ export default function StructureTabTable(props: Props) {
                                             JSON.stringify(treeItemsRef.current.texts),
                                         )
                                         const postfixes = [
-                                            TextPostfix.short,
-                                            TextPostfix.long,
+                                            // TextPostfix.short,
+                                            // TextPostfix.long,
                                             TextPostfix.title,
                                             TextPostfix.doc,
                                             TextPostfix.placeholder,
@@ -1153,66 +1153,66 @@ export default function StructureTabTable(props: Props) {
                     )
                 },
             },
-            {
-                Header: "Texts short",
-                accessor: (originalRow: Record<string, any>) => {
-                    return (
-                        treeItemsRef.current?.texts![
-                        props.defaultLanguage
-                            ? props.defaultLanguage!
-                            : (Object.keys(treeItemsRef.current?.texts!).sort()[0] as any)
-                        ]?.[
-                        `${getElemByIndex(originalRow.index)?.name}${TextPostfix.short}` as any
-                        ] ?? ""
-                    )
-                },
-                width: 180,
-                Cell: (instance: any) => {
-                    return (
-                        <FlexBox style={{ width: "100%" }}>
-                            <StructureTabTextsInput
-                                postfix={TextPostfix.short}
-                                texts={treeItemsRef.current?.texts}
-                                defaultLanguage={props.defaultLanguage}
-                                currentName={getElemByIndex(instance.row.original.index)?.name}
-                                scenarioMixinName={props.scenarioMixinName}
-                                version={props.version}
-                                setUpdate={scheduleRefresh}
-                            />
-                        </FlexBox>
-                    )
-                },
-            },
-            {
-                Header: "Texts long",
-                accessor: (originalRow: Record<string, any>) => {
-                    return (
-                        treeItemsRef.current?.texts![
-                        props.defaultLanguage
-                            ? props.defaultLanguage!
-                            : (Object.keys(treeItemsRef.current?.texts!).sort()[0] as any)
-                        ]?.[
-                        `${getElemByIndex(originalRow.index)?.name}${TextPostfix.long}` as any
-                        ] ?? ""
-                    )
-                },
-                width: 180,
-                Cell: (instance: any) => {
-                    return (
-                        <FlexBox style={{ width: "100%" }}>
-                            <StructureTabTextsInput
-                                postfix={TextPostfix.long}
-                                texts={treeItemsRef.current?.texts}
-                                defaultLanguage={props.defaultLanguage}
-                                currentName={getElemByIndex(instance.row.original.index)?.name}
-                                scenarioMixinName={props.scenarioMixinName}
-                                version={props.version}
-                                setUpdate={scheduleRefresh}
-                            />
-                        </FlexBox>
-                    )
-                },
-            },
+            // {
+            //     Header: "Texts short",
+            //     accessor: (originalRow: Record<string, any>) => {
+            //         return (
+            //             treeItemsRef.current?.texts![
+            //             props.defaultLanguage
+            //                 ? props.defaultLanguage!
+            //                 : (Object.keys(treeItemsRef.current?.texts!).sort()[0] as any)
+            //             ]?.[
+            //             `${getElemByIndex(originalRow.index)?.name}${TextPostfix.short}` as any
+            //             ] ?? ""
+            //         )
+            //     },
+            //     width: 180,
+            //     Cell: (instance: any) => {
+            //         return (
+            //             <FlexBox style={{ width: "100%" }}>
+            //                 <StructureTabTextsInput
+            //                     postfix={TextPostfix.short}
+            //                     texts={treeItemsRef.current?.texts}
+            //                     defaultLanguage={props.defaultLanguage}
+            //                     currentName={getElemByIndex(instance.row.original.index)?.name}
+            //                     scenarioMixinName={props.scenarioMixinName}
+            //                     version={props.version}
+            //                     setUpdate={scheduleRefresh}
+            //                 />
+            //             </FlexBox>
+            //         )
+            //     },
+            // },
+            // {
+            //     Header: "Texts long",
+            //     accessor: (originalRow: Record<string, any>) => {
+            //         return (
+            //             treeItemsRef.current?.texts![
+            //             props.defaultLanguage
+            //                 ? props.defaultLanguage!
+            //                 : (Object.keys(treeItemsRef.current?.texts!).sort()[0] as any)
+            //             ]?.[
+            //             `${getElemByIndex(originalRow.index)?.name}${TextPostfix.long}` as any
+            //             ] ?? ""
+            //         )
+            //     },
+            //     width: 180,
+            //     Cell: (instance: any) => {
+            //         return (
+            //             <FlexBox style={{ width: "100%" }}>
+            //                 <StructureTabTextsInput
+            //                     postfix={TextPostfix.long}
+            //                     texts={treeItemsRef.current?.texts}
+            //                     defaultLanguage={props.defaultLanguage}
+            //                     currentName={getElemByIndex(instance.row.original.index)?.name}
+            //                     scenarioMixinName={props.scenarioMixinName}
+            //                     version={props.version}
+            //                     setUpdate={scheduleRefresh}
+            //                 />
+            //             </FlexBox>
+            //         )
+            //     },
+            // },
             {
                 Header: "Texts title",
                 accessor: (originalRow: Record<string, any>) => {

@@ -132,7 +132,7 @@ export default function (props: ControlProps) {
                 icon={
                     <Icon
                         name="border"
-                        onClick={handleShowDialog}
+                        onClick={element?.ed && globalEd ? handleShowDialog : undefined}
                         style={{
                             boxShadow: isHovered ? "var(--sapField_Hover_Shadow)" : "none",
                         }}

@@ -593,7 +593,7 @@ export default function (props: ControlProps) {
 
     return (
         <div>
-            {!asTableCell && (
+            {!asTableCell && def.showLabel && (
                 <FlexBox alignItems="Center" style={{ gap: "0.25rem" }}>
                     <Label
                         id={"l" + def.key}

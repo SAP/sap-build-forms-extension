@@ -763,6 +763,13 @@ public class MetadataService extends AbstractProcessor {
                 if (r != null) {
                     return r;
                 }
+                // also search inside headerSegment (not part of getElements())
+                if (it instanceof FormElementDefinition fed && fed.getHeaderSegment() != null) {
+                    r = findAccessClassForElement(fed.getHeaderSegment().getElements(), helpClassName, search);
+                    if (r != null) {
+                        return r;
+                    }
+                }
             }
         }
         return null;
