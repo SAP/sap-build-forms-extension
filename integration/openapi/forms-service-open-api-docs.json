@@ -6,12 +6,12 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8080",
+      "url": "https://sbfx-generic-process.c-9999e9c.kyma.ondemand.com",
       "description": "Generated server url"
     }
   ],
   "paths": {
-    "/api/v1/scenario/process/{stateValue}": {
+    "/api/v1/scenario/process/{formsProcessId}/{stateValue}": {
       "post": {
         "tags": [
           "scenario-controller"
@@ -20,6 +20,14 @@
         "description": "This operation sets a state for a form process.",
         "operationId": "setProcessState",
         "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "stateValue",
             "in": "path",
@@ -30,22 +38,12 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/ProcessStateResponse"
                 }
               }
             }
@@ -53,7 +51,7 @@
         }
       }
     },
-    "/api/v1/scenario/event/{eventName}": {
+    "/api/v1/scenario/event/{formsProcessId}/{eventName}": {
       "post": {
         "tags": [
           "scenario-controller"
@@ -62,6 +60,14 @@
         "description": "This operation triggers the execution of a scenario event for a form process.",
         "operationId": "triggerEvent",
         "parameters": [
+          {
+            "name": "formsProcessId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "eventName",
             "in": "path",
@@ -72,22 +78,12 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/TriggerEventResponse"
                 }
               }
             }
@@ -104,16 +100,6 @@
         "description": "This operation returns the string of forms scenario base URL, where the SessionController of the scenario is executed.",
         "operationId": "getFormsScenarioBaseUrl",
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -157,22 +143,12 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FieldResponseMapStringObject"
+                  "$ref": "#/components/schemas/FieldListResponse"
                 }
               }
             }
@@ -210,16 +186,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -260,16 +226,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -310,16 +266,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -360,16 +306,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -410,16 +346,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -460,16 +386,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -510,16 +426,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -560,16 +466,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -610,16 +506,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -660,16 +546,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -710,16 +586,6 @@
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "*/*": {
-                "schema": {
-                  "$ref": "#/components/schemas/FieldResponseString"
-                }
-              }
-            }
-          },
           "200": {
             "description": "OK",
             "content": {
@@ -736,11 +602,60 @@
   },
   "components": {
     "schemas": {
-      "FieldResponseString": {
+      "ProcessStateResponse": {
         "type": "object",
         "properties": {
-          "fieldValue": {
+          "statusCode": {
             "type": "string"
+          },
+          "statusMessage": {
+            "type": "string"
+          }
+        }
+      },
+      "FieldResponseObject": {
+        "type": "object",
+        "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
+          "fieldValue": {
+
+          }
+        }
+      },
+      "ParameterItemObject": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+
+          }
+        }
+      },
+      "TriggerEventResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "string"
+          },
+          "statusMessage": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParameterItemObject"
+            },
+            "uniqueItems": true
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldResponseObject"
+            }
           }
         }
       },
@@ -752,20 +667,37 @@
           }
         }
       },
-      "FieldResponseMapStringObject": {
+      "FieldListResponse": {
         "type": "object",
         "properties": {
-          "fieldValue": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object"
+          "scenarioFieldNames": {
+            "type": "string"
+          },
+          "fieldList": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldResponseObject"
             }
+          }
+        }
+      },
+      "FieldResponseString": {
+        "type": "object",
+        "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
+          "fieldValue": {
+            "type": "string"
           }
         }
       },
       "FieldResponseInteger": {
         "type": "object",
         "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
           "fieldValue": {
             "type": "integer",
             "format": "int32"
@@ -775,6 +707,9 @@
       "FieldResponseBigDecimal": {
         "type": "object",
         "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
           "fieldValue": {
             "type": "number"
           }
@@ -783,6 +718,9 @@
       "FieldResponseMapStringString": {
         "type": "object",
         "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
           "fieldValue": {
             "type": "object",
             "additionalProperties": {
@@ -794,6 +732,9 @@
       "FieldResponseBoolean": {
         "type": "object",
         "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
           "fieldValue": {
             "type": "boolean"
           }
@@ -802,10 +743,13 @@
       "FieldResponseCollectionObject": {
         "type": "object",
         "properties": {
+          "scenarioFieldName": {
+            "type": "string"
+          },
           "fieldValue": {
             "type": "array",
             "items": {
-              "type": "object"
+
             }
           }
         }

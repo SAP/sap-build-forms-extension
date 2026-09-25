@@ -4,7 +4,6 @@ import com.sap.cloud.sdk.cloudplatform.connectivity.Destination;
 import com.sap.cloud.sdk.services.openapi.apiclient.ApiClient;
 import com.sap.cloud.sdk.services.openapi.core.OpenApiRequestException;
 import com.sap.openapi.sbpaworkflow.api.WorkflowDefinitionsApi;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -19,11 +18,11 @@ import java.util.List;
 
 public class WorkflowDefinitionsApiExtended extends WorkflowDefinitionsApi {
 
-    public WorkflowDefinitionsApiExtended(@NotNull Destination httpDestination) {
+    public WorkflowDefinitionsApiExtended(@Nonnull Destination httpDestination) {
         super(httpDestination);
     }
 
-    public WorkflowDefinitionsApiExtended(@NotNull ApiClient apiClient) {
+    public WorkflowDefinitionsApiExtended(@Nonnull ApiClient apiClient) {
         super(apiClient);
     }
 

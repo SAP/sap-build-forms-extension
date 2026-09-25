@@ -11,12 +11,12 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
-import javax.servlet.Servlet;
+import jakarta.servlet.Servlet;
 import java.io.InputStreamReader;
 
 @Mojo(name = "serve", requiresDependencyResolution = ResolutionScope.COMPILE)
