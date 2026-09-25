@@ -290,7 +290,7 @@ export default function () {
                                         icon="validate"
                                         onClick={function Ta() {
                                             const p = backendDispatch(
-                                                "v1/scenarios/check/",
+                                                "v1/scenarios/check",
                                                 "PUT",
                                                 Object.assign(
                                                     {},
@@ -395,7 +395,7 @@ export default function () {
                                                 if (action.status == 200) {
                                                     newItems1 = action.data
                                                     const p2 = backendDispatch(
-                                                        "v1/scenarios/mixins/",
+                                                        "v1/scenarios/mixins",
                                                         "PUT",
                                                         Object.assign(
                                                             {},

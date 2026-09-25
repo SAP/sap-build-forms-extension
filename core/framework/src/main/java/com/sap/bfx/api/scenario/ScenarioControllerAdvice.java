@@ -1,7 +1,6 @@
 package com.sap.bfx.api.scenario;
 
-import com.sap.bfx.api.scenario.json.FieldResponse;
-import com.sap.bfx.api.scenario.json.JsonService;
+import com.sap.bfx.api.scenario.json.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
@@ -34,6 +33,30 @@ public class ScenarioControllerAdvice implements ResponseBodyAdvice<Object> {
                 jsonService.send(tempFieldResponse, response, MediaType.APPLICATION_JSON_UTF8);
             } catch (Exception e) {
                 log.error("Error writing ScenarioController.FieldResponse result", e);
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return null;
+        } else if (obj instanceof FieldListResponse tempFieldListResponse) {
+            try {
+                jsonService.send(tempFieldListResponse, response, MediaType.APPLICATION_JSON_UTF8);
+            } catch (Exception e) {
+                log.error("Error writing ScenarioController.FieldListResponse result", e);
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return null;
+        } else if (obj instanceof ProcessStateResponse tempProcessStateResponse) {
+            try {
+                jsonService.send(tempProcessStateResponse, response, MediaType.APPLICATION_JSON_UTF8);
+            } catch (Exception e) {
+                log.error("Error writing ScenarioController.ProcessStateResponse result", e);
+                response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            return null;
+        } else if (obj instanceof TriggerEventResponse tempTriggerEventResponse) {
+            try {
+                jsonService.send(tempTriggerEventResponse, response, MediaType.APPLICATION_JSON_UTF8);
+            } catch (Exception e) {
+                log.error("Error writing ScenarioController.TriggerEventResponse result", e);
                 response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
             }
             return null;
