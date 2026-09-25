@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.sap.bfx.api.scenario.json.FieldResponse;
-import com.sap.bfx.api.scenario.json.ScenarioBaseUrlResponse;
+import com.sap.bfx.api.scenario.json.*;
 import com.sap.bfx.api.scenario.json.serializer.*;
 import com.sap.bfx.callback.CallbackService;
 import com.sap.bfx.callback.ContextFactory;
@@ -99,11 +98,15 @@ public class ScenarioController {
         module.addSerializer(DateRange.class, new DateRangeSerializer());
         module.addSerializer(ElementRow.class, new ElementRowSerializer());
         module.addSerializer(Table.class, new TableSerializer());
+        module.addSerializer(FieldListResponse.class, new FieldListResponseSerializer());
         module.addSerializer(FieldResponse.class, new FieldResponseSerializer());
         module.addSerializer(LocalDate.class, new LocalDateSerializer());
         module.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
         module.addSerializer(LocalTime.class, new LocalTimeSerializer());
         module.addSerializer(MoneyAmount.class, new MoneyAmountSerializer());
+        module.addSerializer(ProcessStateResponse.class, new ProcessStateResponseSerializer());
+        module.addSerializer(TriggerEventResponse.class, new TriggerEventResponseSerializer());
+        module.addSerializer(ParameterItem.class, new ParameterItemSerializer());
         om.registerModule(module);
     }
 
@@ -527,7 +530,7 @@ public class ScenarioController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     @Operation(summary = "Get fields", description = "This operation returns multiple fields from a form process.")
-    public ResponseEntity<FieldResponse<Map<String, Object>>> getFields(
+    public ResponseEntity<FieldListResponse> getFields(
             @RequestParam(required = true) String formsProcessId,
             @RequestParam(required = true) List<String> scenarioFieldNames, AbstractAuthenticationToken token)
             throws Exception {
@@ -545,8 +548,18 @@ public class ScenarioController {
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT, sourceKeys);
 
-        Map<String, Object> fieldMap = getFieldMap(scenarioFieldNames, form);
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new FieldResponse<>(null, fieldMap));
+        List<FieldResponse<Object>> fieldList = getFieldList(scenarioFieldNames, form);
+
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new FieldListResponse(String.join(", ", scenarioFieldNames), fieldList));
+    }
+
+    private List<FieldResponse<Object>> getFieldList(List<String> scenarioFieldNames, Form form) {
+        List<FieldResponse<Object>> fieldList = new ArrayList<>();
+        for (String f : scenarioFieldNames) {
+            Object tempField = this.getScenarioFieldValue(form, f, Object.class);
+            fieldList.add(new FieldResponse<>(f, this.getObjectViaObjectMapper(tempField, sourceClassToTargetClass.get(tempField.getClass()))));
+        }
+        return fieldList;
     }
 
     /**
@@ -581,15 +594,15 @@ public class ScenarioController {
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT, sourceKeys);
 
-        Map<String, Object> fieldMap = getFieldMap(scenarioFieldNames, form);
+        List<FieldResponse<Object>> fieldList = getFieldList(scenarioFieldNames, form);
         String jsonSerialized = "";
         try {
-            jsonSerialized = om.writeValueAsString(fieldMap);
+            jsonSerialized = om.writeValueAsString(fieldList);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                             .body(new FieldResponse<>("fieldValue", jsonSerialized));
+                .body(new FieldResponse<>(String.join(", ", scenarioFieldNames), jsonSerialized));
     }
 
     /**
@@ -606,9 +619,8 @@ public class ScenarioController {
     @ResponseBody
     @Operation(summary = "Trigger event",
             description = "This operation triggers the execution of a scenario event for a form process.")
-    public ResponseEntity<String> triggerEvent(@PathVariable(required = true) String formsProcessId,
-                                               @PathVariable(required = true) String eventName,
-                                               AbstractAuthenticationToken token) throws Exception {
+    public ResponseEntity<TriggerEventResponse> triggerEvent(@PathVariable(required = true) String formsProcessId,
+                                                             @PathVariable(required = true) String eventName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -618,7 +630,6 @@ public class ScenarioController {
 
         Form form = formsService.loadById(formsProcessId);
         final var securitySession = SecurityUtils.getSecuritySession();
-
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.PostScenarioControllerAuth, false, null);
         log.debug("FormsProcessId:{},EventName:{}", formsProcessId, eventName);
@@ -636,7 +647,11 @@ public class ScenarioController {
         FormsApi formsApi = ctx.getApi(FormsApi.class);
         formsApi.save();
         //}
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Execution of triggerEvent() is done!");
+        Set<ParameterItem<Object>> parameters = null;
+        //Set<ParameterItem<Object>> parameters = new HashSet<>();
+        List<FieldResponse<Object>> fieldList = null;
+        //List<FieldResponse<Object>> fieldList = new ArrayList<>();
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new TriggerEventResponse("200", "Execution of triggerEvent():'" + eventName + "' is done!", parameters, fieldList));
     }
 
     /**
@@ -652,9 +667,8 @@ public class ScenarioController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     @Operation(summary = "Set process state", description = "This operation sets a state for a form process.")
-    public ResponseEntity<String> setProcessState(@PathVariable(required = true) String formsProcessId,
-                                                  @PathVariable(required = true) String stateValue,
-                                                  AbstractAuthenticationToken token) throws Exception {
+    public ResponseEntity<ProcessStateResponse> setProcessState(@PathVariable(required = true) String formsProcessId,
+                                                                @PathVariable(required = true) String stateValue) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -663,8 +677,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.PostScenarioControllerAuth, false, null);
 
@@ -701,7 +715,7 @@ public class ScenarioController {
                 preCtx.getTaskInstanceId());
         FormsApi formsApi = ctx.getApi(FormsApi.class);
         formsApi.save();
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body("Execution of setProcessState() is done!");
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ProcessStateResponse("200", "Execution of setProcessState():'" + stateValue + "' is done!"));
     }
 
     /**
