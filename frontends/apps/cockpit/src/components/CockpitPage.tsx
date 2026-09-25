@@ -15,7 +15,7 @@ import {
 
 import { getLanguage, Margin, useMessages } from "commons"
 
-import { FilterParams, FILTER_INPUI_TYPES, useProcessStore } from "../state/processes"
+import { FilterParams, useProcessStore } from "../state/processes"
 import { Settings, useVisualStore } from "../state/visual"
 import ProcessListView from "./ProcessListView"
 import ProcessListFilter from "./ProcessListFilter"
@@ -49,7 +49,7 @@ export default function () {
             // initialize the filter with the settings returned
             processState.initFilter((data as any).data as Settings)
             // after loading settings we can load the processes
-            findProcesses(messages, processState.filter)
+            findProcesses(messages, useProcessStore.getState().filter)
         })
     }, [])
 
@@ -57,12 +57,12 @@ export default function () {
         Standard: {
             searchParameters: [],
             description: "",
-            descriptionType: FILTER_INPUI_TYPES[0],
+            descriptionType: "",
             functionalId: "",
-            functionalIdType: FILTER_INPUI_TYPES[0],
+            functionalIdType: "",
             states: [],
             additionalInformation: "",
-            additionalInformationType: FILTER_INPUI_TYPES[0],
+            additionalInformationType: "",
             user: "",
             roleUser: [],
             startedBy: "",
@@ -294,6 +294,21 @@ export default function () {
             style={{ width: "100vw", height: "100vh" }}
             titleArea={
                 <DynamicPageTitle
+                    actionsBar={
+                        visualState.view === "list" ? (
+                            <Toolbar>
+                                <ToolbarButton
+                                    text={intl.formatMessage({ id: "button_clear" })}
+                                    onClick={() => processState.setFilter({ profiles: useProcessStore.getState().filter.profiles })}
+                                />
+                                <ToolbarButton
+                                    design="Emphasized"
+                                    text={intl.formatMessage({ id: "button_go" })}
+                                    onClick={() => findProcesses(messages, useProcessStore.getState().filter)}
+                                />
+                            </Toolbar>
+                        ) : undefined
+                    }
                     heading={<Title level="H1">{intl.formatMessage({ id: "app_title" })}</Title>}
                     subheading={
                         <Title level="H2">

@@ -70,19 +70,14 @@ export const PROCESS_STATES: Array<ProcessStatePresentation> = [
 /**
  * 
  */
-export const FILTER_INPUI_TYPES = ["equals", "contains", "begins_with", "ends_with"]
-
 /**
  * Filter parameters interface
  */
 export type FilterParams = {
     profiles?: string[],
-    descriptionType?: string,
     descriptionValue?: string,
-    functionalIdType?: string,
     functionalIdValue?: string,
     status?: string[],
-    additionalInformationType?: string,
     additionalInformationValue?: string,
     user?: string,
     roleUser?: string[],
@@ -130,8 +125,35 @@ export const useProcessStore = create<ProcessState>((set) => ({
     },
 
     async findProcesses(messages: MessageIntf, filter: FilterParams): Promise<AxiosResponse<Process[]> | Error> {
+        const params: Record<string, unknown> = { ...filter }
+
+        if (!filter.descriptionValue?.trim()) {
+            delete params.descriptionValue
+        } else {
+            params.descriptionType = "contains"
+        }
+
+        if (!filter.functionalIdValue?.trim()) {
+            delete params.functionalIdValue
+        } else {
+            params.functionalIdType = "contains"
+        }
+
+        if (!filter.additionalInformationValue?.trim()) {
+            delete params.additionalInformationValue
+        } else {
+            params.additionalInformationType = "contains"
+        }
+
+        if (!filter.user?.trim()) delete params.user
+        if (!filter.startedBy?.trim()) delete params.startedBy
+        if (!filter.endedOn?.trim()) delete params.endedOn
+        if (!filter.scenario?.trim() || filter.scenario === "...") delete params.scenario
+        if (!filter.roleUser?.length) delete params.roleUser
+        if (!filter.status?.length) delete params.status
+
         const res = await backend.callDirect(messages, "/v1/processes", "GET", undefined, {
-            params: filter, paramsSerializer: { indexes: null }
+            params, paramsSerializer: { indexes: null }
         })
         if (apiOk(res.status)) {
             set(() => ({ processes: res.data as Process[] }))

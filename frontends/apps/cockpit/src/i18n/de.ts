@@ -15,6 +15,8 @@ export default {
     label_started_by: "Gestartet von",
     label_started_at: "Gestartet am",
     label_finished_at: "Beendet am",
+    label_additional_information: "Zusatzinformation",
+    label_ended_on: "Beendet am",
     label_scenario: "Szenario",
     label_scenario_version: "Szenario Version",
 
@@ -35,11 +37,25 @@ export default {
     process_state_finished: "Beendet",
     process_state_canceled: "Abgebrochen",
     process_state_escalated: "Eskaliert",
+    process_state_0: "Entwurf",
+    process_state_10: "Übertragen",
+    process_state_20: "Läuft",
+    process_state_90: "Fehler",
+    process_state_100: "Abgeschlossen",
 
     input_type_equals: "gleich",
     input_type_contains: "enthält",
     input_type_begins_with: "beginnt mit",
     input_type_ends_with: "endet auf",
+
+    common_error_date: "Ungültiger Datumsbereich",
+    common_no_data: "Keine Daten",
+
+    button_go: "Los",
+    button_clear: "Löschen",
+    button_search: "Suchen",
+    button_select: "Auswählen",
+    button_close: "Schließen",
 
     show_tab_details: "Details",
     show_tabl_timeline: "Historie",

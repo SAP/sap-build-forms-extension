@@ -170,6 +170,20 @@ public interface FormsApi extends Api {
     void setTemplateName(String templateName);
 
     /**
+     * Returns the workflow adapter name used for this process instance
+     *
+     * @return
+     */
+    String getWorkflowAdapter();
+
+    /**
+     * Sets the workflow adapter name used for this process instance
+     *
+     * @param workflowAdapter
+     */
+    void setWorkflowAdapter(String workflowAdapter);
+
+    /**
      * Returns the version of the process instance
      *
      * @return

@@ -4,6 +4,7 @@ import com.sap.bfx.cockpit.service.ProcessAbstract;
 import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.utils.EnumUtils;
 import com.sap.bfx.utils.JdbcUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -11,12 +12,18 @@ import javax.sql.DataSource;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 
 /**
  * Base implementation of the cockpit database adapter for PostgreSQL
  */
+@Slf4j
 public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
 
     /**
@@ -38,109 +45,73 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
         final var sql = new StringBuilder("SELECT * FROM forms_forms WHERE 1=1");
         final var params = new ArrayList<>();
 
-        //TODO: Filter for searchParameter, roleUser, ended on, scenario
+        if ("contains".equals(sp.getDescriptionType()) && sp.getDescriptionValue() != null) {
+            sql.append(" AND description LIKE CONCAT('%',?,'%')");
+            params.add(sp.getDescriptionValue());
+        }
 
-//        if (sp.getDescriptionType() != null && descriptionValue != null) {
-//            if (Arrays.asList(new String[]{"equals", "contains", "begins_with", "ends_with"})
-//                    .contains(descriptionType)) {
-//                switch (descriptionType) {
-//                    case "equals" -> sql.append(" AND description = ?");
-//                    case "contains" -> sql.append(" AND description LIKE CONCAT('%',?,'%')");
-//                    case "begins_with" -> sql.append(" AND description LIKE CONCAT(?,'%')");
-//                    case "ends_with" -> sql.append(" AND description LIKE CONCAT('%',?)");
-//                }
-//                params.add(descriptionValue);
-//            }
-//        }
-//
-//        if (functionalIdType != null && functionalIdValue != null) {
-//            if (Arrays.asList(new String[]{"equals", "contains", "begins_with", "ends_with"})
-//                    .contains(functionalIdType)) {
-//                switch (functionalIdType) {
-//                    case "equals" -> sql.append(" AND functional_id = ?");
-//                    case "contains" -> sql.append(" AND functional_id LIKE CONCAT('%',?,'%')");
-//                    case "begins_with" -> sql.append(" AND functional_id LIKE CONCAT(?,'%')");
-//                    case "ends_with" -> sql.append(" AND functional_id LIKE CONCAT('%',?)");
-//                }
-//                params.add(functionalIdValue);
-//            }
-//        }
-//
-//        if (status != null && status.length > 0) {
-//            StringBuilder builder = new StringBuilder();
-//            builder.append("?,".repeat(status.length));
-//            String placeHolders = builder.deleteCharAt(builder.length() - 1).toString();
-//            sql.append(" AND state IN (");
-//            sql.append(placeHolders);
-//            sql.append(")");
-//            params.addAll(Arrays.asList(status));
-//        }
-//
-////        if (additionalInformationType != null && additionalInformationValue != null) {
-////            if (Arrays.asList(new String[]{"equals", "contains", "begins_with", "ends_with"})
-////                    .contains(additionalInformationType)) {
-////                switch (additionalInformationType) {
-////                    case "equals" -> sql.append(" AND additional_information = ?");
-////                    case "contains" -> sql.append(" AND additional_information LIKE CONCAT('%',?,'%')");
-////                    case "begins_with" -> sql.append(" AND additional_information LIKE CONCAT(?,'%')");
-////                    case "ends_with" -> sql.append(" AND additional_information LIKE CONCAT('%',?)");
-////                }
-////                params.add(additionalInformationValue);
-////            }
-////        }
-//
-//        if (user != null) {
-//            sql.append(" AND started_by = ?");
-//            params.add(user);
-//        }
-//
-//        if (startedBy != null) {
-//            String[] dates = startedBy.split(" - ");
-//            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-//
-//            Timestamp startDate = null;
-//            Timestamp endDate = null;
-//            try {
-//                startDate = new Timestamp(dateFormat.parse(dates[0]).getTime());
-//                Calendar calendar = Calendar.getInstance();
-//                calendar.setTime(dateFormat.parse(dates[1]));
-//                calendar.set(Calendar.HOUR_OF_DAY, 23);
-//                calendar.set(Calendar.MINUTE, 59);
-//                calendar.set(Calendar.SECOND, 59);
-//                calendar.set(Calendar.MILLISECOND, 999);
-//                endDate = new Timestamp(calendar.getTimeInMillis());
-//
-//            } catch (ParseException e) {
-//                e.printStackTrace();
-//            }
-//            sql.append(" AND started_at BETWEEN ? AND ?");
-//            params.add(startDate);
-//            params.add(endDate);
-//        }
-//
-//        if (endedOn != null) {
-//            String[] dates = endedOn.split(" - ");
-//            SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
-//
-//            Timestamp startDate = null;
-//            Timestamp endDate = null;
-//            try {
-//                startDate = new Timestamp(dateFormat.parse(dates[0]).getTime());
-//                Calendar calendar = Calendar.getInstance();
-//                calendar.setTime(dateFormat.parse(dates[1]));
-//                calendar.set(Calendar.HOUR_OF_DAY, 23);
-//                calendar.set(Calendar.MINUTE, 59);
-//                calendar.set(Calendar.SECOND, 59);
-//                calendar.set(Calendar.MILLISECOND, 999);
-//                endDate = new Timestamp(calendar.getTimeInMillis());
-//
-//            } catch (ParseException e) {
-//                e.printStackTrace();
-//            }
-//            sql.append(" AND finished_at BETWEEN ? AND ?");
-//            params.add(startDate);
-//            params.add(endDate);
-//        }
+        if ("contains".equals(sp.getFunctionalIdType()) && sp.getFunctionalIdValue() != null) {
+            sql.append(" AND functional_id LIKE CONCAT('%',?,'%')");
+            params.add(sp.getFunctionalIdValue());
+        }
+
+        if (sp.getStatus() != null && sp.getStatus().length > 0) {
+            final var placeholders = "?,".repeat(sp.getStatus().length);
+            sql.append(" AND state IN (").append(placeholders, 0, placeholders.length() - 1).append(")");
+            params.addAll(Arrays.asList(sp.getStatus()));
+        }
+
+        if (sp.getUser() != null) {
+            sql.append(" AND started_by = ?");
+            params.add(sp.getUser());
+        }
+
+        final var dateFormat = new SimpleDateFormat("MMM d, yyyy", java.util.Locale.ENGLISH);
+
+        if (sp.getStartedBy() != null) {
+            final var dates = sp.getStartedBy().split(" - ");
+            if (dates.length == 2) {
+                try {
+                    final var startDate = new Timestamp(dateFormat.parse(dates[0]).getTime());
+                    final var cal = Calendar.getInstance();
+                    cal.setTime(dateFormat.parse(dates[1]));
+                    cal.set(Calendar.HOUR_OF_DAY, 23);
+                    cal.set(Calendar.MINUTE, 59);
+                    cal.set(Calendar.SECOND, 59);
+                    cal.set(Calendar.MILLISECOND, 999);
+                    sql.append(" AND started_at BETWEEN ? AND ?");
+                    params.add(startDate);
+                    params.add(new Timestamp(cal.getTimeInMillis()));
+                } catch (ParseException e) {
+                    log.warn("Cannot parse startedBy date range: {}", sp.getStartedBy(), e);
+                }
+            }
+        }
+
+        if (sp.getEndedOn() != null) {
+            final var dates = sp.getEndedOn().split(" - ");
+            if (dates.length == 2) {
+                try {
+                    final var startDate = new Timestamp(dateFormat.parse(dates[0]).getTime());
+                    final var cal = Calendar.getInstance();
+                    cal.setTime(dateFormat.parse(dates[1]));
+                    cal.set(Calendar.HOUR_OF_DAY, 23);
+                    cal.set(Calendar.MINUTE, 59);
+                    cal.set(Calendar.SECOND, 59);
+                    cal.set(Calendar.MILLISECOND, 999);
+                    sql.append(" AND finished_at BETWEEN ? AND ?");
+                    params.add(startDate);
+                    params.add(new Timestamp(cal.getTimeInMillis()));
+                } catch (ParseException e) {
+                    log.warn("Cannot parse endedOn date range: {}", sp.getEndedOn(), e);
+                }
+            }
+        }
+
+        if (sp.getScenario() != null) {
+            sql.append(" AND scenario_nm = ?");
+            params.add(sp.getScenario());
+        }
 
         sql.append(" ORDER BY started_at DESC, description");
 

@@ -224,6 +224,22 @@ public class FormsApiImpl implements FormsApi {
      * @return
      */
     @Override
+    public String getWorkflowAdapter() {
+        return form.getWorkflowAdapter();
+    }
+
+    /**
+     * @param workflowAdapter
+     */
+    @Override
+    public void setWorkflowAdapter(String workflowAdapter) {
+        form.setWorkflowAdapter(workflowAdapter);
+    }
+
+    /**
+     * @return
+     */
+    @Override
     public long getVersion() {
         return form.getVersion();
     }

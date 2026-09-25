@@ -1,382 +1,246 @@
+import { useState } from "react"
 import { useIntl } from "react-intl"
 
 import {
-    FilterBar,
-    FilterGroupItem,
+    DateRangePicker,
     FlexBox,
+    Grid,
+    Icon,
     Input,
+    InputDomRef,
+    Label,
     MultiComboBox,
     MultiComboBoxItem,
     Option,
     Select,
+    Ui5CustomEvent,
 } from "@ui5/webcomponents-react"
 
-import { useMessages } from "commons"
+import "@ui5/webcomponents-icons/dist/value-help.js"
 
-import { useProcessStore } from "../state/processes"
+import { PROCESS_STATES, useProcessStore } from "../state/processes"
 import { useVisualStore } from "../state/visual"
+import SearchDialog from "./SearchDialog"
+
+function FilterField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+    return (
+        <FlexBox direction="Column" style={{ width: "100%", gap: "0.25rem" }}>
+            <Label required={required}>{label}</Label>
+            {children}
+        </FlexBox>
+    )
+}
+
+function SearchHelpInput({
+    value,
+    onValueChange,
+    suggestions,
+    dialogTitle,
+}: {
+    value: string
+    onValueChange: (v: string) => void
+    suggestions: string[]
+    dialogTitle: string
+}) {
+    const [showDialog, setShowDialog] = useState(false)
+    const [isHovered, setHovered] = useState(false)
+
+    const handleOpen = () => setShowDialog(true)
+
+    return (
+        <>
+            <Input
+                style={{ width: "100%" }}
+                value={value}
+                onInput={(e: Ui5CustomEvent<InputDomRef>) => onValueChange(e.target.value)}
+                icon={
+                    <Icon
+                        name="value-help"
+                        onClick={handleOpen}
+                        style={{ boxShadow: isHovered ? "var(--sapField_Hover_Shadow)" : "none" }}
+                    />
+                }
+                onMouseOver={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+                onKeyDown={(e) => {
+                    if (e.key === "F4") {
+                        e.preventDefault()
+                        handleOpen()
+                    }
+                }}
+            />
+            {showDialog && (
+                <SearchDialog
+                    title={dialogTitle}
+                    suggestions={suggestions}
+                    onSelect={onValueChange}
+                    onClose={() => setShowDialog(false)}
+                />
+            )}
+        </>
+    )
+}
+
+const SPAN = "XL3 L4 M6 S12"
 
 export default function () {
     const intl = useIntl()
-    const messages = useMessages()
     const filter = useProcessStore((state) => state.filter)
     const setFilter = useProcessStore((state) => state.setFilter)
-    const findProcesses = useProcessStore((state) => state.findProcesses)
+    const processes = useProcessStore((state) => state.processes)
     const settings = useVisualStore((state) => state.settings)
 
+    const [startedByError, setStartedByError] = useState(false)
+    const [endedOnError, setEndedOnError] = useState(false)
+
+    const descriptionSuggestions = processes.map((p) => p.description)
+    const functionalIdSuggestions = processes.map((p) => p.functionalId)
+
     return (
-        <FilterBar
-            onClear={() => {
-                setFilter({})
-            }}
-            onGo={() => {
-                findProcesses(messages, filter)
-            }}
-            showResetButton
-            showClearOnFB
-            showGoOnFB
-            hideFilterConfiguration={true}
-            hideToggleFiltersButton={true}
-        >
-            <FilterGroupItem
-                filterKey="profiles"
-                active={true}
-                hiddenInFilterBar={false}
-                label={intl.formatMessage({
-                    id: "label_profiles",
-                })}
-                required={true}
-            >
-                <MultiComboBox
-                    onSelectionChange={(e) => {
-                        setFilter({
-                            ...filter,
-                            profiles: e.detail.items.map((item) => item.id),
-                        })
-                    }}
-                    valueState={filter.profiles && filter.profiles.length > 0 ? "None" : "Negative"}
-                    valueStateMessage={
-                        filter.profiles && filter.profiles.length > 0 ? undefined : (
-                            <span>
-                                {intl.formatMessage({ id: "common_error_required" }, { name: "" })}
-                            </span>
-                        )
-                    }
-                    style={{ width: "40em" }}
-                >
-                    {settings?.profiles.map((p) => (
-                        <MultiComboBoxItem key={p.id} text={p.name} selected={p.selected} />
-                    ))}
-                </MultiComboBox>
-            </FilterGroupItem>
-
-            {/* <FilterGroupItem
-                filterKey="description"
-                active={!!description}
-                hiddenInFilterBar={!visibleFilters.has("description")}
-                label={intl.formatMessage({ id: "description" })}
-                style={{ minWidth: "20em" }}
-            >
-                <FlexBox>
-                    <Select
-                        style={{ minWidth: "9em" }}
-                        onChange={(e) => {
-                            dispatchFiltersChange({
-                                type: "descriptionType",
-                                payload: e.detail.selectedOption.id,
-                            })
-                        }}
-                    >
-                        {FILTER_INPUI_TYPES.map((input_type) => {
-                            return (
-                                <Option
-                                    key={input_type}
-                                    id={input_type}
-                                    selected={descriptionType === input_type}
-                                >
-                                    {intl.formatMessage({
-                                        id: "input_type_" + input_type,
-                                    })}
-                                </Option>
-                            )
-                        })}
-                    </Select>
-                    <Input
+        <Grid>
+                <FilterField label={intl.formatMessage({ id: "label_profiles" })} required>
+                    <MultiComboBox
                         style={{ width: "100%" }}
-                        value={description}
-                        onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                            dispatchFiltersChange({
-                                type: "description",
-                                payload: e.target.attributes.getNamedItem("value")!.nodeValue!,
-                            })
-                        }}
-                    />
-                </FlexBox>
-            </FilterGroupItem> */}
-
-            {/* <FilterGroupItem
-                filterKey="functional_id"
-                active={!!functionalId}
-                hiddenInFilterBar={!visibleFilters.has("functional_id")}
-                label={intl.formatMessage({ id: "functional_id" })}
-                style={{ minWidth: "20em" }}
-            >
-                <FlexBox>
-                    <Select
-                        style={{ minWidth: "9em" }}
-                        onChange={(e) => {
-                            dispatchFiltersChange({
-                                type: "functionalIdType",
-                                payload: e.detail.selectedOption.id,
-                            })
-                        }}
-                    >
-                        {FILTER_INPUI_TYPES.map((input_type) => {
-                            return (
-                                <Option
-                                    key={input_type}
-                                    id={input_type}
-                                    selected={functionalIdType === input_type}
-                                >
-                                    {intl.formatMessage({
-                                        id: "input_type_" + input_type,
-                                    })}
-                                </Option>
+                        onSelectionChange={(e) =>
+                            setFilter({ ...filter, profiles: e.detail.items.map((item) => item.id) })
+                        }
+                        valueState={filter.profiles && filter.profiles.length > 0 ? "None" : "Negative"}
+                        valueStateMessage={
+                            filter.profiles && filter.profiles.length > 0 ? undefined : (
+                                <span>{intl.formatMessage({ id: "common_error_required" }, { name: "" })}</span>
                             )
-                        })}
-                    </Select>
-                    <Input
-                        style={{ width: "100%" }}
-                        value={functionalId}
-                        onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                            dispatchFiltersChange({
-                                type: "functionalId",
-                                payload: e.target.attributes.getNamedItem("value")!.nodeValue!,
-                            })
-                        }}
-                    />
-                </FlexBox>
-            </FilterGroupItem> */}
+                        }
+                    >
+                        {settings?.profiles.map((p) => (
+                            <MultiComboBoxItem key={p.id} id={p.id} text={p.name} selected={p.selected} />
+                        ))}
+                    </MultiComboBox>
+                </FilterField>
 
-            {/* <FilterGroupItem
-                filterKey="status"
-                active={states.length > 0}
-                hiddenInFilterBar={!visibleFilters.has("status")}
-                label={intl.formatMessage({ id: "status" })}
-            >
-                <MultiComboBox
-                    onSelectionChange={(e) => {
-                        dispatchFiltersChange({
-                            type: "states",
-                            payload: e.detail.items.map((item) => item.id),
-                        })
-                    }}
-                >
-                    {PROCESS_STATES.map((process_state) => {
-                        return (
+                <FilterField label={intl.formatMessage({ id: "label_description" })}>
+                    <SearchHelpInput
+                        value={filter.descriptionValue ?? ""}
+                        onValueChange={(v) => setFilter({ ...filter, descriptionValue: v })}
+                        suggestions={descriptionSuggestions}
+                        dialogTitle={intl.formatMessage({ id: "label_description" })}
+                    />
+                </FilterField>
+
+                <FilterField label={intl.formatMessage({ id: "label_functional_id" })}>
+                    <SearchHelpInput
+                        value={filter.functionalIdValue ?? ""}
+                        onValueChange={(v) => setFilter({ ...filter, functionalIdValue: v })}
+                        suggestions={functionalIdSuggestions}
+                        dialogTitle={intl.formatMessage({ id: "label_functional_id" })}
+                    />
+                </FilterField>
+
+                <FilterField label={intl.formatMessage({ id: "label_status" })}>
+                    <MultiComboBox
+                        style={{ width: "100%" }}
+                        onSelectionChange={(e) =>
+                            setFilter({ ...filter, status: e.detail.items.map((item) => item.id) })
+                        }
+                    >
+                        {PROCESS_STATES.map((s) => (
                             <MultiComboBoxItem
-                                key={process_state.id}
-                                id={process_state.id}
-                                selected={states.includes(process_state.id)}
-                                text={intl.formatMessage({
-                                    id: "process_state_" + process_state.id,
-                                })}
+                                key={s.id}
+                                id={s.id}
+                                selected={filter.status?.includes(s.id) ?? false}
+                                text={intl.formatMessage({ id: "process_state_" + s.id })}
                             />
-                        )
-                    })}
-                </MultiComboBox>
-            </FilterGroupItem> */}
+                        ))}
+                    </MultiComboBox>
+                </FilterField>
 
-            {/* <FilterGroupItem
-                filterKey="additional_information"
-                active={!!additionalInformation}
-                hiddenInFilterBar={!visibleFilters.has("additional_information")}
-                label={intl.formatMessage({
-                    id: "additional_information",
-                })}
-                style={{ minWidth: "20em" }}
-            >
-                <FlexBox>
-                    <Select
-                        style={{ minWidth: "9em" }}
-                        onChange={(e) => {
-                            dispatchFiltersChange({
-                                type: "additionalInformationType",
-                                payload: e.detail.selectedOption.id,
-                            })
-                        }}
-                    >
-                        {FILTER_INPUI_TYPES.map((input_type) => {
-                            return (
-                                <Option
-                                    key={input_type}
-                                    id={input_type}
-                                    selected={additionalInformationType === input_type}
-                                >
-                                    {intl.formatMessage({
-                                        id: "input_type_" + input_type,
-                                    })}
-                                </Option>
-                            )
-                        })}
-                    </Select>
+                <FilterField label={intl.formatMessage({ id: "label_additional_information" })}>
+                    <SearchHelpInput
+                        value={filter.additionalInformationValue ?? ""}
+                        onValueChange={(v) => setFilter({ ...filter, additionalInformationValue: v })}
+                        suggestions={[]}
+                        dialogTitle={intl.formatMessage({ id: "label_additional_information" })}
+                    />
+                </FilterField>
+
+                <FilterField label={intl.formatMessage({ id: "label_user" })}>
                     <Input
                         style={{ width: "100%" }}
-                        value={additionalInformation}
-                        onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                            dispatchFiltersChange({
-                                type: "additionalInformation",
-                                payload: e.target.attributes.getNamedItem("value")!.nodeValue!,
-                            })
+                        value={filter.user ?? ""}
+                        onInput={(e: Ui5CustomEvent<InputDomRef>) =>
+                            setFilter({ ...filter, user: e.target.value })
+                        }
+                    />
+                </FilterField>
+
+                <FilterField label={intl.formatMessage({ id: "role_user" })}>
+                    <MultiComboBox
+                        style={{ width: "100%" }}
+                        onSelectionChange={(e) =>
+                            setFilter({ ...filter, roleUser: e.detail.items.map((item) => item.id) })
+                        }
+                    >
+                        <MultiComboBoxItem
+                            text={intl.formatMessage({ id: "role_user_started" })}
+                            id="role_user_started"
+                            selected={filter.roleUser?.includes("role_user_started") ?? false}
+                        />
+                        <MultiComboBoxItem
+                            text={intl.formatMessage({ id: "role_user_involved" })}
+                            id="role_user_involved"
+                            selected={filter.roleUser?.includes("role_user_involved") ?? false}
+                        />
+                    </MultiComboBox>
+                </FilterField>
+
+                <FilterField label={intl.formatMessage({ id: "label_started_by" })}>
+                    <DateRangePicker
+                        style={{ width: "100%" }}
+                        value={filter.startedBy ?? ""}
+                        onChange={(e) => {
+                            setStartedByError(!e.detail.valid)
+                            setFilter({ ...filter, startedBy: e.detail.value })
                         }}
+                        primaryCalendarType="Gregorian"
+                        valueState={startedByError ? "Negative" : "None"}
+                        valueStateMessage={
+                            startedByError ? (
+                                <span>{intl.formatMessage({ id: "common_error_date" })}</span>
+                            ) : undefined
+                        }
                     />
-                </FlexBox>
-            </FilterGroupItem> */}
+                </FilterField>
 
-            {/* <FilterGroupItem
-                filterKey="user"
-                active={!!user}
-                hiddenInFilterBar={!visibleFilters.has("user")}
-                label={intl.formatMessage({ id: "user" })}
-            >
-                <Input
-                    value={user}
-                    onChange={(e: Ui5CustomEvent<InputDomRef, never>) => {
-                        dispatchFiltersChange({
-                            type: "user",
-                            payload: e.target.attributes.getNamedItem("value")!.nodeValue!,
-                        })
-                    }}
-                />
-            </FilterGroupItem> */}
-
-            {/* <FilterGroupItem
-                filterKey="role_user"
-                active={roleUser.length > 0}
-                hiddenInFilterBar={!visibleFilters.has("role_user")}
-                label={intl.formatMessage({ id: "role_user" })}
-            >
-                <MultiComboBox
-                    onSelectionChange={(e) => {
-                        dispatchFiltersChange({
-                            type: "roleUser",
-                            payload: e.detail.items.map((item) => item.id),
-                        })
-                    }}
-                >
-                    <MultiComboBoxItem
-                        text={intl.formatMessage({
-                            id: "role_user_started",
-                        })}
-                        id="role_user_started"
-                        selected={roleUser.includes("role_user_started")}
+                <FilterField label={intl.formatMessage({ id: "label_ended_on" })}>
+                    <DateRangePicker
+                        style={{ width: "100%" }}
+                        value={filter.endedOn ?? ""}
+                        onChange={(e) => {
+                            setEndedOnError(!e.detail.valid)
+                            setFilter({ ...filter, endedOn: e.detail.value })
+                        }}
+                        primaryCalendarType="Gregorian"
+                        valueState={endedOnError ? "Negative" : "None"}
+                        valueStateMessage={
+                            endedOnError ? (
+                                <span>{intl.formatMessage({ id: "common_error_date" })}</span>
+                            ) : undefined
+                        }
                     />
-                    <MultiComboBoxItem
-                        text={intl.formatMessage({
-                            id: "role_user_involved",
-                        })}
-                        id="role_user_involved"
-                        selected={roleUser.includes("role_user_involved")}
-                    />
-                </MultiComboBox>
-            </FilterGroupItem> */}
+                </FilterField>
 
-            {/* <FilterGroupItem
-                filterKey="started_by"
-                active={!!startedBy}
-                hiddenInFilterBar={!visibleFilters.has("started_by")}
-                label={intl.formatMessage({ id: "started_by" })}
-                style={{ minWidth: "15em" }}
-            >
-                <DateRangePicker
-                    style={{ minWidth: "auto" }}
-                    value={startedBy}
-                    onChange={function _a(e) {
-                        if (e.detail.valid == true) {
-                            setStartedByError(false)
-                            dispatchFiltersChange({
-                                type: "startedBy",
-                                payload: e.detail.value,
-                            })
-                        } else {
-                            setStartedByError(true)
-                            dispatchFiltersChange({
-                                type: "startedBy",
-                                payload: e.detail.value,
+                <FilterField label={intl.formatMessage({ id: "scenario" })}>
+                    <Select
+                        style={{ width: "100%" }}
+                        onChange={(e) =>
+                            setFilter({
+                                ...filter,
+                                scenario: e.detail.selectedOption.textContent ?? undefined,
                             })
                         }
-                    }}
-                    primaryCalendarType="Gregorian"
-                    valueState={startedByError ? "Negative" : "None"}
-                    valueStateMessage={
-                        startedByError && (
-                            <span>
-                                {intl.formatMessage({
-                                    id: "common_error_date",
-                                })}
-                            </span>
-                        )
-                    }
-                />
-            </FilterGroupItem> */}
-
-            {/* <FilterGroupItem
-                filterKey="ended_on"
-                active={!!endedOn}
-                hiddenInFilterBar={!visibleFilters.has("ended_on")}
-                label={intl.formatMessage({ id: "ended_on" })}
-                style={{ minWidth: "15em" }}
-            >
-                <DateRangePicker
-                    style={{ minWidth: "auto" }}
-                    value={endedOn}
-                    onChange={function _a(e) {
-                        if (e.detail.valid == true) {
-                            setEndedOnError(false)
-                            dispatchFiltersChange({
-                                type: "endedOn",
-                                payload: e.detail.value,
-                            })
-                        } else {
-                            setEndedOnError(true)
-                            dispatchFiltersChange({
-                                type: "endedOn",
-                                payload: e.detail.value,
-                            })
-                        }
-                    }}
-                    primaryCalendarType="Gregorian"
-                    valueState={endedOnError ? "Negative" : "None"}
-                    valueStateMessage={
-                        endedOnError && (
-                            <span>
-                                {intl.formatMessage({
-                                    id: "common_error_date",
-                                })}
-                            </span>
-                        )
-                    }
-                />
-            </FilterGroupItem> */}
-
-            {/* <FilterGroupItem
-                filterKey="scenario"
-                active={!!scenario}
-                hiddenInFilterBar={!visibleFilters.has("scenario")}
-                label={intl.formatMessage({ id: "scenario" })}
-            >
-                <Select
-                    onChange={(e) => {
-                        const { selectedOption } = e.detail
-                        dispatchFiltersChange({
-                            type: "scenario",
-                            payload: selectedOption.textContent,
-                        })
-                    }}
-                >
-                    <Option id="..." selected={scenario == "..."} />
-                </Select>
-            </FilterGroupItem> */}
-        </FilterBar>
+                    >
+                        <Option id="..." selected={filter.scenario === "..."} />
+                    </Select>
+                </FilterField>
+        </Grid>
     )
 }

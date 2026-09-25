@@ -56,44 +56,19 @@ public class ProcessesController {
 
         final var params = new SearchParams();
         params.setLanguage(req.getParameter("language"));
-
-// TODO(ML): Read more search parameters
-//        final var descriptionType = req.getParameter("descriptionType");
-//        final var descriptionValue = req.getParameter("descriptionValue");
-//        final var functionalIdType = req.getParameter("functionalIdType");
-//        final var functionalIdValue = req.getParameter("functionalIdValue");
-//        final var additionalInformationType = req.getParameter("additionalInformationType");
-//        final var additionalInformationValue = req.getParameter("additionalInformationValue");
-//        final var searchParameters = req.getParameterValues("searchParameters");
-//        final var status = req.getParameterValues("status");
-//        final var user = req.getParameter("user");
-//        final var roleUser = req.getParameterValues("roleUser");
-//        final var startedBy = req.getParameter("startedBy");
-//        final var endedOn = req.getParameter("endedOn");
-//        final var scenario = req.getParameter("scenario");
-//
-//        if (descriptionType != null && (descriptionValue == null || descriptionValue.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
-//        if (descriptionValue != null && (descriptionType == null || descriptionType.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
-//
-//        if (functionalIdType != null && (functionalIdValue == null || functionalIdValue.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
-//        if (functionalIdValue != null && (functionalIdType == null || functionalIdType.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
-//
-//        if (additionalInformationType != null
-//                && (additionalInformationValue == null || additionalInformationValue.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
-//        if (additionalInformationValue != null
-//                && (additionalInformationType == null || additionalInformationType.trim().length() < 1)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
-//        }
+        params.setSearchParameters(req.getParameterValues("profiles"));
+        params.setDescriptionType(req.getParameter("descriptionType"));
+        params.setDescriptionValue(req.getParameter("descriptionValue"));
+        params.setFunctionalIdType(req.getParameter("functionalIdType"));
+        params.setFunctionalIdValue(req.getParameter("functionalIdValue"));
+        params.setAdditionalInformationType(req.getParameter("additionalInformationType"));
+        params.setAdditionalInformationValue(req.getParameter("additionalInformationValue"));
+        params.setStatus(req.getParameterValues("status"));
+        params.setUser(req.getParameter("user"));
+        params.setRoleUser(req.getParameterValues("roleUser"));
+        params.setStartedBy(req.getParameter("startedBy"));
+        params.setEndedOn(req.getParameter("endedOn"));
+        params.setScenario(req.getParameter("scenario"));
 
         return service.findProcesses(params);
     }
