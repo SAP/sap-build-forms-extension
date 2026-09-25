@@ -26,7 +26,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -277,8 +276,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, false, ElementRow.ROOT, IdentifierUtils.key(scenarioFieldName));
 
@@ -314,8 +313,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, false, ElementRow.ROOT, IdentifierUtils.key(scenarioFieldName));
 
@@ -331,7 +330,6 @@ public class ScenarioController {
      *
      * @param formsProcessId    the ID of the form process
      * @param scenarioFieldName the name of the scenario field
-     * @param token             the authentication token
      * @return ResponseEntity containing the string field value in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -342,8 +340,7 @@ public class ScenarioController {
             description = "This operation returns one string field of a form process.")
     public ResponseEntity<FieldResponse<String>> getFieldAsString(@RequestParam(required = true) String formsProcessId,
                                                                   @RequestParam(required = true)
-                                                                  String scenarioFieldName,
-                                                                  AbstractAuthenticationToken token) throws Exception {
+                                                                  String scenarioFieldName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -352,8 +349,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT,
                 IdentifierUtils.key(scenarioFieldName));
@@ -368,7 +365,6 @@ public class ScenarioController {
      *
      * @param formsProcessId    the ID of the form process
      * @param scenarioFieldName the name of the scenario field
-     * @param token             the authentication token
      * @return ResponseEntity containing the integer field value in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -379,8 +375,7 @@ public class ScenarioController {
             description = "This operation returns one integer field of a form process.")
     public ResponseEntity<FieldResponse<Integer>> getFieldAsInteger(
             @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) String scenarioFieldName, AbstractAuthenticationToken token)
-            throws Exception {
+            @RequestParam(required = true) String scenarioFieldName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -389,8 +384,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT,
                 IdentifierUtils.key(scenarioFieldName));
@@ -405,7 +400,6 @@ public class ScenarioController {
      *
      * @param formsProcessId    the ID of the form process
      * @param scenarioFieldName the name of the scenario field
-     * @param token             the authentication token
      * @return ResponseEntity containing the decimal field value in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -416,8 +410,7 @@ public class ScenarioController {
             description = "This operation returns one decimal field of a form process.")
     public ResponseEntity<FieldResponse<BigDecimal>> getFieldAsDecimal(
             @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) String scenarioFieldName, AbstractAuthenticationToken token)
-            throws Exception {
+            @RequestParam(required = true) String scenarioFieldName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -426,8 +419,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT,
                 IdentifierUtils.key(scenarioFieldName));
@@ -442,7 +435,6 @@ public class ScenarioController {
      *
      * @param formsProcessId    the ID of the form process
      * @param scenarioFieldName the name of the scenario field
-     * @param token             the authentication token
      * @return ResponseEntity containing the collection field value in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -453,8 +445,7 @@ public class ScenarioController {
             description = "This operation returns a collection (table) of a form process.")
     public ResponseEntity<FieldResponse<Collection<Object>>> getCollection(
             @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) String scenarioFieldName, AbstractAuthenticationToken token)
-            throws Exception {
+            @RequestParam(required = true) String scenarioFieldName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -463,8 +454,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT,
                 IdentifierUtils.key(scenarioFieldName));
@@ -479,7 +470,6 @@ public class ScenarioController {
      *
      * @param formsProcessId    the ID of the form process
      * @param scenarioFieldName the name of the scenario field
-     * @param token             the authentication token
      * @return ResponseEntity containing the serialized collection field value in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -490,8 +480,7 @@ public class ScenarioController {
             description = "This operation returns a collection (table) of a form process in a serialized string.")
     public ResponseEntity<FieldResponse<String>> getCollectionSerialized(
             @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) String scenarioFieldName, AbstractAuthenticationToken token)
-            throws Exception {
+            @RequestParam(required = true) String scenarioFieldName) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -500,8 +489,8 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
-        final var securitySession = SecurityUtils.getSecuritySession();
 
+        final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT,
                 IdentifierUtils.key(scenarioFieldName));
@@ -522,7 +511,6 @@ public class ScenarioController {
      *
      * @param formsProcessId     the ID of the form process
      * @param scenarioFieldNames the list of scenario field names
-     * @param token              the authentication token
      * @return ResponseEntity containing a map of field names and their corresponding values in JSON format
      * @throws Exception if any error occurs during processing
      */
@@ -530,9 +518,8 @@ public class ScenarioController {
     @ResponseStatus(HttpStatus.OK)
     @ResponseBody
     @Operation(summary = "Get fields", description = "This operation returns multiple fields from a form process.")
-    public ResponseEntity<FieldListResponse> getFields(
-            @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) List<String> scenarioFieldNames, AbstractAuthenticationToken token)
+    public ResponseEntity<FieldListResponse> getFields(@RequestParam(required = true) String formsProcessId,
+                                                       @RequestParam(required = true) List<String> scenarioFieldNames)
             throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
@@ -542,22 +529,31 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
+
         final var securitySession = SecurityUtils.getSecuritySession();
         String[] sourceKeys = scenarioFieldNames.stream().map(IdentifierUtils::key).toList().toArray(new String[0]);
-
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT, sourceKeys);
 
         List<FieldResponse<Object>> fieldList = getFieldList(scenarioFieldNames, form);
 
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new FieldListResponse(String.join(", ", scenarioFieldNames), fieldList));
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache())
+                             .body(new FieldListResponse(String.join(", ", scenarioFieldNames), fieldList));
     }
 
+    /**
+     * Helper method to retrieve a list of field responses for the specified scenario field names from a form.
+     *
+     * @param scenarioFieldNames the list of scenario field names
+     * @param form               the Form object
+     * @return List of FieldResponse objects containing field names and their corresponding values
+     */
     private List<FieldResponse<Object>> getFieldList(List<String> scenarioFieldNames, Form form) {
         List<FieldResponse<Object>> fieldList = new ArrayList<>();
         for (String f : scenarioFieldNames) {
             Object tempField = this.getScenarioFieldValue(form, f, Object.class);
-            fieldList.add(new FieldResponse<>(f, this.getObjectViaObjectMapper(tempField, sourceClassToTargetClass.get(tempField.getClass()))));
+            fieldList.add(new FieldResponse<>(f,
+                    this.getObjectViaObjectMapper(tempField, sourceClassToTargetClass.get(tempField.getClass()))));
         }
         return fieldList;
     }
@@ -567,8 +563,8 @@ public class ScenarioController {
      *
      * @param formsProcessId     the ID of the form process
      * @param scenarioFieldNames the list of scenario field names
-     * @param token              the authentication token
-     * @return ResponseEntity containing a serialized string of field names and their corresponding values in JSON format
+     * @return ResponseEntity containing a serialized string of field names and their corresponding values in JSON
+     * format
      * @throws Exception if any error occurs during processing
      */
     @GetMapping(value = "/fieldsSerialized", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -578,8 +574,7 @@ public class ScenarioController {
             description = "This operation returns multiple fields from a form process in a serialized string.")
     public ResponseEntity<FieldResponse<String>> getFieldsSerialized(
             @RequestParam(required = true) String formsProcessId,
-            @RequestParam(required = true) List<String> scenarioFieldNames, AbstractAuthenticationToken token)
-            throws Exception {
+            @RequestParam(required = true) List<String> scenarioFieldNames) throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -588,9 +583,9 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
+
         final var securitySession = SecurityUtils.getSecuritySession();
         String[] sourceKeys = scenarioFieldNames.stream().map(IdentifierUtils::key).toList().toArray(new String[0]);
-
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.GetScenarioControllerAuth, Boolean.FALSE, ElementRow.ROOT, sourceKeys);
 
@@ -602,7 +597,7 @@ public class ScenarioController {
             throw new RuntimeException(e);
         }
         return ResponseEntity.ok().cacheControl(CacheControl.noCache())
-                .body(new FieldResponse<>(String.join(", ", scenarioFieldNames), jsonSerialized));
+                             .body(new FieldResponse<>(String.join(", ", scenarioFieldNames), jsonSerialized));
     }
 
     /**
@@ -610,7 +605,6 @@ public class ScenarioController {
      *
      * @param formsProcessId the ID of the form process
      * @param eventName      the name of the event to trigger
-     * @param token          the authentication token
      * @return ResponseEntity indicating the execution status of the triggered event
      * @throws Exception if any error occurs during processing
      */
@@ -620,7 +614,8 @@ public class ScenarioController {
     @Operation(summary = "Trigger event",
             description = "This operation triggers the execution of a scenario event for a form process.")
     public ResponseEntity<TriggerEventResponse> triggerEvent(@PathVariable(required = true) String formsProcessId,
-                                                             @PathVariable(required = true) String eventName) throws Exception {
+                                                             @PathVariable(required = true) String eventName)
+            throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -629,6 +624,7 @@ public class ScenarioController {
         }
 
         Form form = formsService.loadById(formsProcessId);
+
         final var securitySession = SecurityUtils.getSecuritySession();
         securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
                 EventType.PostScenarioControllerAuth, false, null);
@@ -651,7 +647,8 @@ public class ScenarioController {
         //Set<ParameterItem<Object>> parameters = new HashSet<>();
         List<FieldResponse<Object>> fieldList = null;
         //List<FieldResponse<Object>> fieldList = new ArrayList<>();
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new TriggerEventResponse("200", "Execution of triggerEvent():'" + eventName + "' is done!", parameters, fieldList));
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new TriggerEventResponse("200",
+                "Execution of triggerEvent():'" + eventName + "' is done!", parameters, fieldList));
     }
 
     /**
@@ -659,7 +656,6 @@ public class ScenarioController {
      *
      * @param formsProcessId the ID of the form process
      * @param stateValue     the new state value to set
-     * @param token          the authentication token
      * @return ResponseEntity indicating the execution status of setting the process state
      * @throws Exception if any error occurs during processing
      */
@@ -668,7 +664,8 @@ public class ScenarioController {
     @ResponseBody
     @Operation(summary = "Set process state", description = "This operation sets a state for a form process.")
     public ResponseEntity<ProcessStateResponse> setProcessState(@PathVariable(required = true) String formsProcessId,
-                                                                @PathVariable(required = true) String stateValue) throws Exception {
+                                                                @PathVariable(required = true) String stateValue)
+            throws Exception {
         if (StringUtils.isBlank(formsProcessId)) {
             throw new BadRequestException("Missing formsProcessId");
         }
@@ -715,7 +712,8 @@ public class ScenarioController {
                 preCtx.getTaskInstanceId());
         FormsApi formsApi = ctx.getApi(FormsApi.class);
         formsApi.save();
-        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ProcessStateResponse("200", "Execution of setProcessState():'" + stateValue + "' is done!"));
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ProcessStateResponse("200",
+                "Execution of setProcessState():'" + stateValue + "' is done!"));
     }
 
     /**
