@@ -1,7 +1,6 @@
 package com.sap.bfx.api;
 
 import com.sap.bfx.exception.FormsCoreException;
-import com.sap.bfx.security.Constants;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateExceptionHandler;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,13 +8,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
@@ -52,6 +49,11 @@ public abstract class AbstractFrontendController {
     @Value("${forms.api-doc.path:/api-docs}")
     private String apiDocPath;
 
+    /**
+     * Constructor for AbstractFrontendController.
+     *
+     * @param applicationContext the Spring application context
+     */
     protected AbstractFrontendController(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
 
@@ -90,13 +92,24 @@ public abstract class AbstractFrontendController {
         }
     }
 
+    /**
+     * Handles all requests to the frontend, serving static resources and the index page.
+     *
+     * @param req       the HttpServletRequest
+     * @param res       the HttpServletResponse
+     * @param principal the authenticated user principal
+     * @return a String indicating the view to render, or null if the response has been handled directly
+     */
     @RequestMapping(value = "/**")
     public String handler(HttpServletRequest req, HttpServletResponse res, Principal principal) {
 
         log.debug("Handling resource '{}'", req.getRequestURI());
 
         // Set header to allow including the content via iframe
-        res.setHeader("Content-Security-Policy", "frame-ancestors http://localhost:* https://*.cloud.sap https://*.ondemand.com");
+        res.setHeader("Content-Security-Policy",
+                "frame-ancestors http://localhost:* https://*.cloud.sap https://*.ondemand.com");
+        // Set CORS header to allow redirected BTP pages
+//        res.setHeader("Access-Control-Allow-Origin", /*"https://*.ondemand.com"*/ "*");
 
         if (apiDocEnabled && StringUtils.equals(req.getRequestURI(), apiDocPath)) {
             log.info("API documentation is enabled, redirecting to {}", apiDocPath);
@@ -106,17 +119,14 @@ public abstract class AbstractFrontendController {
         var mimeType = "";
         var path = "";
 
-        // because there could be prefixes, e.g. from k8s ingress we need to filter
-        // these. The rule is, that
-        // the path needs to start with "assets", any other resource can don't have and
-        // cannot return
+        // because there could be prefixes, e.g. from k8s ingress we need to filter these. The rule is, that
+        // the path needs to start with "assets", any other resource can don't have and cannot return
         final var m = resourcePathPattern.matcher(req.getRequestURI());
         if (m.matches()) {
             path = m.group(1);
             log.debug("Translated path is '{}'", path);
 
-            if (StringUtils.endsWithIgnoreCase(path, ".js")
-                    || StringUtils.endsWithIgnoreCase(path, ".mjs")) {
+            if (StringUtils.endsWithIgnoreCase(path, ".js") || StringUtils.endsWithIgnoreCase(path, ".mjs")) {
                 mimeType = "text/javascript";
             } else if (StringUtils.endsWithIgnoreCase(path, "css")) {
                 mimeType = "text/css";
@@ -150,32 +160,18 @@ public abstract class AbstractFrontendController {
             return null;
         }
 
-        // handling of index...
-        String accessToken = null;
-        String refreshToken = null;
-
-        if (StringUtils.equalsIgnoreCase(AUTH_TYPE, Constants.AUTH_TYPE_OIDC)) {
-            var oAuth2AuthorizedClientRepository = applicationContext.getBean(OAuth2AuthorizedClientRepository.class);
-            var oauth2Token = (OAuth2AuthenticationToken) principal;
-            var userInfo = (DefaultOidcUser) (oauth2Token).getPrincipal();
-            accessToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token, req))
-                    .getAccessToken().getTokenValue();
-            refreshToken = (oAuth2AuthorizedClientRepository.loadAuthorizedClient(AUTH_CLIENT_ID, oauth2Token, req))
-                    .getRefreshToken().getTokenValue();
-            log.debug("User: '{}' logged in with ID Token: '{}'", userInfo.getName(), accessToken);
-        }
+        // if not explicitly requested, we serve the index.html page, which will load the SPA
+        final var resName =
+                (Strings.CS.endsWith(req.getRequestURI(), "login.html")) ? "login.html.ftlh" : "index.html.ftlh";
 
         final var values = new HashMap<String, Object>();
-        values.put(NM_HAS_TOKEN, StringUtils.isNotBlank(accessToken));
-        values.put(NM_ACCESS_TOKEN, accessToken);
-        values.put(NM_REFRESH_TOKEN, refreshToken);
         values.put(NM_FAVICON, favicon);
         values.put(NM_INDEX_JS, jsIndex);
         values.put(NM_INDEX_CSS, cssIndex);
         values.put(NM_CONTEXT_PATH, StringUtils.isBlank(contextPath) ? "/" : contextPath);
 
         try (final var out = new OutputStreamWriter(res.getOutputStream())) {
-            final var template = templateCfg.getTemplate("index.html.ftlh");
+            final var template = templateCfg.getTemplate(resName);
             res.setContentType(MediaType.TEXT_HTML_VALUE);
             res.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
             res.setHeader("Pragma", "no-cache");

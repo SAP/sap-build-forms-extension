@@ -21,7 +21,7 @@ function toKebabCase(str: string): string {
 }
 
 export default function (props: ControlProps) {
-    const { def, rowId, withContainer} = props
+    const { def, rowId, withContainer, globalEd } = props
     const dispatch = useAppDispatch()
     const form = useAppSelector((state) => state.session.form)
     const element = FormService.findElementByRowAndKey(rowId, def.key, form)
@@ -36,8 +36,9 @@ export default function (props: ControlProps) {
         <Icon
             name={iconName}
             title={def.tooltip}
-            onClick={() =>
-                dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
+            onClick={element?.ed && globalEd
+                ? () => dispatch(triggerEvent({ type: UserEventType.Action, def, rowId, messages }))
+                : undefined
             }
             style={{ height: "100%" }}
         />

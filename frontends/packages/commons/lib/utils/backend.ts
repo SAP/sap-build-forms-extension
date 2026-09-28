@@ -10,12 +10,16 @@ declare var ROUTER_BASE_NAME: string
 export const api = axios.create({
   baseURL: (ROUTER_BASE_NAME + "/api").replace("//", "/"),
   timeout: 60000,
+  maxRedirects: 0,
   // @ts-ignore
-  validateStatus: (status: number) => true,
+  validateStatus: (status: number) => {
+    // console.log(`API call returned status ${status}`)
+    return status >= 200 && status < 400
+  },
 })
-if (sessionStorage["accessToken"]) {
-  api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")
-}
+// if (sessionStorage["accessToken"]) {
+//   api.defaults.headers["Authorization"] = "Bearer " + sessionStorage.getItem("accessToken")
+// }
 
 /**
  *
@@ -39,10 +43,7 @@ export function apiOk(status: number) {
  * @returns
  */
 export function apiCsrfToken(): string {
-  const csrfToken = document.cookie.replace(
-    /(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/,
-    "$1",
-  )
+  const csrfToken = document.cookie.replace(/(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/, '$1')
   // console.log(`CSRF-Token is ${csrfToken}`)
   return csrfToken
 }
@@ -118,6 +119,10 @@ export class Backend<TResponse> {
     }
     // extract the first element of the queue
     const request = this.requestQueue.shift()
+    if (!request) {
+      console.error("Request is undefined in executeQueued")
+      return
+    }
 
     // repare data
     let data: any = request?.data ?? {}
@@ -126,9 +131,20 @@ export class Backend<TResponse> {
       this.preSendProcessor(data, request!)
     }
 
+    // set xsrf token
+    request.config ??= {}
+    request.config.headers ??= {}
+    const csrfToken = apiCsrfToken()
+    if (csrfToken) {
+      request.config.headers["X-XSRF-TOKEN"] = csrfToken
+    }
+    // set CORS handler to allow all origins (for development purposes)
+    // request.config.headers["Access-Control-Allow-Origin"] = "*"
+
+    let res: any = undefined
     try {
       this.waitCount++
-      let res: any = undefined
+
       switch (request?.method) {
         case "GET":
           res = await api.get(request.url, request.config)
@@ -245,14 +261,31 @@ export class Backend<TResponse> {
           throw new Error(`Unsupported method: ${method}`)
       }
     } catch (err) {
-      Promise.reject(err)
+      return Promise.reject(err)
     } finally {
       this.waitCount--
       if (this.waitCount === 0) {
         messages.block(false)
       }
     }
-
-    return Promise.reject(Error("unsupported call"))
   }
+}
+
+/**
+ *  
+ */
+export interface BackendError {
+  error_code: number
+  guid: string
+  message: string
+  user: string
+}
+
+/**
+ * 
+ */
+export interface UnauthenticatedError extends Error {
+  error_code: number
+  guid: string
+  data: string
 }

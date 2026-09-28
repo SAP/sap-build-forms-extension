@@ -8,7 +8,6 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +18,6 @@ import java.util.*;
 /**
  * @see <a href="https://www.jackrutorial.com/2018/08/multiple-datasource-in-spring-boot.html" />
  */
-@ConditionalOnProperty(name = "forms.valuehelp.datasource.dbType", havingValue = "hana")
 @Repository("valueHelpDaoHana")
 @Qualifier("valueHelpDaoHana")
 @Slf4j

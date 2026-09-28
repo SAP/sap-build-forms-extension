@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 
+/**
+ * Custom Redis serializer for Session objects.
+ */
 public class SessionRedisSerializer implements RedisSerializer<Session> {
 
     private final ObjectMapper om;
@@ -62,7 +65,6 @@ public class SessionRedisSerializer implements RedisSerializer<Session> {
 
     @Override
     public Session deserialize(byte[] bytes) throws SerializationException {
-
         if (bytes == null) {
             return null;
         }

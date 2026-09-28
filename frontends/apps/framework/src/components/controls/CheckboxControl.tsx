@@ -3,7 +3,7 @@ import { CheckBox, CheckBoxDomRef, Ui5CustomEvent } from "@ui5/webcomponents-rea
 import { useMessages } from "commons"
 
 import { useAppDispatch, useAppSelector } from "../../features/store"
-import { ControlProps, getLong, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
+import { ControlProps, getLabel, handleChange, handleEnterFocus, handleLeaveFocus } from "./Control"
 import ControlContainer from "./ControlFlexContainer"
 import { FormService } from "../../features/sessions/forms"
 import { elementInfo2ValueState } from "./utils"
@@ -32,7 +32,7 @@ export default function (props: ControlProps) {
                 }
                 onFocus={() => handleEnterFocus(dispatch, def, rowId, messages)}
                 onBlur={() => handleLeaveFocus(dispatch, def, rowId, messages)}
-                text={asTableCell ? "" : getLong(texts, def)}
+                text={asTableCell ? "" : getLabel(texts, def)}
                 valueState={elementInfo2ValueState(element?.msg)}
             />
         </ControlContainer>

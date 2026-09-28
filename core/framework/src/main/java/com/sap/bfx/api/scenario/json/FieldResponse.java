@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 final public class FieldResponse<T> {
-    @JsonIgnore
     String scenarioFieldName;
     T fieldValue;
 }

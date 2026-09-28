@@ -389,8 +389,8 @@ export default function AddElementDialog(props: Props) {
                                     )
                                     const pascalName = toPascalCase(newEl.name)
                                     Object.keys(texts).forEach((key) => {
-                                        texts![key][`${pascalName}.short`] = ""
-                                        texts[key]![`${pascalName}.long`] = ""
+                                        // texts![key][`${pascalName}.short`] = ""
+                                        // texts[key]![`${pascalName}.long`] = ""
                                         texts![key][`${pascalName}.title`] = ""
                                         texts[key][`${pascalName}.doc`] = ""
                                     })

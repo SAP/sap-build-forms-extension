@@ -32,9 +32,9 @@ export default function (props: ControlProps) {
     if (typeof text !== "string" || text.length === 0) {
         text = texts[def.id + ".doc"]
     }
-    if (typeof text !== "string" || text.length === 0) {
-        text = texts[def.id + ".long"]
-    }
+    // if (typeof text !== "string" || text.length === 0) {
+    //     text = texts[def.id + ".long"]
+    // }
     if (typeof text !== "string" || text.length === 0) {
         text = def.id
     }

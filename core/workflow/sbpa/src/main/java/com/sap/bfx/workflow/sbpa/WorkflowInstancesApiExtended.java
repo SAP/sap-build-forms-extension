@@ -8,7 +8,6 @@ import com.sap.openapi.sbpaworkflow.api.WorkflowInstancesApi;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstance;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstanceStartPayload;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstanceUpdatePayload;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -26,11 +25,11 @@ import java.util.Map;
 
 public class WorkflowInstancesApiExtended extends WorkflowInstancesApi {
 
-    public WorkflowInstancesApiExtended(@NotNull Destination httpDestination) {
+    public WorkflowInstancesApiExtended(@Nonnull Destination httpDestination) {
         super(httpDestination);
     }
 
-    public WorkflowInstancesApiExtended(@NotNull ApiClient apiClient) {
+    public WorkflowInstancesApiExtended(@Nonnull ApiClient apiClient) {
         super(apiClient);
     }
 

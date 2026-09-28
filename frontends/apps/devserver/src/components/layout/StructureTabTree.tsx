@@ -204,8 +204,8 @@ export default function StructureTabTree(props: Props) {
         if (oldName != null && oldName !== newName) {
             const texts = JSON.parse(JSON.stringify(textsRef.current ?? {}))
             const postfixes = [
-                TextPostfix.short,
-                TextPostfix.long,
+                // TextPostfix.short,
+                // TextPostfix.long,
                 TextPostfix.title,
                 TextPostfix.doc,
                 TextPostfix.placeholder,
@@ -648,7 +648,7 @@ export default function StructureTabTree(props: Props) {
                                         labelSpan="S2 M2 L1 XL1"
                                         style={{ width: "90%" }}
                                     >
-                                        <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_short" })}</Label>}>
+                                        {/* <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_short" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.short}
                                                 texts={props.treeItemsShown?.texts!}
@@ -669,7 +669,7 @@ export default function StructureTabTree(props: Props) {
                                                 version={props.version}
                                                 setUpdate={props.setUpdate}
                                             />
-                                        </FormItem>
+                                        </FormItem> */}
                                         <FormItem labelContent={<Label>{intl.formatMessage({ id: "element_label_texts_title" })}</Label>}>
                                             <StructureTabTextsInput
                                                 postfix={TextPostfix.title}

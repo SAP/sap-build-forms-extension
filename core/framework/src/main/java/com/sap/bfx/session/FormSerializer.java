@@ -30,7 +30,7 @@ public class FormSerializer extends StdSerializer<Form> {
     }
 
     /**
-     * Constructor
+     * Serialize Form with type information
      *
      * @param value       Value to serialize; can <b>not</b> be null.
      * @param gen         Generator used to output resulting Json content
@@ -229,8 +229,7 @@ public class FormSerializer extends StdSerializer<Form> {
                     gen.writeStringField(FormUtils.NM_CURRENCY, ((MoneyAmount) it.getValue()).getCurrency());
                     gen.writeNumberField(FormUtils.NM_AMOUNT, ((MoneyAmount) it.getValue()).getAmount());
                     gen.writeEndObject();
-                }
-                else {
+                } else {
                     throw new FormsCoreException("Unhandled type " + dt.getName() + " in FormSerializer");
                 }
             }

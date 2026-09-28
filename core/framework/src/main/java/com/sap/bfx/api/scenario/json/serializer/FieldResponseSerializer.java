@@ -35,22 +35,23 @@ public class FieldResponseSerializer extends StdSerializer<FieldResponse> {
     private void serializeWithFieldName(String fieldName, Object fieldObj, JsonGenerator jgen, SerializerProvider serializerProvider) throws IOException {
         jgen.writeStartObject();
         try {
+            jgen.writeStringField("scenarioFieldName", fieldName);
             if (fieldObj instanceof LocalDate || fieldObj instanceof LocalTime) {
-                jgen.writeStringField(fieldName, fieldObj.toString());
+                jgen.writeStringField("fieldValue", fieldObj.toString());
             } else if (fieldObj instanceof LocalDateTime tempDateTime) {
-                jgen.writeStringField(fieldName, tempDateTime.format(Constants.DT_FORMATTER));
+                jgen.writeStringField("fieldValue", tempDateTime.format(Constants.DT_FORMATTER));
             } else if (fieldObj instanceof DateRange tempDateRange) {
-                jgen.writeObjectField(fieldName, tempDateRange);
+                jgen.writeObjectField("fieldValue", tempDateRange);
             } else if (fieldObj instanceof BigDecimal tempBigDecimal) {
-                jgen.writeNumberField(fieldName, tempBigDecimal);
+                jgen.writeNumberField("fieldValue", tempBigDecimal);
             } else if (fieldObj instanceof Integer tempInteger) {
-                jgen.writeNumberField(fieldName, tempInteger);
+                jgen.writeNumberField("fieldValue", tempInteger);
             } else if (fieldObj instanceof String tempString) {
-                jgen.writeStringField(fieldName, tempString);
+                jgen.writeStringField("fieldValue", tempString);
             } else if (fieldObj instanceof Boolean tempBoolean) {
-                jgen.writeBooleanField(fieldName, tempBoolean);
+                jgen.writeBooleanField("fieldValue", tempBoolean);
             } else if (fieldObj instanceof Collection tempColl) {
-                jgen.writeArrayFieldStart(fieldName);
+                jgen.writeArrayFieldStart("fieldValue");
                 try {
                     tempColl.forEach(item -> {
                         try {
@@ -63,9 +64,9 @@ public class FieldResponseSerializer extends StdSerializer<FieldResponse> {
                     jgen.writeEndArray();
                 }
             } else if (fieldObj instanceof Map tempMap) {
-                jgen.writeObjectField(fieldName, tempMap);
+                jgen.writeObjectField("fieldValue", tempMap);
             } else if (fieldObj instanceof ElementRow tempElementRow) {
-                jgen.writeObjectField(fieldName, tempElementRow);
+                jgen.writeObjectField("fieldValue", tempElementRow);
             } else {
                 throw new RuntimeException("Unhandled type " + fieldObj.getClass().getName() + " in FieldResponseSerializer");
             }

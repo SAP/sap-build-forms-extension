@@ -372,25 +372,25 @@ export function getLabel(texts: Record<string, string>, def: Definition): string
     return labelText
 }
 
-/**
- *
- * @param texts
- * @param def
- * @returns
- */
-export function getLong(texts: Record<string, string>, def: Definition): string {
-    let text = undefined
+// /**
+//  *
+//  * @param texts
+//  * @param def
+//  * @returns
+//  */
+// export function getLong(texts: Record<string, string>, def: Definition): string {
+//     let text = undefined
 
-    if (texts) {
-        text = texts[def.id + ".long"]
-    }
+//     if (texts) {
+//         text = texts[def.id + ".long"]
+//     }
 
-    if (typeof text !== "string" || text.length === 0) {
-        text = def.id
-    }
+//     if (typeof text !== "string" || text.length === 0) {
+//         text = def.id
+//     }
 
-    return text
-}
+//     return text
+// }
 
 /**
  *

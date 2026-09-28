@@ -1,10 +1,13 @@
 import { createContext, ReactNode, useContext, useRef, useState } from "react"
 import ReactDOM from "react-dom"
+import { UnauthenticatedError } from "../../utils/backend"
 
 import { useIntl } from "react-intl"
 import { PrimitiveType } from "intl-messageformat"
 
 import {
+    Bar,
+    Button,
     Dialog,
     IllustratedMessage,
     MessageBox,
@@ -30,19 +33,21 @@ import {
  */
 const Context = createContext<MessageIntf>({
     // @ts-ignore
-    fatal: (key: string, values?: Record<string, PrimitiveType>) => {},
+    fatal: (key: string, values?: Record<string, PrimitiveType>) => { },
     // @ts-ignore
     dialog: (msg: Message[], options?: MessageOption[]): Promise<MessageOption> => {
         return Promise.reject()
     },
     // @ts-ignore
-    toast: (msg: Message[]) => {},
+    toast: (msg: Message[]) => { },
     // @ts-ignore
-    block: (show: boolean) => {},
+    block: (show: boolean) => { },
     // @ts-ignore
-    readonlyDialog: (type: string, text: string) => {},
+    login: (err: UnauthenticatedError) => { },
     // @ts-ignore
-    closeReadonlyDialog: () => {},
+    readonlyDialog: (type: string, text: string) => { },
+    // @ts-ignore
+    closeReadonlyDialog: () => { },
 })
 
 /**
@@ -140,9 +145,10 @@ function MessagesProvider(props: { children: ReactNode }) {
     const intl = useIntl()
     const resolverRef = useRef<MessageResolver | undefined>(undefined)
 
-    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "readonly" | undefined>()
+    const [type, setType] = useState<"fatal" | "dialog" | "toast" | "block" | "login" | "readonly" | undefined>()
     const [messages, setMessages] = useState<Message[]>([])
     const [opts, setOpts] = useState<MessageOption[]>([])
+    const [loginUrl, setLoginUrl] = useState<string | undefined>(undefined)
 
     /**
      * Displays a fatal error message in a dialog. This type of message is used for critical errors that require immediate
@@ -205,6 +211,21 @@ function MessagesProvider(props: { children: ReactNode }) {
         setType(show ? "block" : undefined)
     }
 
+    /**
+     * Triggers the login process. This method can be used to prompt the user to log in when authentication is
+     * required.
+     */
+    const login = (err: UnauthenticatedError) => {
+        setLoginUrl(err.data)
+        setLoginUrl("/login.html")
+        setType("login")
+    }
+
+    /**
+     *
+     * @param typeStr
+     * @param text
+     */
     const readonlyDialog = (typeStr: string, text: string) => {
         const severityMap: Record<string, Severity> = {
             e: Severity.Error,
@@ -217,6 +238,9 @@ function MessagesProvider(props: { children: ReactNode }) {
         setMessages([{ style: "dialog", severity, key: "", params: { text } }])
     }
 
+    /**
+     *
+     */
     const closeReadonlyDialog = () => {
         setType(undefined)
         setMessages([])
@@ -296,11 +320,9 @@ function MessagesProvider(props: { children: ReactNode }) {
     // console.log(`Messages type: ${type}`)
 
     return (
-        <Context.Provider value={{ fatal, dialog, toast, block, readonlyDialog, closeReadonlyDialog }}>
+        <Context.Provider value={{ fatal, dialog, toast, block, login, readonlyDialog, closeReadonlyDialog }}>
             <>
-                {messages.length > 0 &&
-                    type === "dialog" &&
-                    ReactDOM.createPortal(
+                {ReactDOM.createPortal(
                     <MessageBox
                         titleText={intl.formatMessage({
                             id: severity2MessageBoxTitle(highestSeverity(messages)),
@@ -324,7 +346,7 @@ function MessagesProvider(props: { children: ReactNode }) {
                             headerText={intl.formatMessage({ id: "common_fatal_title" })}
                             open={true}
                             onBeforeClose={(e) => e.preventDefault()}
-                            onClose={() => {}}
+                            onClose={() => { }}
                             state="Negative"
                         >
                             <IllustratedMessage
@@ -348,7 +370,7 @@ function MessagesProvider(props: { children: ReactNode }) {
                             })}
                             open={true}
                             onBeforeClose={(e) => e.preventDefault()}
-                            onClose={() => {}}
+                            onClose={() => { }}
                             state={severity2ValueState(messages[0].severity)}
                         >
                             <Text>{messages[0].params?.text as string}</Text>
@@ -409,7 +431,31 @@ function MessagesProvider(props: { children: ReactNode }) {
                             {intl.formatMessage({ id: messages[0].key }, messages[0].params)}
                         </Toast>,
                         document.body,
-                    )}
+                    )
+                }
+                {(type == "login") && ReactDOM.createPortal(
+                    <Dialog
+                        headerText={intl.formatMessage({ id: "common_login_title", })}
+                        open={type == "login"}
+                        stretch={true}
+                        onClose={() => setType(undefined)}
+                        footer={<Bar
+                            design="Footer"
+                            endContent={
+                                <Button
+                                    data-sap-ui-fastnavgroup="true"
+                                    onClick={() => setType(undefined)}
+                                >
+                                    {intl.formatMessage({ id: "common_close" })}
+                                </Button>}
+                        />}
+                    >
+                        <div style={{ width: "100%", height: "100%" }}>
+                            <iframe width="100%" height="100%" src={loginUrl} style={{ border: "none" }} />
+                        </div>
+                    </Dialog>,
+                    document.body,
+                )}
             </>
             {props.children}
         </Context.Provider>
