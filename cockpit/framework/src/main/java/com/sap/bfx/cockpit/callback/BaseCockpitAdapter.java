@@ -13,6 +13,10 @@ import java.util.List;
 public class BaseCockpitAdapter implements CockpitAdapter {
     protected final JdbcTemplate jdbc;
 
+    /** Columns allowed in findSuggestions to prevent SQL injection. */
+    private static final java.util.Set<String> ALLOWED_COLUMNS =
+            java.util.Set.of("description", "functional_id", "additional_information");
+
     /**
      * Constructor
      *
@@ -22,23 +26,27 @@ public class BaseCockpitAdapter implements CockpitAdapter {
         this.jdbc = new JdbcTemplate(ds);
     }
 
-    /**
-     * Initializes the adapter with the provided settings and parameters.
-     *
-     * @param settings the data structure to be filled
-     * @param params   Frontend parameters
-     */
     @Override
     public void init(FrontendSettings settings, FrontendParams params) {
     }
 
-    /**
-     * Finds processes based on the provided list of process instance attributes and search parameters.
-     *
-     * @param processes List of process instance attributes for querying
-     * @param params    Search params from the frontend
-     */
     @Override
-    public void findProcesses(List<ProcessAbstract> processes, SearchParams params) {
+    public int findProcesses(List<ProcessAbstract> processes, SearchParams params) {
+        return 0;
+    }
+
+    @Override
+    public List<String> findSuggestions(String column, String search) {
+        return List.of();
+    }
+
+    /**
+     * Validates that the column name is in the allowed set.
+     * Throws IllegalArgumentException if not, to prevent SQL injection.
+     */
+    protected void validateColumn(String column) {
+        if (!ALLOWED_COLUMNS.contains(column)) {
+            throw new IllegalArgumentException("Column not allowed for suggestions: " + column);
+        }
     }
 }

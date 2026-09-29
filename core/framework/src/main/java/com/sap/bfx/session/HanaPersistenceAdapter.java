@@ -139,6 +139,14 @@ public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter 
         });
     }
 
+    @Override
+    public long nextFunctionalIdCounter() {
+        return jdbc.queryForObject(
+                "SELECT forms_data.forms_functional_id_seq.NEXTVAL FROM DUMMY",
+                Long.class
+        );
+    }
+
     /**
      * Callback handler to map a ResultSet row to a Form object and InputStream
      */

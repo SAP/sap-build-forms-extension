@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import { useIntl } from "react-intl"
 import { createUseStyles } from "react-jss"
 
@@ -28,9 +27,9 @@ import "@ui5/webcomponents-icons/dist/media-reverse.js"
 import "@ui5/webcomponents-icons/dist/media-play.js"
 import "@ui5/webcomponents-icons/dist/media-forward.js"
 
-import { formatDate, getLanguage, Margin } from "commons"
+import { formatDate, getLanguage, Margin, useMessages } from "commons"
 
-import { Process, PROCESS_STATES, useProcessStore } from "../state/processes"
+import { PAGE_SIZES, Process, PROCESS_STATES, useProcessStore } from "../state/processes"
 import { useVisualStore } from "../state/visual"
 
 const useStyles = createUseStyles({
@@ -96,30 +95,27 @@ const useStyles = createUseStyles({
     },
 })
 
-const PAGE_SIZES = [10, 25, 50, 100]
-
 export default function () {
     const intl = useIntl()
+    const messages = useMessages()
     const processes = useProcessStore((state) => state.processes)
+    const totalCount = useProcessStore((state) => state.totalCount)
+    const page = useProcessStore((state) => state.page)
+    const pageSize = useProcessStore((state) => state.pageSize)
+    const setPage = useProcessStore((state) => state.setPage)
+    const setPageSize = useProcessStore((state) => state.setPageSize)
     const setSelectedProcess = useVisualStore((state) => state.setSelectedProcess)
     const setView = useVisualStore((state) => state.setView)
     const classes = useStyles()
 
-    const [page, setPage] = useState(1)
-    const [pageSize, setPageSize] = useState(PAGE_SIZES[0])
-
-    useEffect(() => { setPage(1) }, [processes])
-
-    const lastPage = Math.max(Math.ceil(processes.length / pageSize), 1)
-    const pageItems = processes.slice((page - 1) * pageSize, page * pageSize)
+    const lastPage = Math.max(Math.ceil(totalCount / pageSize), 1)
 
     const handlePageSizeChange = (
         evt: Ui5CustomEvent<SegmentedButtonDomRef, SegmentedButtonSelectionChangeEventDetail>,
     ) => {
         for (const item of evt.detail.selectedItems) {
             if (item.dataset["key"]) {
-                setPageSize(parseInt(item.dataset.key!))
-                setPage(1)
+                setPageSize(messages, parseInt(item.dataset.key!))
                 break
             }
         }
@@ -130,7 +126,7 @@ export default function () {
         if (isNaN(pageNum)) return
         const clamped = Math.max(1, Math.min(pageNum, lastPage))
         if (pageNum !== clamped) evt.target.value = "" + clamped
-        setPage(clamped)
+        setPage(messages, clamped)
     }
 
     const handleCancel = (process: Process) => {
@@ -176,7 +172,7 @@ export default function () {
                 noDataText={intl.formatMessage({ id: "common_no_data" })}
                 rowActionCount={3}
             >
-                {pageItems.map((process) => (
+                {processes.map((process) => (
                     <TableRow
                         actions={
                             <>
@@ -189,12 +185,12 @@ export default function () {
                                 )}
                                 <TableRowAction
                                     icon="form"
-                                    text={intl.formatMessage({ id: "common_show_form" })}
+                                    text={intl.formatMessage({ id: "show_form" })}
                                     onClick={() => handleShowForm(process)}
                                 />
                                 <TableRowAction
                                     icon="show"
-                                    text={intl.formatMessage({ id: "common_show" })}
+                                    text={intl.formatMessage({ id: "show_details" })}
                                     onClick={() => handleShowDetails(process)}
                                 />
                             </>
@@ -269,13 +265,13 @@ export default function () {
                             icon="media-rewind"
                             design="Transparent"
                             disabled={lastPage === 1}
-                            onClick={() => setPage(1)}
+                            onClick={() => setPage(messages, 1)}
                         />
                         <Button
                             icon="media-reverse"
                             design="Transparent"
                             disabled={page === 1}
-                            onClick={() => setPage((p) => p - 1)}
+                            onClick={() => setPage(messages, page - 1)}
                         />
                         <Input
                             value={"" + page}
@@ -287,13 +283,13 @@ export default function () {
                             icon="media-play"
                             design="Transparent"
                             disabled={page === lastPage}
-                            onClick={() => setPage((p) => p + 1)}
+                            onClick={() => setPage(messages, page + 1)}
                         />
                         <Button
                             icon="media-forward"
                             design="Transparent"
                             disabled={lastPage === 1}
-                            onClick={() => setPage(lastPage)}
+                            onClick={() => setPage(messages, lastPage)}
                         />
                     </>
                 }

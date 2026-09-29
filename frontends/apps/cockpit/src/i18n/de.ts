@@ -20,6 +20,10 @@ export default {
     label_scenario: "Szenario",
     label_scenario_version: "Szenario Version",
 
+    show_form: "Formular anzeigen",
+    show_details: "Details anzeigen",
+
+    scenario: "Szenario",
     process_flow: "Prozessfluss",
     click_to_open: "Zum Öffnen klicken",
     technical_bo_name: "Technischer BO-Name",
@@ -50,6 +54,7 @@ export default {
 
     common_error_date: "Ungültiger Datumsbereich",
     common_no_data: "Keine Daten",
+    common_cancel: "Abbrechen",
 
     button_go: "Los",
     button_clear: "Löschen",

@@ -18,6 +18,7 @@ import {
 
 import "@ui5/webcomponents-icons/dist/value-help.js"
 
+import { useMessages } from "commons"
 import { PROCESS_STATES, useProcessStore } from "../state/processes"
 import { useVisualStore } from "../state/visual"
 import SearchDialog from "./SearchDialog"
@@ -32,16 +33,19 @@ function FilterField({ label, required, children }: { label: string; required?: 
 }
 
 function SearchHelpInput({
+    field,
     value,
     onValueChange,
-    suggestions,
     dialogTitle,
 }: {
-    value: string
-    onValueChange: (v: string) => void
-    suggestions: string[]
+    field: string
+    value: string[]
+    onValueChange: (v: string[]) => void
     dialogTitle: string
 }) {
+    const messages = useMessages()
+    const loadSuggestions = useProcessStore((state) => state.loadSuggestions)
+
     const [showDialog, setShowDialog] = useState(false)
     const [isHovered, setHovered] = useState(false)
 
@@ -51,8 +55,11 @@ function SearchHelpInput({
         <>
             <Input
                 style={{ width: "100%" }}
-                value={value}
-                onInput={(e: Ui5CustomEvent<InputDomRef>) => onValueChange(e.target.value)}
+                value={value.length <= 1 ? (value[0] ?? "") : `${value[0]} (+${value.length - 1})`}
+                readonly={value.length > 1}
+                onInput={(e: Ui5CustomEvent<InputDomRef>) =>
+                    onValueChange(e.target.value ? [e.target.value] : [])
+                }
                 icon={
                     <Icon
                         name="value-help"
@@ -72,8 +79,8 @@ function SearchHelpInput({
             {showDialog && (
                 <SearchDialog
                     title={dialogTitle}
-                    suggestions={suggestions}
-                    onSelect={onValueChange}
+                    onSearch={(search) => loadSuggestions(messages, field, search)}
+                    onSelect={(values) => onValueChange(values)}
                     onClose={() => setShowDialog(false)}
                 />
             )}
@@ -81,20 +88,14 @@ function SearchHelpInput({
     )
 }
 
-const SPAN = "XL3 L4 M6 S12"
-
 export default function () {
     const intl = useIntl()
     const filter = useProcessStore((state) => state.filter)
     const setFilter = useProcessStore((state) => state.setFilter)
-    const processes = useProcessStore((state) => state.processes)
     const settings = useVisualStore((state) => state.settings)
 
     const [startedByError, setStartedByError] = useState(false)
     const [endedOnError, setEndedOnError] = useState(false)
-
-    const descriptionSuggestions = processes.map((p) => p.description)
-    const functionalIdSuggestions = processes.map((p) => p.functionalId)
 
     return (
         <Grid>
@@ -119,18 +120,18 @@ export default function () {
 
                 <FilterField label={intl.formatMessage({ id: "label_description" })}>
                     <SearchHelpInput
-                        value={filter.descriptionValue ?? ""}
+                        field="description"
+                        value={filter.descriptionValue ?? []}
                         onValueChange={(v) => setFilter({ ...filter, descriptionValue: v })}
-                        suggestions={descriptionSuggestions}
                         dialogTitle={intl.formatMessage({ id: "label_description" })}
                     />
                 </FilterField>
 
                 <FilterField label={intl.formatMessage({ id: "label_functional_id" })}>
                     <SearchHelpInput
-                        value={filter.functionalIdValue ?? ""}
+                        field="functionalId"
+                        value={filter.functionalIdValue ?? []}
                         onValueChange={(v) => setFilter({ ...filter, functionalIdValue: v })}
-                        suggestions={functionalIdSuggestions}
                         dialogTitle={intl.formatMessage({ id: "label_functional_id" })}
                     />
                 </FilterField>
@@ -155,9 +156,9 @@ export default function () {
 
                 <FilterField label={intl.formatMessage({ id: "label_additional_information" })}>
                     <SearchHelpInput
-                        value={filter.additionalInformationValue ?? ""}
+                        field="additionalInformation"
+                        value={filter.additionalInformationValue ?? []}
                         onValueChange={(v) => setFilter({ ...filter, additionalInformationValue: v })}
-                        suggestions={[]}
                         dialogTitle={intl.formatMessage({ id: "label_additional_information" })}
                     />
                 </FilterField>

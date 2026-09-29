@@ -14,8 +14,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Service class for managing cockpit adapters and process instances.
@@ -62,13 +64,12 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
      * Finds processes based on the provided search parameters.
      *
      * @param params Search parameters for filtering processes.
-     * @return Collection of FormAttributes matching the search criteria.
+     * @return ProcessPage with matching items and total count.
      */
-    public Collection<ProcessAbstract> findProcesses(SearchParams params) {
+    public ProcessPage findProcesses(SearchParams params) {
         final var result = new ArrayList<ProcessAbstract>();
-        // retrieval is done by the adapters
-        this.getAllAdapters().forEach(a -> a.findProcesses(result, params));
-        // after this fill the scenario URLs
+        final var totalCount = new AtomicInteger(0);
+        this.getAllAdapters().forEach(a -> totalCount.addAndGet(a.findProcesses(result, params)));
         this.checkScenarioUrls();
         result.forEach(process -> {
             var scenarioUrl = scenarioUrls != null ? scenarioUrls.get(process.getScenarioName()) : null;
@@ -77,8 +78,26 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
             }
             process.setScenarioUrl(scenarioUrl);
         });
+        return new ProcessPage(result, totalCount.get());
+    }
 
-        return result;
+    /**
+     * Returns distinct non-blank values for the given field across all adapters,
+     * merged and sorted alphabetically.
+     *
+     * @param field  logical field name (description, functionalId, additionalInformation)
+     * @param search substring filter; empty string returns all values
+     * @return sorted, deduplicated list of matching values
+     */
+    public List<String> findSuggestions(String field, String search) {
+        final String column = switch (field) {
+            case "functionalId" -> "functional_id";
+            case "additionalInformation" -> "additional_information";
+            default -> field; // "description" maps directly
+        };
+        final var merged = new TreeSet<String>();
+        this.getAllAdapters().forEach(a -> merged.addAll(a.findSuggestions(column, search)));
+        return new ArrayList<>(merged);
     }
 
     /**

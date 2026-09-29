@@ -4,6 +4,7 @@ import { useIntl } from "react-intl"
 
 import {
     Bar,
+    BusyIndicator,
     Button,
     Dialog,
     FlexBox,
@@ -14,42 +15,49 @@ import {
     TableHeaderCell,
     TableHeaderRow,
     TableRow,
-    TableRowAction,
+    TableSelectionMulti,
+    TableSelectionMultiDomRef,
     Text,
     Ui5CustomEvent,
 } from "@ui5/webcomponents-react"
 
 import "@ui5/webcomponents-icons/dist/media-reverse.js"
 import "@ui5/webcomponents-icons/dist/media-play.js"
-import "@ui5/webcomponents-icons/dist/accept.js"
 
 export interface SearchDialogProps {
     title: string
-    suggestions: string[]
-    onSelect: (v: string) => void
+    onSearch: (search: string) => Promise<string[]>
+    onSelect: (values: string[]) => void
     onClose: () => void
 }
 
 const PAGE_SIZE = 20
 
-export default function SearchDialog({ title, suggestions, onSelect, onClose }: SearchDialogProps) {
+export default function SearchDialog({ title, onSearch, onSelect, onClose }: SearchDialogProps) {
     const intl = useIntl()
+
     const [searchInput, setSearchInput] = useState("")
-    const [search, setSearch] = useState("")
+    const [suggestions, setSuggestions] = useState<string[]>([])
+    const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
-    const [selectedValue, setSelectedValue] = useState("")
+    const [selected, setSelected] = useState<Set<number>>(new Set())
 
-    const allFiltered = [...new Set(suggestions.filter(Boolean))]
-        .filter((s) => s.toLowerCase().includes(search.toLowerCase()))
-        .sort()
-
-    const lastPage = Math.max(Math.ceil(allFiltered.length / PAGE_SIZE), 1)
-    const pageItems = allFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-
-    const handleSearch = () => {
-        setSearch(searchInput)
+    async function triggerSearch(term: string) {
+        setLoading(true)
         setPage(1)
-        setSelectedValue("")
+        setSelected(new Set())
+        const results = await onSearch(term)
+        setSuggestions(results)
+        setLoading(false)
+    }
+
+    const lastPage = Math.max(Math.ceil(suggestions.length / PAGE_SIZE), 1)
+    const pageItems = suggestions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+    const selectedStr = [...selected].join(" ")
+
+    function handleConfirm() {
+        onSelect([...selected].map((i) => suggestions[i]).filter(Boolean))
+        onClose()
     }
 
     return ReactDOM.createPortal(
@@ -63,8 +71,8 @@ export default function SearchDialog({ title, suggestions, onSelect, onClose }: 
                         <>
                             <Button
                                 design="Emphasized"
-                                disabled={!selectedValue}
-                                onClick={() => { onSelect(selectedValue); onClose() }}
+                                disabled={selected.size === 0}
+                                onClick={handleConfirm}
                             >
                                 {intl.formatMessage({ id: "button_select" })}
                             </Button>
@@ -85,40 +93,41 @@ export default function SearchDialog({ title, suggestions, onSelect, onClose }: 
                         placeholder={intl.formatMessage({ id: "button_search" })}
                         value={searchInput}
                         onInput={(e: Ui5CustomEvent<InputDomRef>) => setSearchInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleSearch() }}
+                        onKeyDown={(e) => { if (e.key === "Enter") triggerSearch(searchInput) }}
                     />
-                    <Button onClick={handleSearch}>
+                    <Button onClick={() => triggerSearch(searchInput)}>
                         {intl.formatMessage({ id: "button_search" })}
                     </Button>
                 </FlexBox>
-                <Table
-                    headerRow={
-                        <TableHeaderRow sticky>
-                            <TableHeaderCell>{title}</TableHeaderCell>
-                        </TableHeaderRow>
-                    }
-                    noDataText={intl.formatMessage({ id: "common_no_data" })}
-                    overflowMode="Scroll"
-                    rowActionCount={1}
-                    style={{ width: "100%" }}
-                >
-                    {pageItems.map((s) => (
-                        <TableRow
-                            key={s}
-                            row-key={s}
-                            interactive={false}
-                            style={{
-                                backgroundColor:
-                                    s === selectedValue
-                                        ? "var(--sapList_SelectionBackgroundColor)"
-                                        : undefined,
-                            }}
-                            onClick={() => setSelectedValue(s)}
-                        >
-                            <TableCell>{s}</TableCell>
-                        </TableRow>
-                    ))}
-                </Table>
+                <BusyIndicator active={loading} style={{ width: "100%" }}>
+                    <Table
+                        features={
+                            <TableSelectionMulti
+                                selected={selectedStr}
+                                onChange={(e: Ui5CustomEvent<TableSelectionMultiDomRef>) =>
+                                    setSelected(new Set([...e.target.getSelectedAsSet()].map(Number)))
+                                }
+                            />
+                        }
+                        headerRow={
+                            <TableHeaderRow sticky>
+                                <TableHeaderCell>{title}</TableHeaderCell>
+                            </TableHeaderRow>
+                        }
+                        noDataText={intl.formatMessage({ id: "common_no_data" })}
+                        overflowMode="Scroll"
+                        style={{ width: "100%" }}
+                    >
+                        {pageItems.map((s, i) => {
+                            const globalIdx = (page - 1) * PAGE_SIZE + i
+                            return (
+                                <TableRow key={globalIdx} row-key={String(globalIdx)}>
+                                    <TableCell>{s}</TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </Table>
+                </BusyIndicator>
                 <Bar
                     endContent={
                         <>
@@ -126,14 +135,14 @@ export default function SearchDialog({ title, suggestions, onSelect, onClose }: 
                                 icon="media-reverse"
                                 design="Transparent"
                                 disabled={page === 1}
-                                onClick={() => { setPage((p) => p - 1); setSelectedValue("") }}
+                                onClick={() => setPage((p) => p - 1)}
                             />
                             <Text>{page}&nbsp;/&nbsp;{lastPage}</Text>
                             <Button
                                 icon="media-play"
                                 design="Transparent"
                                 disabled={page === lastPage}
-                                onClick={() => { setPage((p) => p + 1); setSelectedValue("") }}
+                                onClick={() => setPage((p) => p + 1)}
                             />
                         </>
                     }

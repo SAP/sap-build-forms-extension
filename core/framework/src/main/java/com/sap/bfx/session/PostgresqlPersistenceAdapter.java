@@ -135,6 +135,11 @@ public abstract class PostgresqlPersistenceAdapter extends AbstractPersistenceAd
         });
     }
 
+    @Override
+    public long nextFunctionalIdCounter() {
+        return jdbc.queryForObject("SELECT nextval('forms_data.forms_functional_id_seq')", Long.class);
+    }
+
     /**
      * Callback handler to map a ResultSet row to a Form object and InputStream
      */

@@ -16,6 +16,9 @@ export default {
     label_additional_information: "Additional Information",
     label_ended_on: "Ended On",
 
+    show_form: "Show form",
+    show_details: "Show details",
+
     scenario: "Scenario",
     process_flow: "Prozess Flow",
     click_to_open: "Click to open",
@@ -47,6 +50,7 @@ export default {
 
     common_error_date: "Invalid date range",
     common_no_data: "No data",
+    common_cancel: "Cancel",
 
     button_go: "Go",
     button_clear: "Clear",

@@ -43,4 +43,12 @@ public interface PersistenceAdapter extends Adapter {
      */
     void delete(final String id);
 
+    /**
+     * Returns the next value from the global functional-ID sequence.
+     * Each call increments the sequence by one and never returns the same value twice.
+     *
+     * @return the next counter value, starting at 1
+     */
+    long nextFunctionalIdCounter();
+
 }

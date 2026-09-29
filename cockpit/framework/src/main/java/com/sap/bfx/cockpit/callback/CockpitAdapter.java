@@ -20,9 +20,23 @@ public interface CockpitAdapter extends Adapter {
 
     /**
      * Query process instances based on provided attributes and locale.
+     * Appends the page of matching processes to {@code processes} and returns
+     * the total (unpaged) count so the caller can build a {@code ProcessPage}.
      *
-     * @param processes List of process instance attributes for querying
-     * @param params    Search params from the frontend
+     * @param processes List to append the current page of results to
+     * @param params    Search params from the frontend (includes page / pageSize)
+     * @return total count of matching processes (before paging)
      */
-    void findProcesses(final List<ProcessAbstract> processes, SearchParams params);
+    int findProcesses(final List<ProcessAbstract> processes, SearchParams params);
+
+    /**
+     * Returns distinct non-blank values for the given column that contain
+     * {@code search} (case-insensitive), up to 100 results, ordered alphabetically.
+     * Allowed column names: {@code description}, {@code functional_id}.
+     *
+     * @param column the DB column name to query
+     * @param search substring to filter by; empty string returns all distinct values
+     * @return sorted list of distinct matching values
+     */
+    List<String> findSuggestions(String column, String search);
 }

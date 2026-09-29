@@ -6,13 +6,15 @@ import lombok.Data;
 public class SearchParams {
     private String language;
     private String[] searchParameters;
+    private int page = 1;
+    private int pageSize = 10;
     private String descriptionType;
-    private String descriptionValue;
+    private String[] descriptionValue;
     private String functionalIdType;
-    private String functionalIdValue;
+    private String[] functionalIdValue;
     private String[] status;
     private String additionalInformationType;
-    private String additionalInformationValue;
+    private String[] additionalInformationValue;
     private String user;
     private String[] roleUser;
     private String startedBy;

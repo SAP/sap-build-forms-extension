@@ -243,4 +243,9 @@ public class FormsApiImpl implements FormsApi {
     public long getVersion() {
         return form.getVersion();
     }
+
+    @Override
+    public String generateFunctionalId(String prefix, String postfix) {
+        return formsService.generateFunctionalId(prefix, postfix);
+    }
 }

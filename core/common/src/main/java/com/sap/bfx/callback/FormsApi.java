@@ -189,4 +189,14 @@ public interface FormsApi extends Api {
      * @return
      */
     long getVersion();
+
+    /**
+     * Generates a unique functional ID.
+     *
+     * @param prefix  optional prefix, e.g. {@code "PO"}
+     * @param postfix optional postfix, e.g. {@code "DE"}
+     * @return the generated functional ID
+     */
+    String generateFunctionalId(String prefix, String postfix);
+
 }

@@ -67,18 +67,17 @@ export const PROCESS_STATES: Array<ProcessStatePresentation> = [
     },
 ]
 
-/**
- * 
- */
+export const PAGE_SIZES = [10, 25, 50, 100]
+
 /**
  * Filter parameters interface
  */
 export type FilterParams = {
     profiles?: string[],
-    descriptionValue?: string,
-    functionalIdValue?: string,
+    descriptionValue?: string[],
+    functionalIdValue?: string[],
     status?: string[],
-    additionalInformationValue?: string,
+    additionalInformationValue?: string[],
     user?: string,
     roleUser?: string[],
     startedBy?: string,
@@ -87,23 +86,32 @@ export type FilterParams = {
 }
 
 /**
- * Process state interface 
+ * Process state interface
  */
 interface ProcessState {
     processes: Process[],
+    totalCount: number,
+    page: number,
+    pageSize: number,
     filter: FilterParams,
 
     initFilter: (settings: Settings) => void,
     setFilter: (filter: FilterParams) => void,
+    setPage: (messages: MessageIntf, page: number) => void,
+    setPageSize: (messages: MessageIntf, pageSize: number) => void,
 
-    findProcesses: (messages: MessageIntf, filter: FilterParams) => Promise<AxiosResponse<Process[]> | Error>,
+    findProcesses: (messages: MessageIntf, filter: FilterParams, page?: number, pageSize?: number) => Promise<AxiosResponse | Error>,
+    loadSuggestions: (messages: MessageIntf, field: string, search: string) => Promise<string[]>,
 }
 
 /**
- * 
+ *
  */
-export const useProcessStore = create<ProcessState>((set) => ({
+export const useProcessStore = create<ProcessState>((set, get) => ({
     processes: [],
+    totalCount: 0,
+    page: 1,
+    pageSize: PAGE_SIZES[0],
     filter: { profiles: ["my_applications"] },
 
     initFilter(settings: Settings) {
@@ -116,30 +124,40 @@ export const useProcessStore = create<ProcessState>((set) => ({
             }
         })
         set(() => ({ filter: f }))
-
-        console.log(f)
     },
 
     setFilter(filter: FilterParams) {
         set(() => ({ filter }))
     },
 
-    async findProcesses(messages: MessageIntf, filter: FilterParams): Promise<AxiosResponse<Process[]> | Error> {
+    setPage(messages: MessageIntf, page: number) {
+        set(() => ({ page }))
+        const { filter, pageSize, findProcesses } = get()
+        findProcesses(messages, filter, page, pageSize)
+    },
+
+    setPageSize(messages: MessageIntf, pageSize: number) {
+        set(() => ({ pageSize, page: 1 }))
+        const { filter, findProcesses } = get()
+        findProcesses(messages, filter, 1, pageSize)
+    },
+
+    async findProcesses(messages: MessageIntf, filter: FilterParams, page?: number, pageSize?: number): Promise<AxiosResponse | Error> {
         const params: Record<string, unknown> = { ...filter }
 
-        if (!filter.descriptionValue?.trim()) {
+        if (!filter.descriptionValue?.length) {
             delete params.descriptionValue
         } else {
             params.descriptionType = "contains"
         }
 
-        if (!filter.functionalIdValue?.trim()) {
+        if (!filter.functionalIdValue?.length) {
             delete params.functionalIdValue
         } else {
             params.functionalIdType = "contains"
         }
 
-        if (!filter.additionalInformationValue?.trim()) {
+        if (!filter.additionalInformationValue?.length) {
             delete params.additionalInformationValue
         } else {
             params.additionalInformationType = "contains"
@@ -152,14 +170,37 @@ export const useProcessStore = create<ProcessState>((set) => ({
         if (!filter.roleUser?.length) delete params.roleUser
         if (!filter.status?.length) delete params.status
 
+        // When called without an explicit page (e.g. Go button after filter change), reset to page 1
+        const currentPage = page ?? 1
+        const currentPageSize = pageSize ?? get().pageSize
+        params.page = currentPage
+        params.pageSize = currentPageSize
+
         const res = await backend.callDirect(messages, "/v1/processes", "GET", undefined, {
             params, paramsSerializer: { indexes: null }
         })
         if (apiOk(res.status)) {
-            set(() => ({ processes: res.data as Process[] }))
+            const data = res.data as { items?: Process[], totalCount?: number }
+            set(() => ({
+                processes: data.items ?? [],
+                totalCount: data.totalCount ?? 0,
+                page: currentPage,
+                pageSize: currentPageSize,
+            }))
             return Promise.resolve(res)
         }
         return handleError(res, "findProcesses", messages)
+    },
+
+    async loadSuggestions(messages: MessageIntf, field: string, search: string): Promise<string[]> {
+        const res = await backend.callDirect(messages, "/v1/processes/suggestions", "GET", undefined, {
+            params: { field, search }
+        })
+        if (apiOk(res.status)) {
+            return res.data as string[]
+        }
+        handleError(res, "loadSuggestions", messages)
+        return []
     }
 
 }))

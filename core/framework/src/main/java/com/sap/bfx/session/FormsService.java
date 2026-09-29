@@ -202,6 +202,25 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
     }
 
     /**
+     * Generates a unique functional ID.
+     * Format: [PREFIX-]000000001[-POSTFIX]
+     *
+     * @param prefix  optional prefix, e.g. "PO" — pass {@code null} to omit
+     * @param postfix optional postfix, e.g. "DE" — pass {@code null} to omit
+     * @return the generated functional ID
+     */
+    public String generateFunctionalId(String prefix, String postfix) {
+        final long counter = this.getAdapter(DATABASE_FORMS).nextFunctionalIdCounter();
+        final var number = String.format("%09d", counter);
+        final boolean hasPrefix = prefix != null && !prefix.isBlank();
+        final boolean hasPostfix = postfix != null && !postfix.isBlank();
+        if (hasPrefix && hasPostfix) return prefix + "-" + number + "-" + postfix;
+        if (hasPrefix)               return prefix + "-" + number;
+        if (hasPostfix)              return number + "-" + postfix;
+        return number;
+    }
+
+    /**
      * @param form
      * @param is
      * @throws IOException
