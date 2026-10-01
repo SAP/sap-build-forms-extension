@@ -78,11 +78,11 @@ cd frontends && yarn workspace commons lint
 │   ├── core-common/            # Base Spring Boot configs, security, cloud
 │   ├── core-framework/         # Main framework (Redis, OpenAPI, gRPC)
 │   ├── core-maven/             # Maven plugin utilities + devserver static assets
-│   ├── core-btp/               # SAP BTP integration
+│   ├── core-btp/               # SAP Business AI Platform integration
 │   └── core-workflow-sbpa/     # SBPA workflow integration
 ├── p13n/                       # Personalization Java modules
 ├── valuehelp/                  # Value help Java modules
-├── integration/sbpa-taskui/    # MTA deployment for Cloud Foundry / SAP BTP
+├── integration/sbpa-taskui/    # MTA deployment for Cloud Foundry / SAP Business AI Platform
 └── frontends/                  # Yarn workspace monorepo (Node.js)
     ├── packages/commons/       # Shared library (must build before apps)
     └── apps/
@@ -120,7 +120,7 @@ The shared library (`frontends/packages/commons`) is consumed by all apps. Key e
 ### Java / Spring Boot
 
 - Spring Boot 3.2.6, Java 21
-- OAuth2 / XSUAA authentication (SAP BTP)
+- OAuth2 / XSUAA authentication (SAP Business AI Platform)
 - PostgreSQL + Redis
 - gRPC for inter-service communication
 - OpenAPI for REST documentation
@@ -130,7 +130,7 @@ The shared library (`frontends/packages/commons`) is consumed by all apps. Key e
 ### SAP BUILD Process Automation (SBPA) Integration
 
 The `integration/sbpa-taskui/` module packages the app as an MTA (Multi-Target Application) for Cloud Foundry on
-SAP BTP, binding to xsuaa, HTML5 repository, and destination services.
+SAP Business AI Platform, binding to xsuaa, HTML5 repository, and destination services.
 
 ## Support, Feedback, Contributing
 
