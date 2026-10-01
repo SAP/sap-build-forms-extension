@@ -156,6 +156,20 @@ public interface FormsApi extends Api {
     void setDetailState(String detailState);
 
     /**
+     * Returns the additional information of the process instance
+     *
+     * @return the additional information
+     */
+    String getAdditionalInformation();
+
+    /**
+     * Sets the additional information of the process instance
+     *
+     * @param additionalInformation
+     */
+    void setAdditionalInformation(String additionalInformation);
+
+    /**
      * Returns the name of the template used to create the process instance
      *
      * @return

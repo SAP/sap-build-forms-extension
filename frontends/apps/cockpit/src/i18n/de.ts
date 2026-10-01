@@ -16,7 +16,6 @@ export default {
     label_started_at: "Gestartet am",
     label_finished_at: "Beendet am",
     label_additional_information: "Zusatzinformation",
-    label_ended_on: "Beendet am",
     label_scenario: "Szenario",
     label_scenario_version: "Szenario Version",
 
@@ -35,16 +34,10 @@ export default {
     role_user_involved: "Benutzer ist involviert",
 
     process_state: "Prozesszustand",
-    process_state_started: "Gestartet",
-    process_state_draft: "Entwurf",
-    process_state_submitted: "Übertragen",
-    process_state_finished: "Beendet",
-    process_state_canceled: "Abgebrochen",
-    process_state_escalated: "Eskaliert",
     process_state_0: "Entwurf",
-    process_state_10: "Übertragen",
+    process_state_10: "Eingereicht",
     process_state_20: "Läuft",
-    process_state_90: "Fehler",
+    process_state_90: "Abgebrochen",
     process_state_100: "Abgeschlossen",
 
     input_type_equals: "gleich",

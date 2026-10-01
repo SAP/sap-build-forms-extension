@@ -96,10 +96,13 @@ public class FormSerializer extends StdSerializer<Form> {
             gen.writeNumberField(FormUtils.NM_CREATED_AT, value.getStartedAt().toEpochMilli());
         }
         if (value.getState() != null) {
-            gen.writeStringField(FormUtils.NM_STATE, value.getState().name());
+            gen.writeStringField(FormUtils.NM_STATE, value.getState().getIdentifier());
         }
         if (value.getDetailState() != null) {
             gen.writeStringField(FormUtils.NM_DETAIL_STATE, value.getDetailState());
+        }
+        if (value.getAdditionalInformation() != null) {
+            gen.writeStringField(FormUtils.NM_ADDITIONAL_INFORMATION, value.getAdditionalInformation());
         }
 
         // the data that is stored in rows (root itself is also a row)

@@ -56,6 +56,7 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
         final var result = new FrontendSettings();
 
         this.getAllAdapters().forEach(a -> a.init(result, params));
+        this.getAllAdapters().forEach(a -> result.getScenarios().addAll(a.findScenarios()));
 
         return result;
     }

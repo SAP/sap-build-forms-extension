@@ -155,17 +155,17 @@ export default function () {
                         <TableHeaderCell width="10em">
                             {intl.formatMessage({ id: "label_functional_id" })}
                         </TableHeaderCell>
-                        <TableHeaderCell minWidth="30em">
+                        <TableHeaderCell minWidth="10em">
                             {intl.formatMessage({ id: "label_status" })}
+                        </TableHeaderCell>
+                        <TableHeaderCell minWidth="30em">
+                            {intl.formatMessage({ id: "label_additional_information" })}
                         </TableHeaderCell>
                         <TableHeaderCell minWidth="20em">
                             {intl.formatMessage({ id: "label_started_by" })}
                         </TableHeaderCell>
                         <TableHeaderCell minWidth="10em">
                             {intl.formatMessage({ id: "label_started_at" })}
-                        </TableHeaderCell>
-                        <TableHeaderCell minWidth="10em">
-                            {intl.formatMessage({ id: "label_finished_at" })}
                         </TableHeaderCell>
                     </TableHeaderRow>
                 }
@@ -198,7 +198,12 @@ export default function () {
                         key={process.id}
                         id={process.id}
                     >
-                        <TableCell>{process.description}</TableCell>
+                        <TableCell>
+                            <FlexBox direction="Column">
+                                <Text style={{ fontWeight: "bold" }}>{process.scenarioName}</Text>
+                                <Text>{process.description}</Text>
+                            </FlexBox>
+                        </TableCell>
                         <TableCell>{process.functionalId}</TableCell>
                         <TableCell>
                             <Tag
@@ -239,9 +244,9 @@ export default function () {
                                 </>
                             </Tag>
                         </TableCell>
+                        <TableCell>{process.additionalInformation}</TableCell>
                         <TableCell>{process.startedBy}</TableCell>
-                        <TableCell>{formatDate(process.startedAt, getLanguage())}</TableCell>
-                        <TableCell>{formatDate(process.finishedAt, getLanguage())}</TableCell>
+                        <TableCell>{formatDate(process.startedAt, getLanguage())}{process.startedAt ? ", " + new Date(process.startedAt).toLocaleTimeString(getLanguage(), { hour: "2-digit", minute: "2-digit" }) : ""}</TableCell>
                     </TableRow>
                 ))}
             </Table>

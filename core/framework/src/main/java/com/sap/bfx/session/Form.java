@@ -37,6 +37,7 @@ public class Form extends ElementRow implements FormAttributes {
     private Instant changedAt;
     private String description;
     private Instant finishedAt;
+    private String additionalInformation;
     private String functionalId;
     private String id;
     private String refId;
@@ -101,7 +102,9 @@ public class Form extends ElementRow implements FormAttributes {
             this.setScenarioName(sd.getName());
         }
         this.journal = journal;
-        this.state = ProcessState.Draft;
+        if (this.state == null) {
+            this.state = ProcessState.Draft;
+        }
     }
 
     /**

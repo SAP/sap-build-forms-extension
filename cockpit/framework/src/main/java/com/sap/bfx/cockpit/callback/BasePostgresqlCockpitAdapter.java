@@ -44,7 +44,7 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
     public int findProcesses(List<ProcessAbstract> processes, SearchParams sp) {
 
         final var baseCondition = new StringBuilder(" FROM forms_forms WHERE 1=1");
-        final var params = new ArrayList<>();
+        final var params = new ArrayList<Object>();
 
         if ("contains".equals(sp.getDescriptionType()) && sp.getDescriptionValue() != null && sp.getDescriptionValue().length > 0) {
             if (sp.getDescriptionValue().length == 1) {
@@ -86,9 +86,42 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
         }
 
         if (sp.getUser() != null) {
+            // explicit user filter from the filter panel overrides everything
             baseCondition.append(" AND started_by = ?");
             params.add(sp.getUser());
+        } else if (sp.getRoleUser() != null && sp.getRoleUser().length > 0) {
+            // role_user_involved: started by OR last changed by the current user
+            // role_user_started:  started by the current user only
+            // If both are selected, "involved" is the broader condition and covers "started" as well.
+            if (sp.getCurrentUser() != null && !sp.getCurrentUser().isBlank()) {
+                final var roles = Arrays.asList(sp.getRoleUser());
+                if (roles.contains("role_user_involved")) {
+                    baseCondition.append(" AND (started_by = ? OR user_nm = ?)");
+                    params.add(sp.getCurrentUser());
+                    params.add(sp.getCurrentUser());
+                } else if (roles.contains("role_user_started")) {
+                    baseCondition.append(" AND started_by = ?");
+                    params.add(sp.getCurrentUser());
+                }
+            }
+        } else if (sp.getSearchParameters() != null && sp.getSearchParameters().length > 0) {
+            // "all": no restriction; "involved": started_by OR user_nm; others (e.g. my_requests): started_by only
+            final var profiles = Arrays.asList(sp.getSearchParameters());
+            if (!profiles.contains("all") && sp.getCurrentUser() != null && !sp.getCurrentUser().isBlank()) {
+                if (profiles.contains("involved")) {
+                    // involved: user started it OR last changed it
+                    baseCondition.append(" AND (started_by = ? OR user_nm = ?)");
+                    params.add(sp.getCurrentUser());
+                    params.add(sp.getCurrentUser());
+                } else {
+                    // my_requests: only processes started by the current user
+                    baseCondition.append(" AND started_by = ?");
+                    params.add(sp.getCurrentUser());
+                }
+            }
         }
+
+        applyCustomProfileConditions(baseCondition, params, sp);
 
         final var dateFormat = new SimpleDateFormat("MMM d, yyyy", java.util.Locale.ENGLISH);
 
@@ -180,6 +213,28 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
         return jdbc.queryForList(sql, String.class, search == null ? "" : search);
     }
 
+    @Override
+    public List<String> findScenarios() {
+        return jdbc.queryForList(
+                "SELECT DISTINCT scenario_nm FROM forms_forms"
+                + " WHERE scenario_nm IS NOT NULL AND scenario_nm <> ''"
+                + " ORDER BY scenario_nm",
+                String.class);
+    }
+
+    /**
+     * Hook for subclasses to append extra SQL conditions based on custom profile IDs.
+     * Called after all standard filters have been applied.
+     * Append to {@code condition} with " AND ..." and add corresponding bind values to {@code params}.
+     *
+     * @param condition the WHERE clause builder
+     * @param params    bind parameter list
+     * @param sp        full search parameters including selected profiles
+     */
+    protected void applyCustomProfileConditions(StringBuilder condition, List<Object> params, SearchParams sp) {
+        // no-op by default
+    }
+
     /**
      * Maps a SQL result row to a Form object.
      */
@@ -192,6 +247,7 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
             form.setDescription(rs.getString("description"));
             form.setDetailState(rs.getString("detail_state"));
             form.setFinishedAt(JdbcUtils.fromResultSetToInstant(rs, "finished_at"));
+            form.setAdditionalInformation(rs.getString("additional_information"));
             form.setFunctionalId(rs.getString("functional_id"));
             form.setId(rs.getString("id"));
             form.setRefId(rs.getString("ref_id"));

@@ -42,7 +42,7 @@ public class FormUtils {
     public static final String NM_LINK_HREF = "h";
     public static final String NM_LINK_TARGET = "t";
     public static final String NM_LOCALE = "l";
-    public static final String NM_STATE = "s";
+    public static final String NM_STATE = "pst";
     public static final String NM_USERNAME = "u";
     public static final String NM_PERSONALIZATIONS = "pe";
     public static final String NM_PERSONALIZATIONS_ID = "pei";
@@ -80,6 +80,7 @@ public class FormUtils {
     public static final String NM_CREATED_BY = "cby";
     public static final String NM_CREATED_AT = "cat";
     public static final String NM_DETAIL_STATE = "dst";
+    public static final String NM_ADDITIONAL_INFORMATION = "ai";
 
     /**
      * Create a new form instance based on the scenario definition provided.

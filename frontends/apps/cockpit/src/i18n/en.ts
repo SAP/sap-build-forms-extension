@@ -6,6 +6,7 @@ export default {
 
     label_profiles: "Profiles",
     label_id: "Id",
+    label_ref_id: "Reference/Workflow ID",
     label_description: "Description",
     label_functional_id: "Functional ID",
     label_status: "State",
@@ -14,8 +15,6 @@ export default {
     label_started_at: "Started on",
     label_finished_at: "Finished on",
     label_additional_information: "Additional Information",
-    label_ended_on: "Ended On",
-
     show_form: "Show form",
     show_details: "Show details",
 
@@ -31,17 +30,11 @@ export default {
     role_user_involved: "User is involved",
 
     process_state: "Process State",
-    process_state_started: "Started",
-    process_state_draft: "Draft",
-    process_state_submitted: "Submitted",
-    process_state_finished: "Finished",
-    process_state_canceled: "Canceled",
-    process_state_escalated: "Escalated",
     process_state_0: "Draft",
     process_state_10: "Submitted",
     process_state_20: "Running",
-    process_state_90: "Error",
-    process_state_100: "Completed",
+    process_state_90: "Canceled",
+    process_state_100: "Finished",
 
     input_type_equals: "equals",
     input_type_contains: "contains",

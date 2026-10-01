@@ -24,6 +24,7 @@ export interface Profile {
 export interface Settings {
     language: string
     profiles: Array<Profile>
+    scenarios: Array<string>
 }
 
 /**

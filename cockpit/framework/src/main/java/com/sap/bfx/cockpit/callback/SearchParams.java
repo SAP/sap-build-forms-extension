@@ -6,6 +6,7 @@ import lombok.Data;
 public class SearchParams {
     private String language;
     private String[] searchParameters;
+    private String currentUser;
     private int page = 1;
     private int pageSize = 10;
     private String descriptionType;

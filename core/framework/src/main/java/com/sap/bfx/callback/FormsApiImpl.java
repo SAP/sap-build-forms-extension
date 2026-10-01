@@ -208,6 +208,22 @@ public class FormsApiImpl implements FormsApi {
      * @return
      */
     @Override
+    public String getAdditionalInformation() {
+        return form.getAdditionalInformation();
+    }
+
+    /**
+     * @param additionalInformation
+     */
+    @Override
+    public void setAdditionalInformation(String additionalInformation) {
+        form.setAdditionalInformation(additionalInformation);
+    }
+
+    /**
+     * @return
+     */
+    @Override
     public String getTemplateName() {
         return form.getTemplateName();
     }

@@ -136,6 +136,9 @@ class SessionResponse {
             if (value.dynamicValuehelps != null && !value.dynamicValuehelps.isEmpty()) {
                 gen.writeObjectField("dvhs", value.dynamicValuehelps);
             }
+            if (value.form != null && value.form.getAdditionalInformation() != null) {
+                gen.writeStringField("additionalInformation", value.form.getAdditionalInformation());
+            }
             if (value.operation != null) {
                 gen.writeObjectFieldStart("operation");
                 gen.writeStringField("command", value.operation.getCommand());

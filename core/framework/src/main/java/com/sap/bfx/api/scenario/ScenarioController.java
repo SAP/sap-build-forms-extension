@@ -692,7 +692,7 @@ public class ScenarioController {
                     form.setState(ProcessState.Running);
                     break;
                 case "cancelled":
-                    form.setState(ProcessState.Cancelled);
+                    form.setState(ProcessState.Canceled);
                     break;
                 case "finished":
                     form.setState(ProcessState.Finished);

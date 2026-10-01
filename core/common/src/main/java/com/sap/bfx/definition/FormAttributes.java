@@ -176,6 +176,18 @@ public interface FormAttributes {
      *
      * @return
      */
+    String getAdditionalInformation();
+
+    /**
+     *
+     * @param value
+     */
+    void setAdditionalInformation(final String value);
+
+    /**
+     *
+     * @return
+     */
     ProcessState getState();
 
     /**

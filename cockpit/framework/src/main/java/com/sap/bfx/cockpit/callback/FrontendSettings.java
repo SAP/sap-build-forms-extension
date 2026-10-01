@@ -11,6 +11,7 @@ import java.util.List;
 public class FrontendSettings {
     private String language = "en";
     private List<Profile> profiles = new ArrayList<>();
+    private List<String> scenarios = new ArrayList<>();
 
     @Data
     @NoArgsConstructor

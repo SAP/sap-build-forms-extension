@@ -23,6 +23,7 @@ export interface SessionState {
     ignore: boolean
     globalReadonly: boolean
     shouldReset: boolean
+    additionalInformation?: string
 }
 
 /**

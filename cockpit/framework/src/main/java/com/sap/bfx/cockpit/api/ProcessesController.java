@@ -5,6 +5,7 @@ import com.sap.bfx.cockpit.callback.FrontendSettings;
 import com.sap.bfx.cockpit.callback.SearchParams;
 import com.sap.bfx.cockpit.service.CockpitService;
 import com.sap.bfx.cockpit.service.ProcessPage;
+import com.sap.bfx.security.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +88,7 @@ public class ProcessesController {
         params.setScenario(scenario);
         params.setPage(page);
         params.setPageSize(pageSize);
+        params.setCurrentUser(SecurityUtils.getUserName());
 
         return service.findProcesses(params);
     }

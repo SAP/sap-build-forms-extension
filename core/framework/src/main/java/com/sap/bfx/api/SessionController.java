@@ -343,7 +343,7 @@ public class SessionController {
         });
 
         // create response and sent it to client
-        final var response = new SessionResponse(session.getId(), result, form, null);
+        final var response = new SessionResponse(session.getId(), result, session.getForm(), null);
         response.setDef(context.getScenarioDefinition());
         response.setValues(session.getForm().getElements());
         response.setLocale(context.getLocale());

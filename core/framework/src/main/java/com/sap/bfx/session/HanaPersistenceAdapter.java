@@ -71,7 +71,7 @@ public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter 
                 final var ps = con.prepareStatement(
                         "INSERT INTO forms_data.forms_forms (id,version,ref_id,scenario_nm," +
                                 "scneario_ver,wf_adapter,user_nm,ts,template_nm,description,finished_at,functional_id," +
-                                "started_at,started_by,state,detail_state,data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                                "started_at,started_by,state,detail_state,additional_information,data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
                 ps.setString(1, formAttributes.getId());
                 ps.setLong(2, formAttributes.getVersion());
                 ps.setString(3, formAttributes.getRefId());
@@ -91,15 +91,16 @@ public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter 
                 ps.setString(15, formAttributes.getState() != null ? formAttributes.getState().getIdentifier() :
                         ProcessState.Draft.getIdentifier());
                 ps.setString(16, formAttributes.getDetailState());
-                ps.setBlob(17, data);
+                ps.setString(17, formAttributes.getAdditionalInformation());
+                ps.setBlob(18, data);
                 return ps;
             });
         } else {
             jdbc.update(con -> {
                 final var ps = con.prepareStatement("UPDATE forms_data.forms_forms SET data=?,version=?,ref_id=?," +
                         "scenario_nm=?,scneario_ver=?,wf_adapter=?,user_nm=?,ts=?,template_nm=?,description=?," +
-                        "finished_at=?,functional_id=?,started_at=?,started_by=?,state=?,detail_state=?" +
-                        " WHERE id=? AND version=?");
+                        "finished_at=?,functional_id=?,started_at=?,started_by=?,state=?,detail_state=?," +
+                        "additional_information=? WHERE id=? AND version=?");
                 ps.setBlob(1, data);
                 ps.setLong(2, formAttributes.getVersion());
                 ps.setString(3, formAttributes.getRefId());
@@ -119,8 +120,9 @@ public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter 
                 ps.setString(15, formAttributes.getState() != null ? formAttributes.getState().getIdentifier() :
                         ProcessState.Draft.getIdentifier());
                 ps.setString(16, formAttributes.getDetailState());
-                ps.setString(17, formAttributes.getId());
-                ps.setLong(18, formAttributes.getVersion() - 1); // optimistic locking
+                ps.setString(17, formAttributes.getAdditionalInformation());
+                ps.setString(18, formAttributes.getId());
+                ps.setLong(19, formAttributes.getVersion() - 1); // optimistic locking
                 return ps;
             });
         }
@@ -175,6 +177,7 @@ public abstract class HanaPersistenceAdapter extends AbstractPersistenceAdapter 
                 form.setDetailState(rs.getString("detail_state"));
                 form.setFinishedAt(JdbcUtils.fromResultSetToInstant(rs, "finished_at"));
                 form.setFunctionalId(rs.getString("functional_id"));
+                form.setAdditionalInformation(rs.getString("additional_information"));
                 form.setId(rs.getString("id"));
                 form.setRefId(rs.getString("ref_id"));
                 form.setScenarioName(rs.getString("scenario_nm"));

@@ -16,6 +16,7 @@ export interface Process {
     functionalId: string,
     state: string,
     detailState: string,
+    additionalInformation?: string
     startedBy?: string,
     startedAt?: Date,
     finishedAt?: Date,
@@ -97,6 +98,7 @@ interface ProcessState {
 
     initFilter: (settings: Settings) => void,
     setFilter: (filter: FilterParams) => void,
+    mergeFilter: (partial: Partial<FilterParams>) => void,
     setPage: (messages: MessageIntf, page: number) => void,
     setPageSize: (messages: MessageIntf, pageSize: number) => void,
 
@@ -112,7 +114,7 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
     totalCount: 0,
     page: 1,
     pageSize: PAGE_SIZES[0],
-    filter: { profiles: ["my_applications"] },
+    filter: { profiles: ["my_requests"] },
 
     initFilter(settings: Settings) {
         const f: FilterParams = {}
@@ -128,6 +130,10 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
 
     setFilter(filter: FilterParams) {
         set(() => ({ filter }))
+    },
+
+    mergeFilter(partial: Partial<FilterParams>) {
+        set((state) => ({ filter: { ...state.filter, ...partial } }))
     },
 
     setPage(messages: MessageIntf, page: number) {

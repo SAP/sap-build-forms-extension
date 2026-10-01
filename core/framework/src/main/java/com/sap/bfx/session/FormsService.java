@@ -100,6 +100,7 @@ public class FormsService extends AbstractAdapterHandlingService<PersistenceAdap
                 EnumUtils.valueById(ProcessState.class, SerializationUtils.getPropText(node, FormUtils.NM_STATE));
         form.setState(ps.isPresent() ? ps.get() : ProcessState.Draft);
         form.setDetailState(SerializationUtils.getPropText(node, FormUtils.NM_DETAIL_STATE));
+        form.setAdditionalInformation(SerializationUtils.getPropText(node, FormUtils.NM_ADDITIONAL_INFORMATION));
 
         return form;
     }

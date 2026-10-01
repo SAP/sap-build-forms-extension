@@ -46,6 +46,7 @@ export interface SessionResponse {
     msg: Message[]
     dvhs?: Record<string, Record<string, string>>
     operation?: FrontendOperation
+    additionalInformation?: string
 }
 
 /**

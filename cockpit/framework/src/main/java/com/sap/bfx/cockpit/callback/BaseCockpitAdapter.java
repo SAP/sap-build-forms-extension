@@ -5,6 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /**
  * Base implementation of the CockpitAdapter interface.
@@ -28,6 +30,15 @@ public class BaseCockpitAdapter implements CockpitAdapter {
 
     @Override
     public void init(FrontendSettings settings, FrontendParams params) {
+        final var rb = ResourceBundle.getBundle("cockpit", Locale.forLanguageTag(
+                params.getLanguage() != null ? params.getLanguage() : "en"));
+        settings.setLanguage(params.getLanguage() != null ? params.getLanguage() : "en");
+        settings.getProfiles().add(new FrontendSettings.Profile("my_requests",
+                rb.getString("profile_my_requests"), true));
+        settings.getProfiles().add(new FrontendSettings.Profile("involved",
+                rb.getString("profile_involved"), false));
+        settings.getProfiles().add(new FrontendSettings.Profile("all",
+                rb.getString("profile_all"), false));
     }
 
     @Override
@@ -37,6 +48,11 @@ public class BaseCockpitAdapter implements CockpitAdapter {
 
     @Override
     public List<String> findSuggestions(String column, String search) {
+        return List.of();
+    }
+
+    @Override
+    public List<String> findScenarios() {
         return List.of();
     }
 

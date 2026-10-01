@@ -1,6 +1,7 @@
 package com.sap.bfx.cockpit.service;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sap.bfx.definition.FormAttributes;
 import com.sap.bfx.definition.ProcessState;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class ProcessAbstract implements FormAttributes {
     private Instant changedAt;
     private String description;
     private Instant finishedAt;
+    private String additionalInformation;
     private String functionalId;
     private String id;
     private String refId;
@@ -23,8 +25,16 @@ public class ProcessAbstract implements FormAttributes {
     private String scenarioUrl;
     private String startedBy;
     private Instant startedAt;
+    @JsonIgnore
     private ProcessState state;
     private String detailState;
+
+    /** Serialises {@code state} as its numeric identifier (e.g. {@code "0"}, {@code "20"}) so the
+     *  frontend {@code PROCESS_STATES} lookup by ID works correctly. */
+    @JsonProperty("state")
+    public String getStateIdentifier() {
+        return state != null ? state.getIdentifier() : null;
+    }
     @JsonIgnore
     private String templateName;
     @JsonIgnore

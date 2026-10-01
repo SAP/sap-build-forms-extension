@@ -91,7 +91,7 @@ function SearchHelpInput({
 export default function () {
     const intl = useIntl()
     const filter = useProcessStore((state) => state.filter)
-    const setFilter = useProcessStore((state) => state.setFilter)
+    const mergeFilter = useProcessStore((state) => state.mergeFilter)
     const settings = useVisualStore((state) => state.settings)
 
     const [startedByError, setStartedByError] = useState(false)
@@ -103,7 +103,7 @@ export default function () {
                     <MultiComboBox
                         style={{ width: "100%" }}
                         onSelectionChange={(e) =>
-                            setFilter({ ...filter, profiles: e.detail.items.map((item) => item.id) })
+                            mergeFilter({ profiles: e.detail.items.map((item) => item.dataset.key!) })
                         }
                         valueState={filter.profiles && filter.profiles.length > 0 ? "None" : "Negative"}
                         valueStateMessage={
@@ -113,7 +113,7 @@ export default function () {
                         }
                     >
                         {settings?.profiles.map((p) => (
-                            <MultiComboBoxItem key={p.id} id={p.id} text={p.name} selected={p.selected} />
+                            <MultiComboBoxItem key={p.id} data-key={p.id} text={p.name} selected={p.selected} />
                         ))}
                     </MultiComboBox>
                 </FilterField>
@@ -122,7 +122,7 @@ export default function () {
                     <SearchHelpInput
                         field="description"
                         value={filter.descriptionValue ?? []}
-                        onValueChange={(v) => setFilter({ ...filter, descriptionValue: v })}
+                        onValueChange={(v) => mergeFilter({ descriptionValue: v })}
                         dialogTitle={intl.formatMessage({ id: "label_description" })}
                     />
                 </FilterField>
@@ -131,7 +131,7 @@ export default function () {
                     <SearchHelpInput
                         field="functionalId"
                         value={filter.functionalIdValue ?? []}
-                        onValueChange={(v) => setFilter({ ...filter, functionalIdValue: v })}
+                        onValueChange={(v) => mergeFilter({ functionalIdValue: v })}
                         dialogTitle={intl.formatMessage({ id: "label_functional_id" })}
                     />
                 </FilterField>
@@ -140,13 +140,13 @@ export default function () {
                     <MultiComboBox
                         style={{ width: "100%" }}
                         onSelectionChange={(e) =>
-                            setFilter({ ...filter, status: e.detail.items.map((item) => item.id) })
+                            mergeFilter({ status: e.detail.items.map((item) => item.dataset.key!) })
                         }
                     >
                         {PROCESS_STATES.map((s) => (
                             <MultiComboBoxItem
                                 key={s.id}
-                                id={s.id}
+                                data-key={s.id}
                                 selected={filter.status?.includes(s.id) ?? false}
                                 text={intl.formatMessage({ id: "process_state_" + s.id })}
                             />
@@ -158,7 +158,7 @@ export default function () {
                     <SearchHelpInput
                         field="additionalInformation"
                         value={filter.additionalInformationValue ?? []}
-                        onValueChange={(v) => setFilter({ ...filter, additionalInformationValue: v })}
+                        onValueChange={(v) => mergeFilter({ additionalInformationValue: v })}
                         dialogTitle={intl.formatMessage({ id: "label_additional_information" })}
                     />
                 </FilterField>
@@ -168,7 +168,7 @@ export default function () {
                         style={{ width: "100%" }}
                         value={filter.user ?? ""}
                         onInput={(e: Ui5CustomEvent<InputDomRef>) =>
-                            setFilter({ ...filter, user: e.target.value })
+                            mergeFilter({ user: e.target.value })
                         }
                     />
                 </FilterField>
@@ -177,29 +177,29 @@ export default function () {
                     <MultiComboBox
                         style={{ width: "100%" }}
                         onSelectionChange={(e) =>
-                            setFilter({ ...filter, roleUser: e.detail.items.map((item) => item.id) })
+                            mergeFilter({ roleUser: e.detail.items.map((item) => item.dataset.key!) })
                         }
                     >
                         <MultiComboBoxItem
                             text={intl.formatMessage({ id: "role_user_started" })}
-                            id="role_user_started"
+                            data-key="role_user_started"
                             selected={filter.roleUser?.includes("role_user_started") ?? false}
                         />
                         <MultiComboBoxItem
                             text={intl.formatMessage({ id: "role_user_involved" })}
-                            id="role_user_involved"
+                            data-key="role_user_involved"
                             selected={filter.roleUser?.includes("role_user_involved") ?? false}
                         />
                     </MultiComboBox>
                 </FilterField>
 
-                <FilterField label={intl.formatMessage({ id: "label_started_by" })}>
+                <FilterField label={intl.formatMessage({ id: "label_started_at" })}>
                     <DateRangePicker
                         style={{ width: "100%" }}
                         value={filter.startedBy ?? ""}
                         onChange={(e) => {
                             setStartedByError(!e.detail.valid)
-                            setFilter({ ...filter, startedBy: e.detail.value })
+                            mergeFilter({ startedBy: e.detail.value })
                         }}
                         primaryCalendarType="Gregorian"
                         valueState={startedByError ? "Negative" : "None"}
@@ -211,13 +211,13 @@ export default function () {
                     />
                 </FilterField>
 
-                <FilterField label={intl.formatMessage({ id: "label_ended_on" })}>
+                <FilterField label={intl.formatMessage({ id: "label_finished_at" })}>
                     <DateRangePicker
                         style={{ width: "100%" }}
                         value={filter.endedOn ?? ""}
                         onChange={(e) => {
                             setEndedOnError(!e.detail.valid)
-                            setFilter({ ...filter, endedOn: e.detail.value })
+                            mergeFilter({ endedOn: e.detail.value })
                         }}
                         primaryCalendarType="Gregorian"
                         valueState={endedOnError ? "Negative" : "None"}
@@ -233,13 +233,13 @@ export default function () {
                     <Select
                         style={{ width: "100%" }}
                         onChange={(e) =>
-                            setFilter({
-                                ...filter,
-                                scenario: e.detail.selectedOption.textContent ?? undefined,
-                            })
+                            mergeFilter({ scenario: e.detail.selectedOption.dataset.key ?? undefined })
                         }
                     >
-                        <Option id="..." selected={filter.scenario === "..."} />
+                        <Option data-key="..." selected={!filter.scenario || filter.scenario === "..."} />
+                        {settings?.scenarios.map((s) => (
+                            <Option key={s} data-key={s} selected={filter.scenario === s}>{s}</Option>
+                        ))}
                     </Select>
                 </FilterField>
         </Grid>

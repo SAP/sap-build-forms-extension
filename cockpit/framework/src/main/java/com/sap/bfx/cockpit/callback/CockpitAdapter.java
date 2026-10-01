@@ -39,4 +39,11 @@ public interface CockpitAdapter extends Adapter {
      * @return sorted list of distinct matching values
      */
     List<String> findSuggestions(String column, String search);
+
+    /**
+     * Returns distinct non-blank scenario names, ordered alphabetically.
+     *
+     * @return sorted list of scenario names
+     */
+    List<String> findScenarios();
 }
