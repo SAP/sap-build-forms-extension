@@ -1,8 +1,7 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-
-package com.sap.bfx.p13n.grpc;
+option java_package = "com.sap.bfx.p13n.proto";
 
 /* import "google/protobuf/timestamp.proto"; */
 

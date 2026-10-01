@@ -19,38 +19,52 @@
             <artifactId>p13n-common</artifactId>
             <version>${forms.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-grpc-client</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-shade-plugin</artifactId>-->
+            <!--                <version>${maven-shade-plugin.version}</version>-->
+            <!--                <configuration>-->
+            <!--                    <artifactSet>-->
+            <!--                        <includes>-->
+            <!--                            <include>com/sap/bfx/p13n/**</include>-->
+            <!--                        </includes>-->
+            <!--                    </artifactSet>-->
+            <!--                    <filters>-->
+            <!--                        <filter>-->
+            <!--                            <artifact>com/sap/bfx/p13n/**</artifact>-->
+            <!--                        </filter>-->
+            <!--                    </filters>-->
+            <!--                    <transformers>-->
+            <!--                        <transformer-->
+            <!--                                implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>-->
+            <!--                    </transformers>-->
+            <!--                </configuration>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <phase>package</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>shade</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven-shade-plugin.version}</version>
+                <groupId>io.github.ascopes</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
                 <configuration>
-                    <artifactSet>
-                        <includes>
-                            <include>com/sap/bfx/p13n/**</include>
-                        </includes>
-                    </artifactSet>
-                    <filters>
-                        <filter>
-                            <artifact>com/sap/bfx/p13n/**</artifact>
-                        </filter>
-                    </filters>
-                    <transformers>
-                        <transformer
-                                implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                    </transformers>
+                    <sourceDirectories>
+                        <sourceDirectory>src/main/proto</sourceDirectory>
+                        <sourceDirectory>../common/src/main/proto</sourceDirectory>
+                    </sourceDirectories>
                 </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

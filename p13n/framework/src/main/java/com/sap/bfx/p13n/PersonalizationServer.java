@@ -1,13 +1,13 @@
 package com.sap.bfx.p13n;
 
-import com.sap.bfx.p13n.grpc.*;
-import com.sap.bfx.p13n.grpc.Settings;
 import com.sap.bfx.p13n.model.Personalization;
+import com.sap.bfx.p13n.proto.*;
+import com.sap.bfx.p13n.proto.Settings;
 import com.sap.bfx.p13n.service.PersonalizationService;
 import io.grpc.stub.StreamObserver;
 import lombok.extern.slf4j.Slf4j;
-import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.grpc.server.service.GrpcService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,26 +17,31 @@ import java.util.UUID;
 /**
  * @see <a href="https://yidongnan.github.io/grpc-spring-boot-starter/en/"/>
  */
-@GrpcService @Slf4j public class PersonalizationServer extends P13nServiceGrpc.P13nServiceImplBase {
+@GrpcService
+@Slf4j
+public class PersonalizationServer extends P13nServiceGrpc.P13nServiceImplBase {
 
     private final PersonalizationService service;
 
     /**
+     * Constructor for PersonalizationServer
+     *
      * @param service - personalization service
      */
-    @Autowired public PersonalizationServer(final PersonalizationService service) {
+    @Autowired
+    public PersonalizationServer(final PersonalizationService service) {
         super();
         this.service = service;
     }
 
     /**
-     * Test method
+     * Test method for gRPC
      *
-     * @param request          - test request
+     * @param request          - request with message
      * @param responseObserver - response observer
      */
-    @Override public void test(TestRequest request, StreamObserver<TestResponse> responseObserver) {
-
+    @Override
+    public void test(TestRequest request, StreamObserver<TestResponse> responseObserver) {
         TestResponse response = TestResponse.newBuilder().setReply("Hallo, you received a message via gRPC").build();
 
         responseObserver.onNext(response);
@@ -49,8 +54,8 @@ import java.util.UUID;
      * @param request          - request with app and user
      * @param responseObserver - response observer
      */
-    @Override public void getSettings(GetSettingsRequest request,
-                                      StreamObserver<GetSettingsResponse> responseObserver) {
+    @Override
+    public void getSettings(GetSettingsRequest request, StreamObserver<GetSettingsResponse> responseObserver) {
         var app = request.getApp();
         var user = request.getUser();
 
