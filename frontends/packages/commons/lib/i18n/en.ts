@@ -47,4 +47,6 @@ export default {
     common_name_sub_title: "Sub-Title",
     common_name_description: "Description",
     common_name_values: "Values",
+
+    common_login_title: "Login"
 }

@@ -30,7 +30,7 @@ export default function ValidationTable(props: Props) {
             <Table
                 headerRow={
                     <TableHeaderRow>
-                        <TableHeaderCell min-width="120px" > 
+                        <TableHeaderCell min-width="120px" >
                             <span>Type</span>
                         </TableHeaderCell>
                         <TableHeaderCell min-width="120px" >
@@ -42,6 +42,9 @@ export default function ValidationTable(props: Props) {
                         <TableHeaderCell min-width="120px" >
                             <span>MessageKey</span>
                         </TableHeaderCell>
+                        <TableHeaderCell width="90px" >
+                            <span>Show hint</span>
+                        </TableHeaderCell>
                         <TableHeaderCell width="55px" >
                             <Button
                                 onClick={() => {
@@ -51,7 +54,7 @@ export default function ValidationTable(props: Props) {
                                             validationRules: [
                                                 ...props.el?.validationRules!,
                                                 {
-                                                    type: "regex",
+                                                    type: "",
                                                     pattern: "",
                                                     severity: "information",
                                                     messageKey: "",
@@ -63,7 +66,7 @@ export default function ValidationTable(props: Props) {
                                             ...props.el,
                                             validationRules: [
                                                 {
-                                                    type: "regex",
+                                                    type: "",
                                                     pattern: "",
                                                     severity: "information",
                                                     messageKey: "",
@@ -179,7 +182,7 @@ export default function ValidationTable(props: Props) {
                                 {(["string", "int", "decimal", "date", "time", "datetime"].includes(
                                     props.el?.dataType!,
                                 ) ||
-                                    ["table"].includes(props.el?.type!)) && (
+                                    ["table", "attachment"].includes(props.el?.type!)) && (
                                     <Option selected={item.type == "min"} key="min" id="min">
                                         min
                                     </Option>
@@ -192,8 +195,8 @@ export default function ValidationTable(props: Props) {
                                         max
                                     </Option>
                                 )}
-                                {(["string"].includes(props.el?.type!) ||
-                                    ["string"].includes(props.el?.dataType!)) && (
+                                {(["string", "decimal"].includes(props.el?.type!) ||
+                                    ["string", "decimal"].includes(props.el?.dataType!)) && (
                                     <Option selected={item.type == "fixed"} key="fixed" id="fixed">
                                         fixed
                                     </Option>
@@ -436,6 +439,25 @@ export default function ValidationTable(props: Props) {
                                                       messageKey:
                                                           e.target.attributes.getNamedItem("value")!
                                                               .nodeValue!,
+                                                  }
+                                                : v,
+                                        ),
+                                    })
+                                }}
+                            />
+                        </TableCell>
+
+                        <TableCell>
+                            <CheckBox
+                                checked={item.showHint ?? false}
+                                onChange={(e) => {
+                                    props.setNewEl({
+                                        ...props.el,
+                                        validationRules: props.el?.validationRules?.map((v) =>
+                                            v === item
+                                                ? {
+                                                      ...item,
+                                                      showHint: e.target.checked,
                                                   }
                                                 : v,
                                         ),

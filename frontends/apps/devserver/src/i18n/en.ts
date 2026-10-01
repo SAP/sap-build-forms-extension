@@ -135,6 +135,7 @@ export default {
     element_label_column_min_width: "Min column width",
     element_label_column_max_width: "Max column width",
     element_label_show_as_column: "Show as Column",
+    element_label_floating: "Floating",
     element_label_validation: "Validation",
     element_errors_prefix: "Errors:",
 

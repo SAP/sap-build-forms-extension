@@ -1,7 +1,6 @@
 import { ReactNode } from "react"
 
-import { Bar } from "@ui5/webcomponents-react"
-import BarDesign from "@ui5/webcomponents/dist/types/BarDesign"
+import { Toolbar, ToolbarSpacer } from "@ui5/webcomponents-react"
 
 import { FormService } from "../../features/sessions/forms"
 import Control, { ControlProps } from "./Control"
@@ -11,80 +10,51 @@ export default function (props: ControlProps) {
     const { def, rowId } = props
     const form = useAppSelector((state) => state.session.form)
 
+    if (!def) return <></>
+
+    const start: ReactNode[] = []
+    const center: ReactNode[] = []
+    const end: ReactNode[] = []
+
     // this can occur if toobar-control is called from dialog etc. withat have no toolbar defined. In this
     // case we simply render nothing
-    if (!def) {
-        return <></>
-    }
-    // console.log(`Toolbar for ${def.id}`)
-
-    let children: ReactNode[] = []
-    let start: ReactNode[] = []
-    let end: ReactNode[] = []
-    if (def.elements) {
-        for (let child of def.elements) {
-            const element = FormService.findElementByRowAndKey(rowId, child.key, form)
-            if (element?.vi) {
-                children.push(
-                    <Control {...props} withContainer={false} key={child.id} def={child} />,
-                )
-            }
-        }
-    }
-    if (children.length === 0) {
-        children.push(<div key="_"></div>)
-    }
     if (def.leftElements) {
-        for (let child of def.leftElements) {
+        for (const child of def.leftElements) {
             const element = FormService.findElementByRowAndKey(rowId, child.key, form)
             if (element?.vi) {
-                start.push(<Control {...props} withContainer={false} key={child.key} def={child} />)
+                start.push(<Control {...props} withContainer={false} insideToolbar key={child.key} def={child} />)
             }
         }
     }
-    if (def.rightElements) {
-        for (let child of def.rightElements) {
+
+    if (def.elements) {
+        for (const child of def.elements) {
             const element = FormService.findElementByRowAndKey(rowId, child.key, form)
             if (element?.vi) {
-                end.push(<Control {...props} withContainer={false} key={child.key} def={child} />)
+                center.push(<Control {...props} withContainer={false} insideToolbar key={child.id} def={child} />)
             }
         }
+    }
+
+    if (def.rightElements) {
+        for (const child of def.rightElements) {
+            const element = FormService.findElementByRowAndKey(rowId, child.key, form)
+            if (element?.vi) {
+                end.push(<Control {...props} withContainer={false} insideToolbar key={child.key} def={child} />)
+            }
+        }
+    }
+
+    if (start.length === 0 && center.length === 0 && end.length === 0) {
+        return <></>
     }
 
     return (
-        <Bar
-            {...props}
-            design={props.design ? (props.design as BarDesign) : "Header"}
-            startContent={
-                <span
-                    style={{
-                        display: "flex",
-                        gap: ".5rem",
-                    }}
-                >
-                    {start}
-                </span>
-            }
-            endContent={
-                <span
-                    style={{
-                        display: "flex",
-                        gap: ".5rem",
-                    }}
-                >
-                    {end}
-                </span>
-            }
-            style={{ width: "100%" }}
-        >
-            <span
-                style={{
-                    display: "flex",
-                    gap: ".5rem",
-                }}
-            >
-                {children}
-            </span>
-        </Bar>
+        <Toolbar style={{ width: "100%" }} design="Solid" >
+            {start}
+            {center}
+            <ToolbarSpacer />
+            {end}
+        </Toolbar>
     )
 }

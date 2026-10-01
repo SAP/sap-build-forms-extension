@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -25,8 +27,9 @@ public class ExceptionHandlerControllerAdvice {
     @ExceptionHandler(Throwable.class)
     public ResponseEntity<ExceptionInfo> handleGenericException(Exception e) {
         log.error("An unexpected error occurred: ", e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                new ExceptionInfo(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred", "N/A", "N/A"));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body(new ExceptionInfo(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                     "An unexpected error occurred", "N/A", "N/A"));
     }
 
     /**
@@ -60,7 +63,22 @@ public class ExceptionHandlerControllerAdvice {
      * @return a ResponseEntity containing an ExceptionInfo with details about the exception
      */
     @ExceptionHandler(NotAuthorizedException.class)
-    public ResponseEntity<ExceptionInfo> handleNotAuthorizedException(FormsCoreException e) {
+    public ResponseEntity<ExceptionInfo> handleNotAuthorizedException(NotAuthorizedException e) {
+        log.error(
+                "User is not Authorized: Guid:'" + e.getId() + "', user: '" + e.getUser() + "', required authority: '" +
+                        StringUtils.join(e.getAuthObjects().stream().map(GrantedAuthority::getAuthority).toList(),
+                                ",") + "'", e);
+        return createResponseEntity(HttpStatus.FORBIDDEN, e);
+    }
+
+    /**
+     * Handles NotAuthenticatedException and returns a structured response.
+     *
+     * @param e the NotAuthenticatedException to handle
+     * @return a ResponseEntity containing an ExceptionInfo with details about the exception
+     */
+    @ExceptionHandler(NotAuthenticatedException.class)
+    public ResponseEntity<ExceptionInfo> handleNotAuthenticatedException(FormsCoreException e) {
         logException(e);
         return createResponseEntity(HttpStatus.UNAUTHORIZED, e);
     }
@@ -85,9 +103,8 @@ public class ExceptionHandlerControllerAdvice {
      * @return a ResponseEntity containing an ExceptionInfo with details about the exception
      */
     private ResponseEntity<ExceptionInfo> createResponseEntity(HttpStatus status, FormsCoreException e) {
-        return ResponseEntity.status(status)
-                .cacheControl(CacheControl.noCache())
-                .body(new ExceptionInfo(status.value(), e.getMessage(), e.getId(), e.getUser()));
+        return ResponseEntity.status(status).cacheControl(CacheControl.noCache())
+                             .body(new ExceptionInfo(status.value(), e.getMessage(), e.getId(), e.getUser()));
     }
 
     /**

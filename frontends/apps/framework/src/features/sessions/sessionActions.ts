@@ -1,4 +1,4 @@
-import { PayloadAction, createAsyncThunk } from "@reduxjs/toolkit"
+import { PayloadAction, SerializedError, createAsyncThunk } from "@reduxjs/toolkit"
 import { AxiosResponse } from "axios"
 
 import { apiOk, Backend, getLanguage, Message, MessageIntf } from "commons"
@@ -8,7 +8,7 @@ import { BackendJournal, JournalService } from "./journal"
 import { ElementMap, Form, FormService } from "./forms"
 import { SessionState } from "../states"
 import { AttachmentRequest } from "./attachmentActions"
-import { backend, BackendError } from "../backend"
+import { backend, BackendError, UnauthenticatedError } from "../backend"
 import { PrimitiveType } from "react-intl"
 import { se } from "date-fns/locale"
 
@@ -23,10 +23,17 @@ export interface CreateSessionRequest {
 }
 
 /**
- *  This interface describes the response from the backend when a session is created or updated. It contains 
- *  information about the session, including its definition, header title, ID, journal, locale, page title, values, 
+ *  This interface describes the response from the backend when a session is created or updated. It contains
+ *  information about the session, including its definition, header title, ID, journal, locale, page title, values,
  *  and messages. The dvhs property is optional and may contain dynamic value helps.
+ *  The operation property is optional and carries a FrontendOperation instruction from the backend.
  */
+export interface FrontendOperation {
+    command: "readonly" | "reset" | "editable"
+    text?: string
+    type?: string
+}
+
 export interface SessionResponse {
     def?: FormDefinition
     headerTitle?: string
@@ -38,6 +45,7 @@ export interface SessionResponse {
     vhs: Record<string, number>
     msg: Message[]
     dvhs?: Record<string, Record<string, string>>
+    operation?: FrontendOperation
 }
 
 /**
@@ -48,7 +56,7 @@ export const createSession = createAsyncThunk(
     async (
         { messages, state, task, formsId }: CreateSessionRequest,
         thunkAPI,
-    ): Promise<AxiosResponse<SessionResponse | BackendError | string>> => {
+    ): Promise<AxiosResponse<SessionResponse | BackendError | UnauthenticatedError | string>> => {
         let response = undefined
 
         try {
@@ -72,8 +80,8 @@ export const createSession = createAsyncThunk(
                 },
                 thunkAPI.getState() as any,
             )
-        } catch (err) {
-            console.error(`Error: ${err}`)
+        } catch (err: any) {
+            console.error(`(1) Error: ${err}`)
             setTimeout(() => messages.fatal("session_error_creation"), 10)
             return Promise.reject(err)
         }
@@ -81,6 +89,7 @@ export const createSession = createAsyncThunk(
         if (apiOk(response.status)) {
             return Promise.resolve(response)
         } else {
+            debugger
             console.error(`Error in createSession: ${response.status}:'${response.data}'`)
             let errorInfo: Record<string, PrimitiveType> = {}
             if (typeof response.data === "object") {
@@ -183,10 +192,21 @@ export const triggerEvent = createAsyncThunk(
                         },
                         session,
                     )
-                } catch (err) {
-                    console.error(`Error: ${err}`)
-                    setTimeout(() => messages.fatal("session_error_generic"), 10)
-                    return Promise.reject(err)
+                } catch (err: any) {
+                    // TODO(ML) Here is the place to handle the error and show a message to the user. For now we just log it to the console.
+                    console.error(`(2) Error: ${err}`)
+                    const status = err.request?.status as number
+                    if (status === 401) {
+                        err = {
+                            "error_code": err.request.status as number,
+                            "data": JSON.parse(err.request.response)?.loginUrl
+                        } as UnauthenticatedError
+                        messages.login(err)
+                        return Promise.reject(err)
+                    } else {
+                        setTimeout(() => messages.fatal("session_error_generic"), 10)
+                        return Promise.reject(err)
+                    }
                 }
 
                 if (apiOk(response.status)) {
@@ -286,7 +306,7 @@ export const deleteRow = createAsyncThunk(
 export function handleSessionResponse(
     state: SessionState,
     action: PayloadAction<
-        AxiosResponse<string | BackendError | SessionResponse, any> | undefined,
+        AxiosResponse<string | BackendError | UnauthenticatedError | SessionResponse, any> | undefined,
         string,
         {
             arg: TriggerEventRequest | AttachmentRequest | CreateSessionRequest
@@ -299,10 +319,6 @@ export function handleSessionResponse(
 ) {
     // console.log(action.payload)
     if (action.payload) {
-        if (action.payload.status == 410) {
-            throw new Error("Session is Gone!")
-        }
-
         const data: SessionResponse = action.payload.data as SessionResponse
         if (!initSession && data.id !== state.id) {
             throw new Error("Session-Id does not match!")
@@ -355,5 +371,49 @@ export function handleSessionResponse(
         if (data.dvhs) {
             state.dvhs = data.dvhs
         }
+
+        // handling of frontend operations from backend hooks/events
+        if (data.operation) {
+            switch (data.operation.command) {
+                case "readonly":
+                    state.globalReadonly = true
+                    if (data.operation.text) {
+                        const text = data.operation.text
+                        const type = data.operation.type
+                        setTimeout(
+                            () => action.meta.arg.messages.readonlyDialog(type ?? "i", text),
+                            10,
+                        )
+                    }
+                    break
+                case "editable":
+                    state.globalReadonly = false
+                    setTimeout(() => action.meta.arg.messages.closeReadonlyDialog(), 10)
+                    break
+                case "reset":
+                    state.shouldReset = true
+                    break
+            }
+        }
     }
 }
+
+// /**
+//  *
+//  */
+// export function handleSessionError(state: SessionState,
+//     action: PayloadAction<unknown, string, {
+//         arg: CreateSessionRequest
+//         requestId: string
+//         requestStatus: "rejected"
+//         aborted: boolean
+//         condition: boolean
+//     } & ({
+//         rejectedWithValue: true
+//     } | ({
+//         rejectedWithValue: false
+//     } & {})), SerializedError>) {
+
+//     debugger
+//     console.error("Error in session action", action.error)
+// }

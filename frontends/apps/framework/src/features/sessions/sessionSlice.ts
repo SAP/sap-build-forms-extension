@@ -1,7 +1,7 @@
 import { PayloadAction, createSlice } from "@reduxjs/toolkit"
 
 import { FrontendJournal, ElementProp, JournalService } from "./journal"
-import { DataTypes, ElementInfo, Form, FormService, TableInfo } from "./forms"
+import { DataTypes, ElementInfo, Form, FormService } from "./forms"
 import { SessionState } from "../states"
 import { createSession, deleteRow, handleSessionResponse, triggerEvent } from "./sessionActions"
 import { DownloadAttachmentInput, deleteAttachment, uploadAttachment } from "./attachmentActions"
@@ -41,6 +41,8 @@ const initialState: SessionState = {
     vhs: {},
     ignore: true,
     dvhs: {},
+    globalReadonly: false,
+    shouldReset: false,
 }
 
 /**
@@ -145,11 +147,18 @@ export const sessionSlice = createSlice({
                 `api/v1/attachments/${state.id}/${action.payload.key}/${action.payload.id}`,
             )
         },
+        resetFlag: (state) => {
+            state.shouldReset = false
+            state.globalReadonly = false
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(createSession.fulfilled, (state, action) =>
             handleSessionResponse(state, action, true),
         )
+        // builder.addCase(createSession.rejected, (state, action) => {
+        //     handleSessionError(state, action)
+        // })
         builder.addCase(triggerEvent.fulfilled, (state, action) =>
             handleSessionResponse(state, action, false),
         )
@@ -165,4 +174,4 @@ export const sessionSlice = createSlice({
     },
 })
 
-export const { update, downloadAttachment } = sessionSlice.actions
+export const { update, downloadAttachment, resetFlag } = sessionSlice.actions

@@ -54,6 +54,7 @@ export type Elem = {
     version?: number
     adapter?: string
     hasDescription?: boolean
+    floating?: boolean
     elements: Elem[]
     footer?: Elem
     headerSegment?: Elem
@@ -79,6 +80,7 @@ export type Validation = {
     type: string | undefined
     severity: string | undefined
     messageKey: string | undefined
+    showHint?: boolean
 }
 
 export type MinMaxValidation = Validation & {

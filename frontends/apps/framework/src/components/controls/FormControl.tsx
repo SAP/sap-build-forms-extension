@@ -23,6 +23,23 @@ import { update } from "../../features/sessions/sessionSlice"
 import { ElementProp } from "../../features/sessions/journal"
 import { isEventValid } from "../../features/sessions/sessionActions"
 import DialogControl from "./DialogControl"
+import PdfViewerControl from "./PdfViewerControl"
+
+/**
+ * Recursively collect all floating pdfviewer element definitions from the form tree.
+ */
+function collectFloatingPdfViewers(elements: Definition[]): Definition[] {
+    const result: Definition[] = []
+    for (const el of elements) {
+        if (el.uiElement === UIElement.PdfViewer && el.floating) {
+            result.push(el)
+        }
+        if (el.elements) {
+            result.push(...collectFloatingPdfViewers(el.elements))
+        }
+    }
+    return result
+}
 
 /**
  *
@@ -131,6 +148,11 @@ export default function (props: ControlProps) {
     let tabs: ReactNode[] = []
     let dialogs: ReactNode[] = []
     let isAutoSelect = false
+
+    // Collect floating pdfviewers from the entire form tree and render them persistently
+    const floatingPdfViewers = collectFloatingPdfViewers(def.elements ?? []).map((it) => (
+        <PdfViewerControl {...props} def={it} rowId={ROOT_ROW} key={it.key} />
+    ))
     def.elements!.forEach(async (it, i) => {
         const childElement = FormService.findElementByRowAndKey(rowId, it.key, form)
 
@@ -182,7 +204,13 @@ export default function (props: ControlProps) {
                             alignItems={FlexBoxAlignItems.Stretch}
                             direction={FlexBoxDirection.Column}
                             fitContainer
-                            style={{ rowGap: ".5rem", overflowX: "scroll", overflowY: "auto" }}
+                            style={{
+                                rowGap: ".5rem",
+                                overflowX: "hidden",
+                                overflowY: "auto",
+                                minWidth: 0,
+                                minHeight: 0,
+                            }}
                         >
                             <SegmentControl {...props} def={it} rowId={ROOT_ROW} />
                         </FlexBox>
@@ -222,6 +250,7 @@ export default function (props: ControlProps) {
                 </TabContainer>
             </FlexBox>
             {dialogs}
+            {floatingPdfViewers}
         </>
     )
 }

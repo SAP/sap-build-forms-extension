@@ -221,6 +221,18 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                     gen.writeEndObject();
                 }
                 break;
+            case PdfViewer:
+                Dimension pdfSize = ((PdfViewerElementDefinition) ed).getSize();
+                if (pdfSize != null) {
+                    gen.writeObjectFieldStart(NM_SIZE);
+                    gen.writeStringField(NM_HEIGHT, pdfSize.getHeight());
+                    gen.writeStringField(NM_WIDTH, pdfSize.getWidth());
+                    gen.writeEndObject();
+                }
+                if (((PdfViewerElementDefinition) ed).isFloating()) {
+                    gen.writeBooleanField(NM_FLOATING, true);
+                }
+                break;
             case Input:
                 gen.writeStringField(NM_INPUT_TYPE, ((InputElementDefinition) ed).getInputType().getIdentifier());
                 break;
@@ -333,6 +345,9 @@ public class ScenarioDefinitionSerializer extends StdSerializer<ScenarioDefiniti
                 gen.writeStringField(NM_TYPE, ((AbstractValidationRule) it).getType().getIdentifier());
                 gen.writeStringField(NM_SEVERITY, ((AbstractValidationRule) it).getSeverity().getIdentifier());
                 gen.writeStringField(NM_MESSAGE_KEY, ((AbstractValidationRule) it).getMessageKey());
+                if (((AbstractValidationRule) it).isShowHint()) {
+                    gen.writeBooleanField(NM_SHOW_HINT, true);
+                }
 
                 if (it instanceof MinValidationRule) {
                     gen.writeStringField(NM_LIMIT, ((MinValidationRule) it).getLimit());

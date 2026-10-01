@@ -2,9 +2,9 @@ package com.sap.bfx.callback;
 
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.p13n.Settings;
+import com.sap.bfx.security.User;
 import com.sap.bfx.session.ElementPos;
 import com.sap.bfx.session.Session;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 import java.util.*;
 
@@ -23,9 +23,10 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     Locale locale;
     AC data;
     DataApi dataApi;
-    AbstractAuthenticationToken token;
+    User user;
     ElementPos source;
     String taskInstanceId;
+    Object authObject;
 
     @Override
     public <T extends Api> T getApi(Class<T> apiCls) {
@@ -135,8 +136,13 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     }
 
     @Override
-    public AbstractAuthenticationToken getToken() {
-        return token;
+    public Object getAuthentication() {
+        return authObject;
+    }
+
+    @Override
+    public User getUser() {
+        return user;
     }
 
     @Override

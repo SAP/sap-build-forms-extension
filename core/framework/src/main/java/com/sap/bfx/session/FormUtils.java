@@ -67,6 +67,7 @@ public class FormUtils {
     public static final String NM_JOURNAL = "journal";
     public static final String NM_MESSAGE = "m";
     public static final String NM_SEVERITY = "s";
+    public static final String NM_PARAMS = "mp";
     public static final String NM_TASK_INSTANCE_ID = "tid";
     public static final String NM_TEMPLATE = "tn";
     public static final String NM_FORM_ID = "fid";
@@ -381,6 +382,11 @@ public class FormUtils {
                 final var msg = new Message();
                 msg.setSeverity(Message.mapSeverity(msgNode.get(NM_SEVERITY).asText()));
                 msg.setKey(msgNode.get(NM_KEY).asText());
+                if (msgNode.get(NM_PARAMS) != null && msgNode.get(NM_PARAMS).isObject()) {
+                    final var paramsMap = new HashMap<String, Object>();
+                    msgNode.get(NM_PARAMS).fields().forEachRemaining(e -> paramsMap.put(e.getKey(), e.getValue().asText()));
+                    msg.setParams(paramsMap);
+                }
                 element.setMessage(msg);
             }
 

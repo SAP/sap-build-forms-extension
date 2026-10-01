@@ -8,6 +8,7 @@ abstract class AbstractValidationRule implements ValidationRule {
     protected ValidationRuleType type;
     protected Severity severity;
     protected String messageKey;
+    protected boolean showHint = false;
 
     protected AbstractValidationRule(ValidationRuleType type) {
         this.type = type;
