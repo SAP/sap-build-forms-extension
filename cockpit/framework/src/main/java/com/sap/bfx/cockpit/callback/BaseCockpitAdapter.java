@@ -30,15 +30,37 @@ public class BaseCockpitAdapter implements CockpitAdapter {
 
     @Override
     public void init(FrontendSettings settings, FrontendParams params) {
-        final var rb = ResourceBundle.getBundle("cockpit", Locale.forLanguageTag(
-                params.getLanguage() != null ? params.getLanguage() : "en"));
         settings.setLanguage(params.getLanguage() != null ? params.getLanguage() : "en");
+        final var rb = getResourceBundle(params);
         settings.getProfiles().add(new FrontendSettings.Profile("my_requests",
                 rb.getString("profile_my_requests"), true));
+    }
+
+    /**
+     * Returns the i18n ResourceBundle for the cockpit, resolved from the request language.
+     * Can be used in custom {@link #init} overrides to translate additional profile labels.
+     */
+    protected ResourceBundle getResourceBundle(FrontendParams params) {
+        return ResourceBundle.getBundle("cockpit", Locale.forLanguageTag(
+                params.getLanguage() != null ? params.getLanguage() : "en"));
+    }
+
+    /**
+     * Adds the "I'm involved" profile to the frontend settings.
+     * Call this from a custom {@link #init} override to include this profile.
+     */
+    protected void addInvolvedProfile(FrontendSettings settings, FrontendParams params) {
         settings.getProfiles().add(new FrontendSettings.Profile("involved",
-                rb.getString("profile_involved"), false));
+                getResourceBundle(params).getString("profile_involved"), false));
+    }
+
+    /**
+     * Adds the "All" profile to the frontend settings.
+     * Call this from a custom {@link #init} override to include this profile.
+     */
+    protected void addAllProfile(FrontendSettings settings, FrontendParams params) {
         settings.getProfiles().add(new FrontendSettings.Profile("all",
-                rb.getString("profile_all"), false));
+                getResourceBundle(params).getString("profile_all"), false));
     }
 
     @Override

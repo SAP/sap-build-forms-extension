@@ -25,6 +25,7 @@ export interface Process {
     scenarioUrl: string,
     version: number,
     cancelable: boolean,
+    templatable: boolean,
     showState: string
 }
 
@@ -104,6 +105,8 @@ interface ProcessState {
 
     findProcesses: (messages: MessageIntf, filter: FilterParams, page?: number, pageSize?: number) => Promise<AxiosResponse | Error>,
     loadSuggestions: (messages: MessageIntf, field: string, search: string) => Promise<string[]>,
+    cancelProcess: (messages: MessageIntf, processId: string) => Promise<AxiosResponse | Error>,
+    useAsTemplate: (messages: MessageIntf, processId: string) => Promise<AxiosResponse | Error>,
 }
 
 /**
@@ -207,6 +210,22 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
         }
         handleError(res, "loadSuggestions", messages)
         return []
-    }
+    },
+
+    async cancelProcess(messages: MessageIntf, processId: string): Promise<AxiosResponse | Error> {
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/cancel`, "POST", undefined)
+        if (apiOk(res.status)) {
+            return Promise.resolve(res)
+        }
+        return handleError(res, "cancelProcess", messages)
+    },
+
+    async useAsTemplate(messages: MessageIntf, processId: string): Promise<AxiosResponse | Error> {
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/template`, "POST", undefined)
+        if (apiOk(res.status)) {
+            return Promise.resolve(res)
+        }
+        return handleError(res, "useAsTemplate", messages)
+    },
 
 }))

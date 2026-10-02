@@ -1,7 +1,7 @@
 export default {
     app_title: "FORMS Cockpit",
     app_subtitle_list: "Prozessübersicht",
-    app_subtitle_details: "Prozessdetails für {description} ({functionalId})",
+    app_subtitle_details: "Prozessdetails",
     app_subtitle_form: "Formularansicht für {description} ({functionalId})",
 
     label_profiles: "Profile",
@@ -16,6 +16,7 @@ export default {
     label_started_at: "Gestartet am",
     label_finished_at: "Beendet am",
     label_additional_information: "Zusatzinformation",
+    label_ended_on: "Beendet am",
     label_scenario: "Szenario",
     label_scenario_version: "Szenario Version",
 
@@ -25,9 +26,6 @@ export default {
     scenario: "Szenario",
     process_flow: "Prozessfluss",
     click_to_open: "Zum Öffnen klicken",
-    technical_bo_name: "Technischer BO-Name",
-    bo_version: "BO-Version",
-    bpm_process_instance_id_short: "BPM Prozessinstanz-ID Kurz",
 
     role_user: "Role User",
     role_user_started: "Gestartet von Benutzer",
@@ -58,4 +56,18 @@ export default {
     show_tab_details: "Details",
     show_tabl_timeline: "Historie",
 
+    tab_details: "Details",
+    tab_tasks: "Aufgaben",
+    tab_history: "Verlauf",
+    tab_feeds: "Feed",
+
+    common_not_implemented: "Noch nicht implementiert",
+
+    process_id: "Prozess-ID",
+    started_by: "Gestartet von",
+    started_on: "Gestartet am",
+    ended_on: "Beendet am",
+
+    button_cancel_process: "Abbrechen",
+    button_use_as_template: "Als Vorlage verwenden",
 }

@@ -1,11 +1,15 @@
 import { Tab, Text } from "@ui5/webcomponents-react"
 import { useIntl } from "react-intl"
 
-export default function () {
+interface Props {
+    selected?: boolean
+}
+
+export default function (props: Props) {
     const intl = useIntl()
 
     return (
-        <Tab icon="discussion-2" text={intl.formatMessage({ id: "tab_feeds" })}>
+        <Tab icon="discussion-2" text={intl.formatMessage({ id: "tab_feeds" })} selected={props.selected}>
             <Text>{intl.formatMessage({ id: "common_not_implemented" })}</Text>
         </Tab>
     )

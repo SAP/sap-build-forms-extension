@@ -176,13 +176,6 @@ export default function () {
                     <TableRow
                         actions={
                             <>
-                                {process.cancelable && (
-                                    <TableRowAction
-                                        icon="sys-cancel"
-                                        text={intl.formatMessage({ id: "common_cancel" })}
-                                        onClick={() => handleCancel(process)}
-                                    />
-                                )}
                                 <TableRowAction
                                     icon="form"
                                     text={intl.formatMessage({ id: "show_form" })}

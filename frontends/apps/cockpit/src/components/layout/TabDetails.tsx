@@ -1,4 +1,4 @@
-import { Form, FormItem, Label, Link, Tab, Text } from "@ui5/webcomponents-react"
+import { Form, FormItem, Label, Tab, Text } from "@ui5/webcomponents-react"
 import { useIntl } from "react-intl"
 import { createUseStyles } from "react-jss"
 import { Process } from "../../state/processes"
@@ -15,6 +15,7 @@ const useStyles = createUseStyles({
 
 interface TabDetailsProps {
     selectedProcess: Process | undefined
+    selected?: boolean
 }
 
 export default function (props: TabDetailsProps) {
@@ -50,75 +51,43 @@ export default function (props: TabDetailsProps) {
             >
                 <>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "process_id" })}</Label>}
+                        labelContent={<Label>{intl.formatMessage({ id: "label_id" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
-                                {props.selectedProcess?.processId}
+                                {props.selectedProcess?.id}
                             </Text>
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "process_state" })}</Label>}
-                    >
-                        <div className={classes.formTextBox}>
-                            {props.selectedProcess && (
-                                <Text className={classes.formText}>
-                                    {intl.formatMessage({
-                                        id: "process_state_" + props.selectedProcess?.state,
-                                    })}
-                                </Text>
-                            )}
-                        </div>
-                    </FormItem>
-                    <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "process_flow" })}</Label>}
-                    >
-                        <div className={classes.formTextBox}>
-                            <Link
-                                design="Default"
-                                className={classes.formText}
-                                onClick={function _a() {}}
-                            >
-                                {intl.formatMessage({ id: "click_to_open" })}
-                            </Link>
-                        </div>
-                    </FormItem>
-                    <FormItem
-                        labelContent={
-                            <Label>{intl.formatMessage({ id: "technical_bo_name" })}</Label>
-                        }
+                        labelContent={<Label>{intl.formatMessage({ id: "label_ref_id" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
-                                {props.selectedProcess?.technicalBoName}
+                                {props.selectedProcess?.refId}
                             </Text>
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "bo_version" })}</Label>}
+                        labelContent={<Label>{intl.formatMessage({ id: "label_status" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
-                                {props.selectedProcess?.boVersion}
+                                {props.selectedProcess?.state}
                             </Text>
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={
-                            <Label>
-                                {intl.formatMessage({ id: "bpm_process_instance_id_short" })}
-                            </Label>
-                        }
+                        labelContent={<Label>{intl.formatMessage({ id: "label_detail_state" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
-                                {props.selectedProcess?.bpmProcessInstanceIdShort}
+                                {props.selectedProcess?.detailState}
                             </Text>
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "started_by" })}</Label>}
+                        labelContent={<Label>{intl.formatMessage({ id: "label_started_by" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
@@ -127,25 +96,43 @@ export default function (props: TabDetailsProps) {
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "started_on" })}</Label>}
+                        labelContent={<Label>{intl.formatMessage({ id: "label_started_at" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
-                            {props.selectedProcess && (
+                            {props.selectedProcess?.startedAt && (
                                 <Text className={classes.formText}>
-                                    {formatDate(new Date(props.selectedProcess.startedOn))}
+                                    {formatDate(new Date(props.selectedProcess.startedAt))}
                                 </Text>
                             )}
                         </div>
                     </FormItem>
                     <FormItem
-                        labelContent={<Label>{intl.formatMessage({ id: "ended_on" })}</Label>}
+                        labelContent={<Label>{intl.formatMessage({ id: "label_finished_at" })}</Label>}
                     >
                         <div className={classes.formTextBox}>
-                            {props.selectedProcess && props.selectedProcess.endedOn && (
+                            {props.selectedProcess?.finishedAt && (
                                 <Text className={classes.formText}>
-                                    {formatDate(new Date(props.selectedProcess.endedOn))}
+                                    {formatDate(new Date(props.selectedProcess.finishedAt))}
                                 </Text>
                             )}
+                        </div>
+                    </FormItem>
+                    <FormItem
+                        labelContent={<Label>{intl.formatMessage({ id: "label_scenario" })}</Label>}
+                    >
+                        <div className={classes.formTextBox}>
+                            <Text className={classes.formText}>
+                                {props.selectedProcess?.scenarioName}
+                            </Text>
+                        </div>
+                    </FormItem>
+                    <FormItem
+                        labelContent={<Label>{intl.formatMessage({ id: "label_scenario_version" })}</Label>}
+                    >
+                        <div className={classes.formTextBox}>
+                            <Text className={classes.formText}>
+                                {props.selectedProcess?.scenarioVersion}
+                            </Text>
                         </div>
                     </FormItem>
                 </>

@@ -1,7 +1,7 @@
 export default {
     app_title: "Cockpit",
     app_subtitle_list: "Process Overview",
-    app_subtitle_details: "Process details of {description} ({functionalId})",
+    app_subtitle_details: "Process details",
     app_subtitle_form: "Process form of {description} ({functionalId})",
 
     label_profiles: "Profiles",
@@ -10,20 +10,22 @@ export default {
     label_description: "Description",
     label_functional_id: "Functional ID",
     label_status: "State",
+    label_detail_state: "Status (Detail)",
     label_user: "User",
     label_started_by: "Started by",
     label_started_at: "Started on",
     label_finished_at: "Finished on",
     label_additional_information: "Additional Information",
+    label_ended_on: "Ended On",
+    label_scenario: "Scenario",
+    label_scenario_version: "Scenario Version",
+
     show_form: "Show form",
     show_details: "Show details",
 
     scenario: "Scenario",
-    process_flow: "Prozess Flow",
+    process_flow: "Process Flow",
     click_to_open: "Click to open",
-    technical_bo_name: "Technical BO Name",
-    bo_version: "BO Version",
-    bpm_process_instance_id_short: "BPM Process Instance ID Short",
 
     role_user: "Role User",
     role_user_started: "Started by user",
@@ -53,4 +55,19 @@ export default {
 
     show_tab_details: "Details",
     show_tabl_timeline: "Timeline",
+
+    tab_details: "Details",
+    tab_tasks: "Tasks",
+    tab_history: "History",
+    tab_feeds: "Feeds",
+
+    common_not_implemented: "Not yet implemented",
+
+    process_id: "Process ID",
+    started_by: "Started by",
+    started_on: "Started on",
+    ended_on: "Finished on",
+
+    button_cancel_process: "Cancel",
+    button_use_as_template: "Use as template",
 }

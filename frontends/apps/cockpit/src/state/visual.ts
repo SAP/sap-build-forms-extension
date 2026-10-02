@@ -7,7 +7,7 @@ import { AxiosResponse } from "axios"
 import { backend } from "./backend"
 
 type Views = "list" | "details" | "form"
-type DetailTabs = "details" | "timeline"
+type DetailTabs = "details" | "tasks" | "history" | "feeds" | "children"
 
 /**
  * 
