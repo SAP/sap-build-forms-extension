@@ -18,7 +18,7 @@ interface TabDetailsProps {
     selected?: boolean
 }
 
-export default function (props: TabDetailsProps) {
+export default function TabDetails(props: TabDetailsProps) {
     const intl = useIntl()
     const classes = useStyles()
 
@@ -40,7 +40,7 @@ export default function (props: TabDetailsProps) {
     }
 
     return (
-        <Tab icon="detail-view" text={intl.formatMessage({ id: "tab_details" })} selected>
+        <Tab icon="detail-view" text={intl.formatMessage({ id: "tab_details" })} selected={props.selected} data-tab-id="details">
             <Form
                 layout="S1 M1 L1 XL1"
                 labelSpan="S10 M4 L2 XL2"

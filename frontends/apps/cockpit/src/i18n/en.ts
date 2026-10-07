@@ -70,4 +70,13 @@ export default {
 
     button_cancel_process: "Cancel",
     button_use_as_template: "Use as template",
+
+    feeds_placeholder: "Post something…",
+    feeds_send: "Send",
+    feeds_reply: "Reply",
+    feeds_no_entries: "No entries yet.",
+    feeds_type_comment: "Comment",
+    feeds_type_info: "Info",
+    feeds_type_question: "Question",
+    feeds_type_answer: "Answer",
 }

@@ -1,6 +1,8 @@
 package com.sap.bfx.cockpit.callback;
 
+import com.sap.bfx.cockpit.service.FeedEntry;
 import com.sap.bfx.cockpit.service.ProcessAbstract;
+import com.sap.bfx.callback.FeedTypeConverter;
 import com.sap.bfx.definition.ProcessState;
 import com.sap.bfx.utils.EnumUtils;
 import com.sap.bfx.utils.JdbcUtils;
@@ -9,6 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.RowMapper;
 
 import javax.sql.DataSource;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Base implementation of the cockpit database adapter for PostgreSQL
@@ -235,6 +240,58 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
         // no-op by default
     }
 
+    @Override
+    public List<FeedEntry> findFeeds(String formId) {
+        return jdbc.query(
+                "SELECT id, parent_id, user_nm, type, pos, form_id, ts, text"
+                        + " FROM forms_feeds WHERE form_id = ? ORDER BY pos ASC",
+                new FeedRowMapper(), formId);
+    }
+
+    @Override
+    public FeedEntry addFeed(String formId, String userNm, String text, String type, String parentId) {
+        // Compute next pos within the same thread level
+        final int nextPos;
+        if (parentId == null) {
+            final Integer max = jdbc.queryForObject(
+                    "SELECT MAX(pos) FROM forms_feeds WHERE form_id = ? AND parent_id IS NULL",
+                    Integer.class, formId);
+            nextPos = (max != null ? max : 0) + 1;
+        } else {
+            final Integer max = jdbc.queryForObject(
+                    "SELECT MAX(pos) FROM forms_feeds WHERE form_id = ? AND parent_id = ?",
+                    Integer.class, formId, parentId);
+            nextPos = (max != null ? max : 0) + 1;
+        }
+
+        final String id = UUID.randomUUID().toString();
+        final byte[] textBytes = text.getBytes(StandardCharsets.UTF_8);
+        jdbc.update(con -> {
+            final PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO forms_feeds (id, parent_id, user_nm, type, pos, form_id, ts, text)"
+                            + " VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)");
+            ps.setString(1, id);
+            ps.setString(2, parentId);
+            ps.setString(3, userNm);
+            ps.setString(4, FeedTypeConverter.toChar(type));
+            ps.setInt(5, nextPos);
+            ps.setString(6, formId);
+            ps.setBlob(7, new ByteArrayInputStream(textBytes), textBytes.length);
+            return ps;
+        });
+
+        final FeedEntry entry = new FeedEntry();
+        entry.setId(id);
+        entry.setParentId(parentId);
+        entry.setFormId(formId);
+        entry.setUserNm(userNm);
+        entry.setType(type);
+        entry.setPos(nextPos);
+        entry.setTs(java.time.Instant.now());
+        entry.setText(text);
+        return entry;
+    }
+
     /**
      * Maps a SQL result row to a Form object.
      */
@@ -262,6 +319,32 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
             form.setWorkflowAdapter(rs.getString("wf_adapter"));
 
             return form;
+        }
+    }
+
+    /**
+     * Maps a SQL result row to a FeedEntry object.
+     */
+    private static class FeedRowMapper implements RowMapper<FeedEntry> {
+        @Override
+        public FeedEntry mapRow(ResultSet rs, int rowNum) throws SQLException {
+            final FeedEntry entry = new FeedEntry();
+            entry.setId(rs.getString("id"));
+            entry.setParentId(rs.getString("parent_id"));
+            entry.setFormId(rs.getString("form_id"));
+            entry.setUserNm(rs.getString("user_nm"));
+            entry.setType(FeedTypeConverter.fromChar(rs.getString("type")));
+            entry.setPos(rs.getInt("pos"));
+            entry.setTs(JdbcUtils.fromResultSetToInstant(rs, "ts"));
+            final java.sql.Blob blob = rs.getBlob("text");
+            if (blob != null) {
+                try {
+                    entry.setText(new String(blob.getBinaryStream().readAllBytes(), StandardCharsets.UTF_8));
+                } catch (java.io.IOException e) {
+                    throw new SQLException("Failed to read text blob", e);
+                }
+            }
+            return entry;
         }
     }
 }

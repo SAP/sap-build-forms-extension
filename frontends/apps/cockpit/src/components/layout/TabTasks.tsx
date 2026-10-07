@@ -5,11 +5,11 @@ interface Props {
     selected?: boolean
 }
 
-export default function (props: Props) {
+export default function TabTasks(props: Props) {
     const intl = useIntl()
 
     return (
-        <Tab icon="approvals" text={intl.formatMessage({ id: "tab_tasks" })} selected={props.selected}>
+        <Tab icon="approvals" text={intl.formatMessage({ id: "tab_tasks" })} selected={props.selected} data-tab-id="tasks">
             <Text>{intl.formatMessage({ id: "common_not_implemented" })}</Text>
         </Tab>
     )

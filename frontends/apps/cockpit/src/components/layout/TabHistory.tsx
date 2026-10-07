@@ -5,11 +5,11 @@ interface Props {
     selected?: boolean
 }
 
-export default function (props: Props) {
+export default function TabHistory(props: Props) {
     const intl = useIntl()
 
     return (
-        <Tab icon="history" text={intl.formatMessage({ id: "tab_history" })} selected={props.selected}>
+        <Tab icon="history" text={intl.formatMessage({ id: "tab_history" })} selected={props.selected} data-tab-id="history">
             <Text>{intl.formatMessage({ id: "common_not_implemented" })}</Text>
         </Tab>
     )

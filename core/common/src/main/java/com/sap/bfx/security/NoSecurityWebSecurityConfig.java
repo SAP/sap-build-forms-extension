@@ -51,6 +51,7 @@ public class NoSecurityWebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 // @formatter:off
         http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+            .csrf(csrf -> csrf.disable())
             .addFilterBefore(devUserFilter(), UsernamePasswordAuthenticationFilter.class);
 // @formatter:on
         return http.build();

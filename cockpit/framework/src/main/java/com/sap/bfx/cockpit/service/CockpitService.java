@@ -2,6 +2,7 @@ package com.sap.bfx.cockpit.service;
 
 import com.sap.bfx.btp.ConnectivityUtils;
 import com.sap.bfx.callback.AbstractAdapterHandlingService;
+import com.sap.bfx.cockpit.service.FeedEntry;
 import com.sap.bfx.cockpit.callback.CockpitAdapter;
 import com.sap.bfx.cockpit.callback.FrontendParams;
 import com.sap.bfx.cockpit.callback.FrontendSettings;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,6 +101,39 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
         final var merged = new TreeSet<String>();
         this.getAllAdapters().forEach(a -> merged.addAll(a.findSuggestions(column, search)));
         return new ArrayList<>(merged);
+    }
+
+    /**
+     * Returns all feed entries for the given process, ordered by pos ASC, collected from all adapters.
+     *
+     * @param formId the process ID
+     * @return ordered list of feed entries
+     */
+    @Transactional(readOnly = true)
+    public List<FeedEntry> findFeeds(String formId) {
+        final var result = new ArrayList<FeedEntry>();
+        this.getAllAdapters().forEach(a -> result.addAll(a.findFeeds(formId)));
+        result.sort(java.util.Comparator.comparingInt(FeedEntry::getPos));
+        return result;
+    }
+
+    /**
+     * Adds a new feed entry for the given process via the first available adapter.
+     *
+     * @param formId   the process ID
+     * @param userNm   author (resolved from security context)
+     * @param text     feed text
+     * @param type     one of COMMENT, INFO, QUESTION, ANSWER
+     * @param parentId parent entry ID for threading, or null for top-level
+     * @return the persisted feed entry
+     */
+    @Transactional
+    public FeedEntry addFeed(String formId, String userNm, String text, String type, String parentId) {
+        for (final var adapter : this.getAllAdapters()) {
+            final FeedEntry result = adapter.addFeed(formId, userNm, text, type, parentId);
+            if (result != null) return result;
+        }
+        return null;
     }
 
     /**

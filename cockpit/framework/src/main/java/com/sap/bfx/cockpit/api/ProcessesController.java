@@ -3,9 +3,14 @@ package com.sap.bfx.cockpit.api;
 import com.sap.bfx.cockpit.callback.FrontendParams;
 import com.sap.bfx.cockpit.callback.FrontendSettings;
 import com.sap.bfx.cockpit.callback.SearchParams;
+import com.sap.bfx.cockpit.service.AddFeedRequest;
 import com.sap.bfx.cockpit.service.CockpitService;
+import com.sap.bfx.cockpit.service.FeedEntry;
 import com.sap.bfx.cockpit.service.ProcessPage;
+import com.sap.bfx.exception.BadRequestException;
+import com.sap.bfx.exception.NotFoundException;
 import com.sap.bfx.security.SecurityUtils;
+import org.apache.commons.lang3.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,6 +113,35 @@ public class ProcessesController {
             @RequestParam(value = "field") String field,
             @RequestParam(value = "search", defaultValue = "") String search) {
         return service.findSuggestions(field, search);
+    }
+
+    /**
+     * Get all feed entries for a process, ordered by pos ASC.
+     */
+    @GetMapping(value = "/{id}/feeds", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List<FeedEntry> findFeeds(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        return service.findFeeds(id);
+    }
+
+    /**
+     * Add a new feed entry to a process.
+     * The author is resolved server-side from the security context.
+     */
+    @PostMapping(value = "/{id}/feeds",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseBody
+    public FeedEntry addFeed(@PathVariable("id") String id, @RequestBody AddFeedRequest req) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        if (StringUtils.isBlank(req.text())) throw new BadRequestException("missing feed text");
+        if (StringUtils.isBlank(req.type())) throw new BadRequestException("missing feed type");
+        final FeedEntry result = service.addFeed(id, SecurityUtils.getUserName(), req.text(), req.type(), req.parentId());
+        if (result == null) throw new NotFoundException("cannot find process with id '" + id + "'");
+        return result;
     }
 
 //    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

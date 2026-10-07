@@ -21,6 +21,7 @@ public interface Context<AC extends AccessClass> {
      *     <it>FormsApi</it>
      *     <it>WorkflowApi</it>
      *     <it>ValuehelpApi</it>
+     *     <it>FeedApi</it>
      * </ul>
      *
      * @param apiCls - the class of the API to retrieve

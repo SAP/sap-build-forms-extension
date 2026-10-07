@@ -70,4 +70,13 @@ export default {
 
     button_cancel_process: "Abbrechen",
     button_use_as_template: "Als Vorlage verwenden",
+
+    feeds_placeholder: "Etwas posten…",
+    feeds_send: "Senden",
+    feeds_reply: "Antworten",
+    feeds_no_entries: "Noch keine Einträge.",
+    feeds_type_comment: "Kommentar",
+    feeds_type_info: "Info",
+    feeds_type_question: "Frage",
+    feeds_type_answer: "Antwort",
 }

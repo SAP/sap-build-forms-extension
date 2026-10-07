@@ -4,7 +4,7 @@ import {
     Ui5CustomEvent,
 } from "@ui5/webcomponents-react"
 
-import { useVisualStore } from "../state/visual"
+import { DetailTabs, useVisualStore } from "../state/visual"
 import { TabContainerTabSelectEventDetail } from "@ui5/webcomponents/dist/TabContainer"
 
 import TabDetails from "./layout/TabDetails"
@@ -20,12 +20,9 @@ export default function () {
     const handleTabSelect = (
         evt: Ui5CustomEvent<TabContainerDomRef, TabContainerTabSelectEventDetail>,
     ) => {
-        const index = evt.detail.tabIndex
-        if (index === 0) setDetailTab("details")
-        else if (index === 1) setDetailTab("tasks")
-        // else if (index === 2) setDetailTab("history")
-        else if (index === 3) setDetailTab("feeds")
-        else console.error(`Unknown tab selected (${index})`)
+        const tabId = (evt.detail.tab as HTMLElement).dataset.tabId as DetailTabs | undefined
+        if (tabId) setDetailTab(tabId)
+        else console.error("Unknown tab selected:", evt.detail.tab)
     }
 
     return (
@@ -33,7 +30,7 @@ export default function () {
             <TabDetails selectedProcess={selectedProcess} selected={detailTab === "details"} />
             <TabTasks selected={detailTab === "tasks"} />
             {/* <TabHistory selected={detailTab === "history"} /> */}
-            <TabFeeds selected={detailTab === "feeds"} />
+            <TabFeeds selectedProcess={selectedProcess} selected={detailTab === "feeds"} />
         </TabContainer>
     )
 }
