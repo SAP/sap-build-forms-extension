@@ -51,37 +51,16 @@ public class BaseHanaCockpitAdapter extends BaseCockpitAdapter {
         final var baseCondition = new StringBuilder(" FROM forms_data.forms_forms WHERE 1=1");
         final var params = new ArrayList<>();
 
-        if ("contains".equals(sp.getDescriptionType()) && sp.getDescriptionValue() != null && sp.getDescriptionValue().length > 0) {
-            if (sp.getDescriptionValue().length == 1) {
-                baseCondition.append(" AND description LIKE CONCAT('%',?,'%')");
-                params.add(sp.getDescriptionValue()[0]);
-            } else {
-                final var placeholders = "?,".repeat(sp.getDescriptionValue().length);
-                baseCondition.append(" AND description IN (").append(placeholders, 0, placeholders.length() - 1).append(")");
-                params.addAll(Arrays.asList(sp.getDescriptionValue()));
-            }
+        if (sp.getDescriptionValue() != null && sp.getDescriptionValue().length > 0) {
+            appendStringFilter(baseCondition, params, "description", sp.getDescriptionType(), sp.getDescriptionValue());
         }
 
-        if ("contains".equals(sp.getFunctionalIdType()) && sp.getFunctionalIdValue() != null && sp.getFunctionalIdValue().length > 0) {
-            if (sp.getFunctionalIdValue().length == 1) {
-                baseCondition.append(" AND functional_id LIKE CONCAT('%',?,'%')");
-                params.add(sp.getFunctionalIdValue()[0]);
-            } else {
-                final var placeholders = "?,".repeat(sp.getFunctionalIdValue().length);
-                baseCondition.append(" AND functional_id IN (").append(placeholders, 0, placeholders.length() - 1).append(")");
-                params.addAll(Arrays.asList(sp.getFunctionalIdValue()));
-            }
+        if (sp.getFunctionalIdValue() != null && sp.getFunctionalIdValue().length > 0) {
+            appendStringFilter(baseCondition, params, "functional_id", sp.getFunctionalIdType(), sp.getFunctionalIdValue());
         }
 
-        if ("contains".equals(sp.getAdditionalInformationType()) && sp.getAdditionalInformationValue() != null && sp.getAdditionalInformationValue().length > 0) {
-            if (sp.getAdditionalInformationValue().length == 1) {
-                baseCondition.append(" AND additional_information LIKE CONCAT('%',?,'%')");
-                params.add(sp.getAdditionalInformationValue()[0]);
-            } else {
-                final var placeholders = "?,".repeat(sp.getAdditionalInformationValue().length);
-                baseCondition.append(" AND additional_information IN (").append(placeholders, 0, placeholders.length() - 1).append(")");
-                params.addAll(Arrays.asList(sp.getAdditionalInformationValue()));
-            }
+        if (sp.getAdditionalInformationValue() != null && sp.getAdditionalInformationValue().length > 0) {
+            appendStringFilter(baseCondition, params, "additional_information", sp.getAdditionalInformationType(), sp.getAdditionalInformationValue());
         }
 
         if (sp.getStatus() != null && sp.getStatus().length > 0) {

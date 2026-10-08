@@ -23,6 +23,9 @@ import { PROCESS_STATES, useProcessStore } from "../state/processes"
 import { useVisualStore } from "../state/visual"
 import SearchDialog from "./SearchDialog"
 
+const INPUT_TYPES = ["equals", "contains", "begins_with", "ends_with"] as const
+type InputType = typeof INPUT_TYPES[number]
+
 function FilterField({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
     return (
         <FlexBox direction="Column" style={{ width: "100%", gap: "0.25rem" }}>
@@ -35,14 +38,19 @@ function FilterField({ label, required, children }: { label: string; required?: 
 function SearchHelpInput({
     field,
     value,
+    inputType,
     onValueChange,
+    onTypeChange,
     dialogTitle,
 }: {
     field: string
     value: string[]
+    inputType: InputType
     onValueChange: (v: string[]) => void
+    onTypeChange: (t: InputType) => void
     dialogTitle: string
 }) {
+    const intl = useIntl()
     const messages = useMessages()
     const loadSuggestions = useProcessStore((state) => state.loadSuggestions)
 
@@ -53,29 +61,41 @@ function SearchHelpInput({
 
     return (
         <>
-            <Input
-                style={{ width: "100%" }}
-                value={value.length <= 1 ? (value[0] ?? "") : `${value[0]} (+${value.length - 1})`}
-                readonly={value.length > 1}
-                onInput={(e: Ui5CustomEvent<InputDomRef>) =>
-                    onValueChange(e.target.value ? [e.target.value] : [])
-                }
-                icon={
-                    <Icon
-                        name="value-help"
-                        onClick={handleOpen}
-                        style={{ boxShadow: isHovered ? "var(--sapField_Hover_Shadow)" : "none" }}
-                    />
-                }
-                onMouseOver={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                onKeyDown={(e) => {
-                    if (e.key === "F4") {
-                        e.preventDefault()
-                        handleOpen()
+            <FlexBox style={{ width: "100%", gap: "0.25rem" }}>
+                <Select
+                    style={{ width: "40%", flexShrink: 0 }}
+                    onChange={(e) => onTypeChange(e.detail.selectedOption.dataset.key as InputType)}
+                >
+                    {INPUT_TYPES.map((t) => (
+                        <Option key={t} data-key={t} selected={inputType === t}>
+                            {intl.formatMessage({ id: "input_type_" + t })}
+                        </Option>
+                    ))}
+                </Select>
+                <Input
+                    style={{ flex: 1 }}
+                    value={value.length <= 1 ? (value[0] ?? "") : `${value[0]} (+${value.length - 1})`}
+                    readonly={value.length > 1}
+                    onInput={(e: Ui5CustomEvent<InputDomRef>) =>
+                        onValueChange(e.target.value ? [e.target.value] : [])
                     }
-                }}
-            />
+                    icon={
+                        <Icon
+                            name="value-help"
+                            onClick={handleOpen}
+                            style={{ boxShadow: isHovered ? "var(--sapField_Hover_Shadow)" : "none" }}
+                        />
+                    }
+                    onMouseOver={() => setHovered(true)}
+                    onMouseLeave={() => setHovered(false)}
+                    onKeyDown={(e) => {
+                        if (e.key === "F4") {
+                            e.preventDefault()
+                            handleOpen()
+                        }
+                    }}
+                />
+            </FlexBox>
             {showDialog && (
                 <SearchDialog
                     title={dialogTitle}
@@ -122,7 +142,9 @@ export default function () {
                     <SearchHelpInput
                         field="description"
                         value={filter.descriptionValue ?? []}
+                        inputType={(filter.descriptionType as InputType) ?? "contains"}
                         onValueChange={(v) => mergeFilter({ descriptionValue: v })}
+                        onTypeChange={(t) => mergeFilter({ descriptionType: t })}
                         dialogTitle={intl.formatMessage({ id: "label_description" })}
                     />
                 </FilterField>
@@ -131,7 +153,9 @@ export default function () {
                     <SearchHelpInput
                         field="functionalId"
                         value={filter.functionalIdValue ?? []}
+                        inputType={(filter.functionalIdType as InputType) ?? "contains"}
                         onValueChange={(v) => mergeFilter({ functionalIdValue: v })}
+                        onTypeChange={(t) => mergeFilter({ functionalIdType: t })}
                         dialogTitle={intl.formatMessage({ id: "label_functional_id" })}
                     />
                 </FilterField>
@@ -158,7 +182,9 @@ export default function () {
                     <SearchHelpInput
                         field="additionalInformation"
                         value={filter.additionalInformationValue ?? []}
+                        inputType={(filter.additionalInformationType as InputType) ?? "contains"}
                         onValueChange={(v) => mergeFilter({ additionalInformationValue: v })}
+                        onTypeChange={(t) => mergeFilter({ additionalInformationType: t })}
                         dialogTitle={intl.formatMessage({ id: "label_additional_information" })}
                     />
                 </FilterField>

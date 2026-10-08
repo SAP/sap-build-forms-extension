@@ -15,8 +15,8 @@ import {
     TableHeaderCell,
     TableHeaderRow,
     TableRow,
-    TableSelectionMulti,
-    TableSelectionMultiDomRef,
+    TableSelectionSingle,
+    TableSelectionSingleDomRef,
     Text,
     Ui5CustomEvent,
 } from "@ui5/webcomponents-react"
@@ -40,12 +40,12 @@ export default function SearchDialog({ title, onSearch, onSelect, onClose }: Sea
     const [suggestions, setSuggestions] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [page, setPage] = useState(1)
-    const [selected, setSelected] = useState<Set<number>>(new Set())
+    const [selected, setSelected] = useState<number | null>(null)
 
     async function triggerSearch(term: string) {
         setLoading(true)
         setPage(1)
-        setSelected(new Set())
+        setSelected(null)
         const results = await onSearch(term)
         setSuggestions(results)
         setLoading(false)
@@ -53,10 +53,11 @@ export default function SearchDialog({ title, onSearch, onSelect, onClose }: Sea
 
     const lastPage = Math.max(Math.ceil(suggestions.length / PAGE_SIZE), 1)
     const pageItems = suggestions.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-    const selectedStr = [...selected].join(" ")
+    const selectedStr = selected !== null ? String(selected) : ""
 
     function handleConfirm() {
-        onSelect([...selected].map((i) => suggestions[i]).filter(Boolean))
+        const value = selected !== null ? suggestions[selected] : undefined
+        if (value) onSelect([value])
         onClose()
     }
 
@@ -71,7 +72,7 @@ export default function SearchDialog({ title, onSearch, onSelect, onClose }: Sea
                         <>
                             <Button
                                 design="Emphasized"
-                                disabled={selected.size === 0}
+                                disabled={selected === null}
                                 onClick={handleConfirm}
                             >
                                 {intl.formatMessage({ id: "button_select" })}
@@ -102,10 +103,10 @@ export default function SearchDialog({ title, onSearch, onSelect, onClose }: Sea
                 <BusyIndicator active={loading} style={{ width: "100%" }}>
                     <Table
                         features={
-                            <TableSelectionMulti
+                            <TableSelectionSingle
                                 selected={selectedStr}
-                                onChange={(e: Ui5CustomEvent<TableSelectionMultiDomRef>) =>
-                                    setSelected(new Set([...e.target.getSelectedAsSet()].map(Number)))
+                                onChange={(e: Ui5CustomEvent<TableSelectionSingleDomRef>) =>
+                                    setSelected(Number(e.target.selected))
                                 }
                             />
                         }

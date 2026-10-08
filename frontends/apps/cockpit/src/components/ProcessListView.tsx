@@ -145,26 +145,26 @@ export default function () {
     }
 
     return (
-        <div>
+        <>
             <Table
                 headerRow={
                     <TableHeaderRow>
-                        <TableHeaderCell width="20em">
+                        <TableHeaderCell width="20%"minWidth="10rem">
                             {intl.formatMessage({ id: "label_description" })}
                         </TableHeaderCell>
-                        <TableHeaderCell width="10em">
+                        <TableHeaderCell minWidth="10rem">
                             {intl.formatMessage({ id: "label_functional_id" })}
                         </TableHeaderCell>
-                        <TableHeaderCell minWidth="10em">
+                        <TableHeaderCell minWidth="10rem">
                             {intl.formatMessage({ id: "label_status" })}
                         </TableHeaderCell>
-                        <TableHeaderCell minWidth="30em">
+                        <TableHeaderCell width="25%" minWidth="10rem">
                             {intl.formatMessage({ id: "label_additional_information" })}
                         </TableHeaderCell>
-                        <TableHeaderCell minWidth="20em">
-                            {intl.formatMessage({ id: "label_started_by" })}
+                        <TableHeaderCell minWidth="10rem">
+                            {intl.formatMessage({ id: "label_started_by"  })}
                         </TableHeaderCell>
-                        <TableHeaderCell minWidth="10em">
+                        <TableHeaderCell minWidth="10rem">
                             {intl.formatMessage({ id: "label_started_at" })}
                         </TableHeaderCell>
                     </TableHeaderRow>
@@ -292,6 +292,6 @@ export default function () {
                     </>
                 }
             />
-        </div>
+        </>
     )
 }

@@ -87,4 +87,43 @@ public class BaseCockpitAdapter implements CockpitAdapter {
             throw new IllegalArgumentException("Column not allowed for suggestions: " + column);
         }
     }
+
+    /**
+     * Appends a SQL condition for a string filter field based on the operator type.
+     *
+     * @param condition   The SQL condition builder to append to
+     * @param params      The parameter list to append bind values to
+     * @param column      SQL column name
+     * @param type        Operator: "equals", "contains", "begins_with", "ends_with"
+     * @param values      Filter values; must be non-null and non-empty
+     */
+    protected static void appendStringFilter(StringBuilder condition, java.util.List<Object> params,
+                                             String column, String type, String[] values) {
+        if (values.length == 1) {
+            final String v = values[0];
+            switch (type == null ? "contains" : type) {
+                case "equals":
+                    condition.append(" AND ").append(column).append(" = ?");
+                    params.add(v);
+                    break;
+                case "begins_with":
+                    condition.append(" AND ").append(column).append(" LIKE CONCAT(?,'%')");
+                    params.add(v);
+                    break;
+                case "ends_with":
+                    condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?)");
+                    params.add(v);
+                    break;
+                default: // "contains"
+                    condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?,'%')");
+                    params.add(v);
+                    break;
+            }
+        } else {
+            final var placeholders = "?,".repeat(values.length);
+            condition.append(" AND ").append(column).append(" IN (")
+                    .append(placeholders, 0, placeholders.length() - 1).append(")");
+            params.addAll(java.util.Arrays.asList(values));
+        }
+    }
 }

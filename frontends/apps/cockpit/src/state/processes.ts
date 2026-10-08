@@ -77,9 +77,12 @@ export const PAGE_SIZES = [10, 25, 50, 100]
 export type FilterParams = {
     profiles?: string[],
     descriptionValue?: string[],
+    descriptionType?: string,
     functionalIdValue?: string[],
+    functionalIdType?: string,
     status?: string[],
     additionalInformationValue?: string[],
+    additionalInformationType?: string,
     user?: string,
     roleUser?: string[],
     startedBy?: string,
@@ -156,20 +159,23 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
 
         if (!filter.descriptionValue?.length) {
             delete params.descriptionValue
+            delete params.descriptionType
         } else {
-            params.descriptionType = "contains"
+            params.descriptionType = filter.descriptionType ?? "contains"
         }
 
         if (!filter.functionalIdValue?.length) {
             delete params.functionalIdValue
+            delete params.functionalIdType
         } else {
-            params.functionalIdType = "contains"
+            params.functionalIdType = filter.functionalIdType ?? "contains"
         }
 
         if (!filter.additionalInformationValue?.length) {
             delete params.additionalInformationValue
+            delete params.additionalInformationType
         } else {
-            params.additionalInformationType = "contains"
+            params.additionalInformationType = filter.additionalInformationType ?? "contains"
         }
 
         if (!filter.user?.trim()) delete params.user
