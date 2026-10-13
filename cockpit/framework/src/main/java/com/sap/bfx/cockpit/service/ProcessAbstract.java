@@ -42,6 +42,6 @@ public class ProcessAbstract implements FormAttributes {
     @JsonIgnore
     private String workflowAdapter;
     private boolean cancelable;
-    private String showState;
+    private boolean templatable;
 
 }

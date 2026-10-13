@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useSearchParams } from "react-router-dom"
 
 import { useMessages } from "commons"
 
 import { useAppDispatch, useAppSelector } from "../features/store"
 import { createSession, SessionResponse } from "../features/sessions/sessionActions"
 import Form from "../components/layout/FormPage"
-import { resetFlag } from "../features/sessions/sessionSlice"
+import { resetFlag, setGlobalReadonly } from "../features/sessions/sessionSlice"
 
 /**
  *
@@ -14,8 +14,10 @@ import { resetFlag } from "../features/sessions/sessionSlice"
  */
 export default function () {
     const params = useParams()
+    const [searchParams] = useSearchParams()
     const formsId = params.formsId ?? undefined
     const state = params.state ?? ""
+    const editable = searchParams.get("editable") === "true"
     const dispatch = useAppDispatch()
     const messages = useMessages()
     const session = useAppSelector((state) => state.session)
@@ -28,6 +30,9 @@ export default function () {
             if (action.meta.requestStatus === "fulfilled") {
                 // console.log("Receiving data from backend!")
                 setResponse(action.payload.data)
+                if (editable) {
+                    dispatch(setGlobalReadonly(false))
+                }
             }
         })
     }

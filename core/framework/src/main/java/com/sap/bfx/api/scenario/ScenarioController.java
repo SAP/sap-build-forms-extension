@@ -7,7 +7,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.sap.bfx.api.scenario.json.*;
 import com.sap.bfx.api.scenario.json.serializer.*;
 import com.sap.bfx.callback.CallbackService;
+import com.sap.bfx.callback.CancellationService;
 import com.sap.bfx.callback.ContextFactory;
+import com.sap.bfx.callback.DisplayVariantService;
+import com.sap.bfx.callback.UseAsTemplateService;
 import com.sap.bfx.callback.FormsApi;
 import com.sap.bfx.definition.DateRange;
 import com.sap.bfx.definition.EventType;
@@ -73,25 +76,37 @@ public class ScenarioController {
     private final ContextFactory contextFactory;
     private final SessionService sessionService;
     private final ObjectMapper om;
+    private final CancellationService cancellationService;
+    private final UseAsTemplateService useAsTemplateService;
+    private final DisplayVariantService displayVariantService;
 
     /**
      * Constructor for ScenarioController.
      *
-     * @param formsService    the FormsService instance
-     * @param securityService the SecurityService instance
-     * @param callbackService the CallbackService instance
-     * @param contextFactory  the ContextFactory instance
-     * @param sessionService  the SessionService instance
+     * @param formsService           the FormsService instance
+     * @param securityService        the SecurityService instance
+     * @param callbackService        the CallbackService instance
+     * @param contextFactory         the ContextFactory instance
+     * @param sessionService         the SessionService instance
+     * @param cancellationService    optional; if absent, cancel endpoint returns 501
+     * @param useAsTemplateService   optional; if absent, useAsTemplate endpoint returns 501
+     * @param displayVariantService  optional; if absent, displayVariant endpoint returns null variant
      */
     @Autowired
     public ScenarioController(final FormsService formsService, final SecurityService securityService,
                               CallbackService callbackService, ContextFactory contextFactory,
-                              SessionService sessionService) {
+                              SessionService sessionService,
+                              @Autowired(required = false) CancellationService cancellationService,
+                              @Autowired(required = false) UseAsTemplateService useAsTemplateService,
+                              @Autowired(required = false) DisplayVariantService displayVariantService) {
         this.formsService = formsService;
         this.callbackService = callbackService;
         this.securityService = securityService;
         this.contextFactory = contextFactory;
         this.sessionService = sessionService;
+        this.cancellationService = cancellationService;
+        this.useAsTemplateService = useAsTemplateService;
+        this.displayVariantService = displayVariantService;
         om = JsonMapper.builder().addModule(new JavaTimeModule()).build();
         final SimpleModule module = new SimpleModule();
         module.addSerializer(DateRange.class, new DateRangeSerializer());
@@ -845,5 +860,65 @@ public class ScenarioController {
                     this.getObjectViaObjectMapper(tempField, sourceClassToTargetClass.get(tempField.getClass())));
         }
         return fieldMap;
+    }
+
+    @PostMapping(value = "/process/{formsProcessId}/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<ProcessStateResponse> cancel(
+            @PathVariable(required = true) String formsProcessId) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
+        if (cancellationService == null) {
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(new ProcessStateResponse("501", "No CancellationService available"));
+        }
+        final Form form = formsService.loadById(formsProcessId);
+        final var securitySession = SecurityUtils.getSecuritySession();
+        securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
+                EventType.PostScenarioControllerAuth, false, null);
+        cancellationService.cancel(formsProcessId, SecurityUtils.getUserName());
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache())
+                .body(new ProcessStateResponse("200", "Process '" + formsProcessId + "' cancelled."));
+    }
+
+    @GetMapping(value = "/process/{formsProcessId}/displayVariant", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<DisplayStateResponse> getDisplayVariant(
+            @PathVariable(required = true) String formsProcessId,
+            @RequestParam(value = "language", required = false) String language) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
+        final Form form = formsService.loadById(formsProcessId);
+        final var securitySession = SecurityUtils.getSecuritySession();
+        securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
+                EventType.PostScenarioControllerAuth, false, null);
+        final String displayVariant = displayVariantService != null
+                ? displayVariantService.getDisplayVariant(formsProcessId, SecurityUtils.getUserName(), language)
+                : null;
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new DisplayStateResponse(displayVariant));
+    }
+
+    @PostMapping(value = "/process/{formsProcessId}/useAsTemplate", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<?> useAsTemplate(
+            @PathVariable(required = true) String formsProcessId) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
+        if (useAsTemplateService == null) {
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+                    .body(new ProcessStateResponse("501", "No UseAsTemplateService available"));
+        }
+        final Form form = formsService.loadById(formsProcessId);
+        final var securitySession = SecurityUtils.getSecuritySession();
+        securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
+                EventType.PostScenarioControllerAuth, false, null);
+        final var templateResult = useAsTemplateService.createFromTemplate(formsProcessId, SecurityUtils.getUserName());
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new UseAsTemplateResponse(templateResult.newProcessId(), templateResult.variant()));
     }
 }

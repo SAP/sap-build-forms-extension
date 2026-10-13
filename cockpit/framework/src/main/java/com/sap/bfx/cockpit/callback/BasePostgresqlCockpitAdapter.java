@@ -186,6 +186,14 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
     }
 
     @Override
+    public ProcessAbstract findById(String id) {
+        final var results = jdbc.query(
+                "SELECT * FROM forms_forms WHERE id = ? LIMIT 1",
+                new FormRowMapper(), id);
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    @Override
     public List<String> findSuggestions(String column, String search) {
         validateColumn(column);
         final String sql = "SELECT DISTINCT " + column
@@ -274,7 +282,7 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
     /**
      * Maps a SQL result row to a Form object.
      */
-    private static class FormRowMapper implements RowMapper<ProcessAbstract> {
+    private class FormRowMapper implements RowMapper<ProcessAbstract> {
         @Override
         public ProcessAbstract mapRow(ResultSet rs, int rowNum) throws SQLException {
             final ProcessAbstract form = new ProcessAbstract();
@@ -296,7 +304,8 @@ public class BasePostgresqlCockpitAdapter extends BaseCockpitAdapter {
             form.setTemplateName(rs.getString("template_nm"));
             form.setVersion(rs.getLong("version"));
             form.setWorkflowAdapter(rs.getString("wf_adapter"));
-
+            form.setCancelable(isCancelable(form.getState()));
+            form.setTemplatable(isTemplatable(form.getState()));
             return form;
         }
     }

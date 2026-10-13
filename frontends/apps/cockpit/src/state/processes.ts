@@ -108,8 +108,9 @@ interface ProcessState {
 
     findProcesses: (messages: MessageIntf, filter: FilterParams, page?: number, pageSize?: number) => Promise<AxiosResponse | Error>,
     loadSuggestions: (messages: MessageIntf, field: string, search: string) => Promise<string[]>,
+    getDisplayVariant: (messages: MessageIntf, processId: string, language?: string) => Promise<string | null>,
     cancelProcess: (messages: MessageIntf, processId: string) => Promise<AxiosResponse | Error>,
-    useAsTemplate: (messages: MessageIntf, processId: string) => Promise<AxiosResponse | Error>,
+    useAsTemplate: (messages: MessageIntf, processId: string) => Promise<{ newProcessId: string; variant: string } | Error>,
 }
 
 /**
@@ -218,6 +219,17 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
         return []
     },
 
+    async getDisplayVariant(messages: MessageIntf, processId: string, language?: string): Promise<string | null> {
+        const params: Record<string, string> = {}
+        if (language) params.language = language
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/displayVariant`, "GET", undefined, { params })
+        if (apiOk(res.status)) {
+            return (res.data as { displayVariant?: string }).displayVariant ?? null
+        }
+        handleError(res, "getDisplayVariant", messages)
+        return null
+    },
+
     async cancelProcess(messages: MessageIntf, processId: string): Promise<AxiosResponse | Error> {
         const res = await backend.callDirect(messages, `/v1/processes/${processId}/cancel`, "POST", undefined)
         if (apiOk(res.status)) {
@@ -226,10 +238,10 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
         return handleError(res, "cancelProcess", messages)
     },
 
-    async useAsTemplate(messages: MessageIntf, processId: string): Promise<AxiosResponse | Error> {
+    async useAsTemplate(messages: MessageIntf, processId: string): Promise<{ newProcessId: string; variant: string } | Error> {
         const res = await backend.callDirect(messages, `/v1/processes/${processId}/template`, "POST", undefined)
         if (apiOk(res.status)) {
-            return Promise.resolve(res)
+            return Promise.resolve(res.data as { newProcessId: string; variant: string })
         }
         return handleError(res, "useAsTemplate", messages)
     },

@@ -322,7 +322,7 @@ public class SessionController {
 
         // TODO (OB) differ between FormCreated in case of new Form and FormLoaded between TaskExecution
         // create the context for following callbacks
-        if (!isTaskContext) {
+        if (!isTaskContext && !isShowContext) {
             result = callbackService.callLifecycleHook(LifecycleHookType.FormCreated, context, result);
         } else {
             result = callbackService.callLifecycleHook(LifecycleHookType.FormLoaded, context, result);
@@ -344,6 +344,7 @@ public class SessionController {
 
         // create response and sent it to client
         final var response = new SessionResponse(session.getId(), result, session.getForm(), null);
+        response.setShowContext(isShowContext);
         response.setDef(context.getScenarioDefinition());
         response.setValues(session.getForm().getElements());
         response.setLocale(context.getLocale());

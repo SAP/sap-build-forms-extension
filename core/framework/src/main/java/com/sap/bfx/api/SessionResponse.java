@@ -44,6 +44,7 @@ class SessionResponse {
     private Map<String, Map<String, String>> dynamicValuehelps;
     private Map<String, String> msgTexts;
     private FrontendOperation operation;
+    private boolean showContext;
 
     /**
      * Constructs a new SessionResponse with the specified session ID, callback result, form, and backend journal.
@@ -147,6 +148,9 @@ class SessionResponse {
                     if (ro.getType() != null) gen.writeStringField("type", ro.getType());
                 }
                 gen.writeEndObject();
+            }
+            if (value.showContext) {
+                gen.writeBooleanField("showContext", true);
             }
 
             gen.writeEndObject();

@@ -1,6 +1,7 @@
 package com.sap.bfx.cockpit.callback;
 
 import com.sap.bfx.cockpit.service.ProcessAbstract;
+import com.sap.bfx.definition.ProcessState;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -66,6 +67,28 @@ public class BaseCockpitAdapter implements CockpitAdapter {
     @Override
     public int findProcesses(List<ProcessAbstract> processes, SearchParams params) {
         return 0;
+    }
+
+    /**
+     * Returns whether a process in the given state can be cancelled.
+     * Default: false. Override in your cockpit adapter to provide scenario-specific logic.
+     *
+     * @param state the current process state
+     * @return true if the process is cancelable
+     */
+    protected boolean isCancelable(ProcessState state) {
+        return false;
+    }
+
+    /**
+     * Returns whether a process in the given state can be used as a template.
+     * Default: false. Override in your cockpit adapter to provide scenario-specific logic.
+     *
+     * @param state the current process state
+     * @return true if the process is templatable
+     */
+    protected boolean isTemplatable(ProcessState state) {
+        return false;
     }
 
     @Override

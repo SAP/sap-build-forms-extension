@@ -151,6 +151,9 @@ export const sessionSlice = createSlice({
             state.shouldReset = false
             state.globalReadonly = false
         },
+        setGlobalReadonly: (state, action: PayloadAction<boolean>) => {
+            state.globalReadonly = action.payload
+        },
     },
     extraReducers: (builder) => {
         builder.addCase(createSession.fulfilled, (state, action) =>
@@ -174,4 +177,4 @@ export const sessionSlice = createSlice({
     },
 })
 
-export const { update, downloadAttachment, resetFlag } = sessionSlice.actions
+export const { update, downloadAttachment, resetFlag, setGlobalReadonly } = sessionSlice.actions

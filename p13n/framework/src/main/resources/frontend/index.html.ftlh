@@ -9,7 +9,7 @@
         const ROUTER_BASE_NAME = "${contextPath}"
     </script>
     <script type="module" crossorigin src="./assets/${indexJS}"></script>
-    <#if hasToken>
+    <#if hasToken?? && hasToken>
     <script type="text/javascript">
         sessionStorage.setItem("accessToken", "${accessToken}");
         sessionStorage.setItem("refreshToken", "${refreshToken}");

@@ -131,7 +131,7 @@ export default function () {
 
     const handleCancel = (process: Process) => {
         setSelectedProcess(process)
-        console.log("Cancel", process)
+        setView("details")
     }
 
     const handleShowForm = (process: Process) => {
@@ -170,7 +170,7 @@ export default function () {
                     </TableHeaderRow>
                 }
                 noDataText={intl.formatMessage({ id: "common_no_data" })}
-                rowActionCount={3}
+                rowActionCount={2}
             >
                 {processes.map((process) => (
                     <TableRow

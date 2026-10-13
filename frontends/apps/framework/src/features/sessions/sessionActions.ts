@@ -47,6 +47,7 @@ export interface SessionResponse {
     dvhs?: Record<string, Record<string, string>>
     operation?: FrontendOperation
     additionalInformation?: string
+    showContext?: boolean
 }
 
 /**
@@ -395,6 +396,11 @@ export function handleSessionResponse(
                     state.shouldReset = true
                     break
             }
+        }
+
+        // show context is always readonly
+        if (data.showContext) {
+            state.globalReadonly = true
         }
     }
 }

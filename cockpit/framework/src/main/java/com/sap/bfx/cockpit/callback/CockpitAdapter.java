@@ -72,4 +72,15 @@ public interface CockpitAdapter extends Adapter {
     default FeedEntry addFeed(String formId, String userNm, String text, String type, String parentId) {
         return null;
     }
+
+    /**
+     * Finds a single process by its ID.
+     * Returns {@code null} if not found or not supported by this adapter.
+     *
+     * @param id the process ID
+     * @return the matching {@link ProcessAbstract}, or {@code null}
+     */
+    default ProcessAbstract findById(String id) {
+        return null;
+    }
 }

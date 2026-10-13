@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Spring Boot auto-configuration for cockpit/framework.
@@ -26,5 +27,11 @@ public class CockpitAutoConfiguration {
     public FeedService feedService(CockpitService cockpitService) {
         return (formId, userNm, text, type, parentId) ->
                 cockpitService.addFeed(formId, userNm, text, type, parentId);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

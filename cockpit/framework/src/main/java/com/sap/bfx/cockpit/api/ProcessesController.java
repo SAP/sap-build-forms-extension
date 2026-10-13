@@ -16,7 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
@@ -27,10 +29,12 @@ import java.util.List;
 public class ProcessesController {
 
     private final CockpitService service;
+    private final RestTemplate restTemplate;
 
     @Autowired
-    public ProcessesController(final CockpitService service) {
+    public ProcessesController(final CockpitService service, final RestTemplate restTemplate) {
         this.service = service;
+        this.restTemplate = restTemplate;
     }
 
     /**
@@ -142,6 +146,62 @@ public class ProcessesController {
         final FeedEntry result = service.addFeed(id, SecurityUtils.getUserName(), req.text(), req.type(), req.parentId());
         if (result == null) throw new NotFoundException("cannot find process with id '" + id + "'");
         return result;
+    }
+
+    /**
+     * Proxy: get display variant for a process by forwarding to the scenario app's ScenarioController.
+     */
+    @GetMapping(value = "/{id}/displayVariant", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<String> getDisplayVariant(
+            @PathVariable("id") String id,
+            @RequestParam(value = "language", required = false) String language) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        final var process = service.findProcessById(id)
+                .orElseThrow(() -> new NotFoundException("cannot find process with id '" + id + "'"));
+        String url = process.getScenarioUrl() + "/api/v1/scenario/process/" + id + "/displayVariant";
+        if (StringUtils.isNotBlank(language)) url += "?language=" + language;
+        log.debug("getDisplayVariant proxy -> {}", url);
+        try {
+            final ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.warn("displayVariant endpoint unavailable at {}: {}", url, e.getMessage());
+            return ResponseEntity.ok().body("{\"displayVariant\":null}");
+        }
+    }
+
+    /**
+     * Proxy: cancel a process by forwarding to the scenario app's ScenarioController.
+     */
+    @PostMapping(value = "/{id}/cancel", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<String> cancelProcess(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        final var process = service.findProcessById(id)
+                .orElseThrow(() -> new NotFoundException("cannot find process with id '" + id + "'"));
+        final String url = process.getScenarioUrl() + "/api/v1/scenario/process/" + id + "/cancel";
+        log.debug("cancelProcess proxy -> {}", url);
+        final ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+    }
+
+    /**
+     * Proxy: use a process as template by forwarding to the scenario app's ScenarioController.
+     */
+    @PostMapping(value = "/{id}/template", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<String> useAsTemplate(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        final var process = service.findProcessById(id)
+                .orElseThrow(() -> new NotFoundException("cannot find process with id '" + id + "'"));
+        final String url = process.getScenarioUrl() + "/api/v1/scenario/process/" + id + "/useAsTemplate";
+        log.debug("useAsTemplate proxy -> {}", url);
+        final ResponseEntity<String> response = restTemplate.postForEntity(url, null, String.class);
+        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
     }
 
 //    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)

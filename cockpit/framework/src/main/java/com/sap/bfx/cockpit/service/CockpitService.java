@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,7 +46,6 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
     @Autowired
     public CockpitService(final ApplicationContext applicationContext) {
         super(applicationContext, CockpitAdapter.class);
-
     }
 
     /**
@@ -134,6 +134,27 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
             if (result != null) return result;
         }
         return null;
+    }
+
+    /**
+     * Finds a single process by its ID across all adapters and resolves its scenario URL.
+     * Used by proxy endpoints to determine which scenario app to forward requests to.
+     *
+     * @param id the process ID
+     * @return the matching process with scenarioUrl populated, or empty if not found
+     */
+    public Optional<ProcessAbstract> findProcessById(String id) {
+        for (final var adapter : this.getAllAdapters()) {
+            final var process = adapter.findById(id);
+            if (process != null) {
+                this.checkScenarioUrls();
+                var scenarioUrl = scenarioUrls != null ? scenarioUrls.get(process.getScenarioName()) : null;
+                if (StringUtils.isBlank(scenarioUrl)) scenarioUrl = "http://localhost:8080";
+                process.setScenarioUrl(scenarioUrl);
+                return Optional.of(process);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

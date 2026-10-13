@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react"
+import { useMatch, useSearchParams } from "react-router-dom"
 
 import { createUseStyles } from "react-jss"
 
@@ -41,7 +42,8 @@ export default function (props: FormProps) {
     const globalReadonly = useAppSelector((state) => state.session.globalReadonly)
     const [root, setRoot] = useState<Definition>()
     const [footer, setFooter] = useState<Definition>()
-    const isShowMode = window.location.pathname.endsWith("/Show")
+    const [searchParams] = useSearchParams()
+    const isShowMode = !!useMatch("/show/:formsId/:state") && searchParams.get("editable") !== "true"
 
     useEffect(() => {
         // initial screen size
@@ -102,10 +104,10 @@ export default function (props: FormProps) {
             }
             footer={
                 <div slot="footer">
-                    {footer && (
+                    {footer && !isShowMode && (
                         <Control
                             def={footer}
-                            globalEd={!isShowMode && !globalReadonly}
+                            globalEd={!globalReadonly}
                             texts={session.def!.texts}
                             vhs={session.vhs}
                             asTableCell={false}

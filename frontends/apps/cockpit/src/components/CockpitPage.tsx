@@ -39,12 +39,21 @@ export default function () {
 
     const handleCancelProcess = async () => {
         if (!visualState.selectedProcess) return
-        await cancelProcess(messages, visualState.selectedProcess.id)
+        const result = await cancelProcess(messages, visualState.selectedProcess.id)
+        if (!(result instanceof Error)) {
+            visualState.setView("list")
+            findProcesses(messages, useProcessStore.getState().filter)
+        }
     }
 
     const handleUseAsTemplate = async () => {
         if (!visualState.selectedProcess) return
-        await useAsTemplate(messages, visualState.selectedProcess.id)
+        const result = await useAsTemplate(messages, visualState.selectedProcess.id)
+        if (!(result instanceof Error)) {
+            const { scenarioUrl, id: sourceId } = visualState.selectedProcess
+            const path = ["show", result.newProcessId, result.variant].join("/")
+            window.open(`${scenarioUrl}/${path}?editable=true&templateId=${sourceId}`, "_blank")
+        }
     }
 
     useEffect(() => {
