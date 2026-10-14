@@ -860,6 +860,7 @@ function FileUploaderControl(props: ControlProps) {
                                     <Button
                                         icon="delete"
                                         design="Transparent"
+                                        disabled={!element?.ed || !globalEd}
                                         onClick={() =>
                                             dispatch(
                                                 deleteAttachment({
@@ -1197,6 +1198,7 @@ function UploadCollectionControl(props: ControlProps) {
                                     <Button
                                         icon="delete"
                                         design="Transparent"
+                                        disabled={!element?.ed || !globalEd}
                                         tooltip={intl.formatMessage({ id: "common_delete" })}
                                         onClick={() =>
                                             dispatch(

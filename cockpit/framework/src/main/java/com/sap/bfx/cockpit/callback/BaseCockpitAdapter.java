@@ -113,6 +113,9 @@ public class BaseCockpitAdapter implements CockpitAdapter {
 
     /**
      * Appends a SQL condition for a string filter field based on the operator type.
+     * If the value contains {@code *}, it is treated as a wildcard pattern: {@code *} is
+     * translated to the SQL {@code %} wildcard and any literal {@code %} in the input is
+     * escaped, then a plain {@code LIKE} condition is used regardless of the operator type.
      *
      * @param condition   The SQL condition builder to append to
      * @param params      The parameter list to append bind values to
@@ -124,23 +127,30 @@ public class BaseCockpitAdapter implements CockpitAdapter {
                                              String column, String type, String[] values) {
         if (values.length == 1) {
             final String v = values[0];
-            switch (type == null ? "contains" : type) {
-                case "equals":
-                    condition.append(" AND ").append(column).append(" = ?");
-                    params.add(v);
-                    break;
-                case "begins_with":
-                    condition.append(" AND ").append(column).append(" LIKE CONCAT(?,'%')");
-                    params.add(v);
-                    break;
-                case "ends_with":
-                    condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?)");
-                    params.add(v);
-                    break;
-                default: // "contains"
-                    condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?,'%')");
-                    params.add(v);
-                    break;
+            if (v.contains("*")) {
+                // Wildcard pattern: escape literal '%', then replace '*' with '%'
+                final String pattern = v.replace("%", "\\%").replace("*", "%");
+                condition.append(" AND ").append(column).append(" LIKE ?");
+                params.add(pattern);
+            } else {
+                switch (type == null ? "contains" : type) {
+                    case "equals":
+                        condition.append(" AND ").append(column).append(" = ?");
+                        params.add(v);
+                        break;
+                    case "begins_with":
+                        condition.append(" AND ").append(column).append(" LIKE CONCAT(?,'%')");
+                        params.add(v);
+                        break;
+                    case "ends_with":
+                        condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?)");
+                        params.add(v);
+                        break;
+                    default: // "contains"
+                        condition.append(" AND ").append(column).append(" LIKE CONCAT('%',?,'%')");
+                        params.add(v);
+                        break;
+                }
             }
         } else {
             final var placeholders = "?,".repeat(values.length);

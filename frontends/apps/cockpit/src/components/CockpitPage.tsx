@@ -63,28 +63,33 @@ export default function () {
         })
     }, [])
 
+    const showCancelButton = !!visualState.selectedProcess?.cancelable
+    const showTemplateButton = !!visualState.selectedProcess?.templatable
+
     return (
         <DynamicPage
             style={{ width: "100vw", height: "100vh" }}
-            showFooter={visualState.view === "details"}
+            showFooter={visualState.view === "details" && (showCancelButton || showTemplateButton)}
             footerArea={
                 <Bar design="Footer"
                     endContent={
                         <>
-                            <Button
-                                icon="decline"
-                                disabled={!visualState.selectedProcess?.cancelable}
-                                onClick={handleCancelProcess}
-                            >
-                                {intl.formatMessage({ id: "button_cancel_process" })}
-                            </Button>
-                            <Button
-                                icon="duplicate"
-                                disabled={!visualState.selectedProcess?.templatable}
-                                onClick={handleUseAsTemplate}
-                            >
-                                {intl.formatMessage({ id: "button_use_as_template" })}
-                            </Button>
+                            {showCancelButton && (
+                                <Button
+                                    icon="decline"
+                                    onClick={handleCancelProcess}
+                                >
+                                    {intl.formatMessage({ id: "button_cancel_process" })}
+                                </Button>
+                            )}
+                            {showTemplateButton && (
+                                <Button
+                                    icon="duplicate"
+                                    onClick={handleUseAsTemplate}
+                                >
+                                    {intl.formatMessage({ id: "button_use_as_template" })}
+                                </Button>
+                            )}
                         </>
                     }
                 />

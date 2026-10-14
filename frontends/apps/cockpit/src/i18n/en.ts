@@ -21,6 +21,7 @@ export default {
     label_scenario_version: "Scenario Version",
 
     show_form: "Show form",
+    open_form: "Open form",
     show_details: "Show details",
 
     scenario: "Scenario",

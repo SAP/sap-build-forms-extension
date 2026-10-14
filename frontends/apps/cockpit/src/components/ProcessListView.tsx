@@ -104,6 +104,7 @@ export default function () {
     const pageSize = useProcessStore((state) => state.pageSize)
     const setPage = useProcessStore((state) => state.setPage)
     const setPageSize = useProcessStore((state) => state.setPageSize)
+    const getDisplayVariant = useProcessStore((state) => state.getDisplayVariant)
     const setSelectedProcess = useVisualStore((state) => state.setSelectedProcess)
     const setView = useVisualStore((state) => state.setView)
     const classes = useStyles()
@@ -135,8 +136,15 @@ export default function () {
     }
 
     const handleShowForm = (process: Process) => {
-        setSelectedProcess(process)
-        setView("form")
+        if (process.state === "0") {
+            getDisplayVariant(messages, process.id).then((variant) => {
+                const path = ["show", process.id, variant ?? ""].join("/")
+                window.open(`${process.scenarioUrl}/${path}?editable=true`, "_blank")
+            })
+        } else {
+            setSelectedProcess(process)
+            setView("form")
+        }
     }
 
     const handleShowDetails = (process: Process) => {
@@ -178,7 +186,7 @@ export default function () {
                             <>
                                 <TableRowAction
                                     icon="form"
-                                    text={intl.formatMessage({ id: "show_form" })}
+                                    text={intl.formatMessage({ id: process.state === "0" ? "open_form" : "show_form" })}
                                     onClick={() => handleShowForm(process)}
                                 />
                                 <TableRowAction
