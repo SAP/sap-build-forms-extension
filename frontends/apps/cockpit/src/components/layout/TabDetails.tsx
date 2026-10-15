@@ -73,7 +73,7 @@ export default function TabDetails(props: TabDetailsProps) {
                     >
                         <div className={classes.formTextBox}>
                             <Text className={classes.formText}>
-                                {props.selectedProcess?.state}
+                                {props.selectedProcess && `${intl.formatMessage({ id: `process_state_${props.selectedProcess.state}` })} (${props.selectedProcess.state})`}
                             </Text>
                         </div>
                     </FormItem>

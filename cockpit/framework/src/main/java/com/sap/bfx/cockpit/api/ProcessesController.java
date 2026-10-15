@@ -204,6 +204,50 @@ public class ProcessesController {
         return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
     }
 
+    /**
+     * Proxy: check if a process can be cancelled by forwarding to the scenario app's ScenarioController.
+     * Returns {@code {"enabled": false}} when the scenario endpoint is unavailable.
+     */
+    @GetMapping(value = "/{id}/cancelable", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<String> isCancelable(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        final var process = service.findProcessById(id)
+                .orElseThrow(() -> new NotFoundException("cannot find process with id '" + id + "'"));
+        final String url = process.getScenarioUrl() + "/api/v1/scenario/process/" + id + "/cancelable";
+        log.debug("isCancelable proxy -> {}", url);
+        try {
+            final ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.warn("cancelable endpoint unavailable at {}: {}", url, e.getMessage());
+            return ResponseEntity.ok().body("{\"enabled\":false}");
+        }
+    }
+
+    /**
+     * Proxy: check if a process can be used as template by forwarding to the scenario app's ScenarioController.
+     * Returns {@code {"enabled": false}} when the scenario endpoint is unavailable.
+     */
+    @GetMapping(value = "/{id}/templatable", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<String> isTemplatable(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        final var process = service.findProcessById(id)
+                .orElseThrow(() -> new NotFoundException("cannot find process with id '" + id + "'"));
+        final String url = process.getScenarioUrl() + "/api/v1/scenario/process/" + id + "/templatable";
+        log.debug("isTemplatable proxy -> {}", url);
+        try {
+            final ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.warn("templatable endpoint unavailable at {}: {}", url, e.getMessage());
+            return ResponseEntity.ok().body("{\"enabled\":false}");
+        }
+    }
+
 //    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 //    @ResponseStatus(HttpStatus.OK)
 //    @ResponseBody

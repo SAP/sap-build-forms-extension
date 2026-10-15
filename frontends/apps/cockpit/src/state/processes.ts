@@ -111,6 +111,8 @@ interface ProcessState {
     getDisplayVariant: (messages: MessageIntf, processId: string, language?: string) => Promise<string | null>,
     cancelProcess: (messages: MessageIntf, processId: string) => Promise<AxiosResponse | Error>,
     useAsTemplate: (messages: MessageIntf, processId: string) => Promise<{ newProcessId: string; variant: string } | Error>,
+    checkCancelable: (messages: MessageIntf, processId: string) => Promise<boolean>,
+    checkTemplatable: (messages: MessageIntf, processId: string) => Promise<boolean>,
 }
 
 /**
@@ -244,6 +246,24 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
             return Promise.resolve(res.data as { newProcessId: string; variant: string })
         }
         return handleError(res, "useAsTemplate", messages)
+    },
+
+    async checkCancelable(messages: MessageIntf, processId: string): Promise<boolean> {
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/cancelable`, "GET", undefined)
+        if (apiOk(res.status)) {
+            return (res.data as { enabled: boolean }).enabled ?? false
+        }
+        handleError(res, "checkCancelable", messages)
+        return false
+    },
+
+    async checkTemplatable(messages: MessageIntf, processId: string): Promise<boolean> {
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/templatable`, "GET", undefined)
+        if (apiOk(res.status)) {
+            return (res.data as { enabled: boolean }).enabled ?? false
+        }
+        handleError(res, "checkTemplatable", messages)
+        return false
     },
 
 }))

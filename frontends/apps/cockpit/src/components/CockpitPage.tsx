@@ -1,4 +1,4 @@
-import { useEffect, JSX } from "react"
+import { useEffect, useState, JSX } from "react"
 
 import { useIntl } from "react-intl"
 
@@ -36,6 +36,11 @@ export default function () {
     const filter = useProcessStore((state) => state.filter)
     const cancelProcess = useProcessStore((state) => state.cancelProcess)
     const useAsTemplate = useProcessStore((state) => state.useAsTemplate)
+    const checkCancelable = useProcessStore((state) => state.checkCancelable)
+    const checkTemplatable = useProcessStore((state) => state.checkTemplatable)
+
+    const [showCancelButton, setShowCancelButton] = useState(false)
+    const [showTemplateButton, setShowTemplateButton] = useState(false)
 
     const handleCancelProcess = async () => {
         if (!visualState.selectedProcess) return
@@ -63,8 +68,23 @@ export default function () {
         })
     }, [])
 
-    const showCancelButton = !!visualState.selectedProcess?.cancelable
-    const showTemplateButton = !!visualState.selectedProcess?.templatable
+    useEffect(() => {
+        if (visualState.view === "details" && visualState.selectedProcess) {
+            const id = visualState.selectedProcess.id
+            setShowCancelButton(false)
+            setShowTemplateButton(false)
+            Promise.all([
+                checkCancelable(messages, id),
+                checkTemplatable(messages, id),
+            ]).then(([cancelable, templatable]) => {
+                setShowCancelButton(cancelable)
+                setShowTemplateButton(templatable)
+            })
+        } else {
+            setShowCancelButton(false)
+            setShowTemplateButton(false)
+        }
+    }, [visualState.view, visualState.selectedProcess?.id])
 
     return (
         <DynamicPage

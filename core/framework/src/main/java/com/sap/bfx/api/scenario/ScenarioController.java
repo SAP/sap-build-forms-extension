@@ -88,8 +88,8 @@ public class ScenarioController {
      * @param callbackService        the CallbackService instance
      * @param contextFactory         the ContextFactory instance
      * @param sessionService         the SessionService instance
-     * @param cancellationService    optional; if absent, cancel endpoint returns 501
-     * @param useAsTemplateService   optional; if absent, useAsTemplate endpoint returns 501
+     * @param cancellationService    optional; if absent, cancel endpoint returns 501 and cancelable returns false
+     * @param useAsTemplateService   optional; if absent, useAsTemplate endpoint returns 501 and templatable returns false
      * @param displayVariantService  optional; if absent, displayVariant endpoint returns null variant
      */
     @Autowired
@@ -920,5 +920,39 @@ public class ScenarioController {
                 EventType.PostScenarioControllerAuth, false, null);
         final var templateResult = useAsTemplateService.createFromTemplate(formsProcessId, SecurityUtils.getUserName());
         return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new UseAsTemplateResponse(templateResult.newProcessId(), templateResult.variant()));
+    }
+
+    @GetMapping(value = "/process/{formsProcessId}/cancelable", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<ActionEnabledResponse> isCancelable(
+            @PathVariable(required = true) String formsProcessId) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
+        final Form form = formsService.loadById(formsProcessId);
+        final var securitySession = SecurityUtils.getSecuritySession();
+        securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
+                EventType.PostScenarioControllerAuth, false, null);
+        final boolean enabled = cancellationService != null
+                && cancellationService.isCancelable(formsProcessId, SecurityUtils.getUserName());
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ActionEnabledResponse(enabled));
+    }
+
+    @GetMapping(value = "/process/{formsProcessId}/templatable", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public ResponseEntity<ActionEnabledResponse> isTemplatable(
+            @PathVariable(required = true) String formsProcessId) throws Exception {
+        if (StringUtils.isBlank(formsProcessId)) {
+            throw new BadRequestException("Missing formsProcessId");
+        }
+        final Form form = formsService.loadById(formsProcessId);
+        final var securitySession = SecurityUtils.getSecuritySession();
+        securityService.ensureAuthorized(form.getSd().getName(), securitySession.getUser(),
+                EventType.PostScenarioControllerAuth, false, null);
+        final boolean enabled = useAsTemplateService != null
+                && useAsTemplateService.isTemplatable(formsProcessId, SecurityUtils.getUserName());
+        return ResponseEntity.ok().cacheControl(CacheControl.noCache()).body(new ActionEnabledResponse(enabled));
     }
 }
