@@ -1,5 +1,6 @@
 package com.sap.bfx.callback;
 
+import com.sap.bfx.definition.EventType;
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.p13n.Settings;
 import com.sap.bfx.security.User;
@@ -25,6 +26,7 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     DataApi dataApi;
     User user;
     ElementPos source;
+    EventType eventType;
     String taskInstanceId;
     Object authObject;
 
@@ -148,6 +150,21 @@ public class ContextImpl<AC extends AccessClass> implements Context<AC> {
     @Override
     public ElementPos getSource() {
         return source;
+    }
+
+    /**
+     * Sets the event type for the current event handler invocation. Called by the framework
+     * dispatcher ({@link CallbackService#callEvent}) before the before/on/after phases run.
+     *
+     * @param value the event type that triggered this handler invocation
+     */
+    public void setEventType(final EventType value) {
+        this.eventType = value;
+    }
+
+    @Override
+    public EventType getEventType() {
+        return eventType;
     }
 
     @Override

@@ -4,28 +4,45 @@ import com.sap.bfx.definition.EventType;
 import com.sap.bfx.utils.Identifier;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Base implementation of {@link EventHandler} that provides common functionality for matching events
- * based on element identifiers and event type, as well as default implementations for the
+ * based on element identifiers and event types, as well as default implementations for the
  * {@code before} and {@code after} phases.
  *
  * <p>Subclasses can extend this base class to implement specific event handling logic while
  * leveraging the built-in matching and execution flow. The constructors allow for flexible
  * configuration of which events the handler should respond to, including support for multiple
- * identifiers and version-based filtering.</p>
+ * identifiers, multiple event types, and version-based filtering.</p>
+ *
+ * <p>When a handler is registered for more than one event type, the concrete phase methods
+ * ({@code before}, {@code on}, {@code after}) can distinguish the triggering event via
+ * {@link Context#getEventType()}:
+ * <pre>{@code
+ * switch (ctx.getEventType()) {
+ *     case Action -> handleAction(ctx, result);
+ *     case Change -> handleChange(ctx, result);
+ * }
+ * }</pre>
+ * </p>
  *
  * @param <AC> the type of access class used in the event context
  */
 public abstract class BaseEventHandler<AC extends AccessClass> implements EventHandler<AC> {
 
     private final Set<String> keys = new HashSet<>();
-    private final EventType type;
+    private final Set<EventType> types;
     private final VersionSelector versionSelector;
     private final Priority order;
     private final boolean validating;
+
+    // -------------------------------------------------------------------------
+    // Original constructors — preserved verbatim for backward compatibility
+    // -------------------------------------------------------------------------
 
     /**
      * Creates a handler bound to a single element identifier with full control over all options.
@@ -38,9 +55,8 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      */
     protected BaseEventHandler(final Identifier identifier, final EventType type, final Priority order,
                                final boolean validating, final VersionSelector versionSelector) {
-
         this.keys.add(identifier.getIdentifier());
-        this.type = type;
+        this.types = toEnumSet(type);
         this.order = order;
         this.validating = validating;
         this.versionSelector = versionSelector;
@@ -53,7 +69,7 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * @param identifier identifies the form element this handler is registered for
      * @param type       the event type that triggers this handler
      */
-    protected BaseEventHandler(final Identifier identifier, EventType type) {
+    protected BaseEventHandler(final Identifier identifier, final EventType type) {
         this(identifier, type, Priority.DEFAULT, false, VersionSelector.all());
     }
 
@@ -65,7 +81,7 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * @param type       the event type that triggers this handler
      * @param validating {@code true} if this handler participates in validation processing
      */
-    protected BaseEventHandler(final Identifier identifier, EventType type, boolean validating) {
+    protected BaseEventHandler(final Identifier identifier, final EventType type, final boolean validating) {
         this(identifier, type, Priority.DEFAULT, validating, VersionSelector.all());
     }
 
@@ -78,11 +94,10 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * @param versionSelector restricts which form definition versions this handler applies to
      * @param identifiers     one or more form element identifiers this handler is registered for
      */
-    protected BaseEventHandler(EventType type, Priority order, boolean validating, VersionSelector versionSelector,
-                               final Identifier... identifiers) {
-
+    protected BaseEventHandler(final EventType type, final Priority order, final boolean validating,
+                               final VersionSelector versionSelector, final Identifier... identifiers) {
         this.keys.addAll(Arrays.stream(identifiers).map(Identifier::getIdentifier).toList());
-        this.type = type;
+        this.types = toEnumSet(type);
         this.order = order;
         this.validating = validating;
         this.versionSelector = versionSelector;
@@ -95,13 +110,77 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
      * @param type        the event type that triggers this handler
      * @param identifiers one or more form element identifiers this handler is registered for
      */
-    protected BaseEventHandler(EventType type, Identifier... identifiers) {
+    protected BaseEventHandler(final EventType type, final Identifier... identifiers) {
         this(type, Priority.DEFAULT, false, VersionSelector.all(), identifiers);
     }
 
+    // -------------------------------------------------------------------------
+    // New constructors — multi-type support
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a handler bound to a single element identifier that responds to multiple event types,
+     * with full control over all options.
+     *
+     * <p>Use this constructor when you need to register for more than one event type. Inside
+     * {@code on()}/{@code before()}/{@code after()}, call {@link Context#getEventType()} to
+     * determine which event fired.
+     *
+     * @param identifier      identifies the form element this handler is registered for
+     * @param order           the execution priority relative to other handlers for the same event
+     * @param validating      {@code true} if this handler participates in validation processing
+     * @param versionSelector restricts which form definition versions this handler applies to
+     * @param types           two or more event types that trigger this handler
+     */
+    protected BaseEventHandler(final Identifier identifier, final Priority order, final boolean validating,
+                               final VersionSelector versionSelector, final EventType... types) {
+        this.keys.add(identifier.getIdentifier());
+        this.types = toEnumSet(types);
+        this.order = order;
+        this.validating = validating;
+        this.versionSelector = versionSelector;
+    }
+
+    /**
+     * Creates a handler bound to a single element identifier that responds to multiple event types,
+     * with default priority, no validation, and matching all form definition versions.
+     *
+     * <pre>{@code super(MyFields.MyButton, EventType.Action, EventType.Change); }</pre>
+     *
+     * @param identifier identifies the form element this handler is registered for
+     * @param type1      first event type that triggers this handler
+     * @param type2      second event type that triggers this handler
+     * @param additional any additional event types
+     */
+    protected BaseEventHandler(final Identifier identifier, final EventType type1, final EventType type2,
+                               final EventType... additional) {
+        this(identifier, Priority.DEFAULT, false, VersionSelector.all(),
+                prepend(type1, type2, additional));
+    }
+
+    /**
+     * Creates a handler bound to a single element identifier that responds to multiple event types,
+     * with default priority and matching all form definition versions.
+     *
+     * @param identifier identifies the form element this handler is registered for
+     * @param validating {@code true} if this handler participates in validation processing
+     * @param type1      first event type that triggers this handler
+     * @param type2      second event type that triggers this handler
+     * @param additional any additional event types
+     */
+    protected BaseEventHandler(final Identifier identifier, final boolean validating,
+                               final EventType type1, final EventType type2, final EventType... additional) {
+        this(identifier, Priority.DEFAULT, validating, VersionSelector.all(),
+                prepend(type1, type2, additional));
+    }
+
+    // -------------------------------------------------------------------------
+    // Matching
+    // -------------------------------------------------------------------------
+
     @Override
     public boolean match(final String key, final EventType type, final int version) {
-        var matches = this.keys.contains(key) && this.type == type;
+        var matches = this.keys.contains(key) && this.types.contains(type);
         if (version != VersionSelector.IGNORE) {
             matches = matches && this.versionSelector.match(version);
         }
@@ -112,6 +191,10 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
     public Priority order() {
         return order;
     }
+
+    // -------------------------------------------------------------------------
+    // Default phase implementations (no-op pass-through)
+    // -------------------------------------------------------------------------
 
     /**
      * Called before the main {@code on} processing phase for the matched event.
@@ -149,14 +232,18 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
         return result;
     }
 
+    // -------------------------------------------------------------------------
+    // Accessors
+    // -------------------------------------------------------------------------
+
     /**
-     * Gets the {@link VersionSelector} that determines which form definition versions this handler applies to.
+     * Gets the set of event types this handler responds to.
      *
-     * @return the version selector for this handler
+     * @return an unmodifiable view of the event types set
      */
     @Override
-    public EventType getType() {
-        return this.type;
+    public Set<EventType> getTypes() {
+        return Collections.unmodifiableSet(this.types);
     }
 
     /**
@@ -170,12 +257,34 @@ public abstract class BaseEventHandler<AC extends AccessClass> implements EventH
     }
 
     /**
-     * Returns if the event-hanlder validates (executes the validation rules defined in definition + required) or not
+     * Returns if the event-handler validates (executes the validation rules defined in definition + required) or not
      *
      * @return boolean value if handler validates or not
      */
     @Override
     public boolean validating() {
         return this.validating;
+    }
+
+    // -------------------------------------------------------------------------
+    // Internal helpers
+    // -------------------------------------------------------------------------
+
+    private static Set<EventType> toEnumSet(final EventType... types) {
+        if (types == null || types.length == 0) {
+            throw new IllegalArgumentException("At least one EventType must be specified");
+        }
+        final var set = EnumSet.of(types[0], types);
+        return set;
+    }
+
+    private static EventType[] prepend(final EventType first, final EventType second,
+                                       final EventType... rest) {
+        final EventType[] all = Arrays.copyOf(rest, rest.length + 2);
+        // shift existing elements up two positions
+        System.arraycopy(rest, 0, all, 2, rest.length);
+        all[0] = first;
+        all[1] = second;
+        return all;
     }
 }

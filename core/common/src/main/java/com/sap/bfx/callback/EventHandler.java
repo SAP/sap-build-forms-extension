@@ -63,11 +63,27 @@ public interface EventHandler<AC extends AccessClass> {
     CallbackResult after(final Context<AC> ctx, final CallbackResult result);
 
     /**
-     * Get the event type this handler is for.
+     * Get the set of event types this handler is registered for.
      *
-     * @return the event type
+     * <p>A handler may respond to more than one event type (e.g. both {@code Action} and
+     * {@code Change}). The current event type that triggered a specific invocation is
+     * available via {@link Context#getEventType()}.
+     *
+     * @return the set of event types
      */
-    EventType getType();
+    Set<EventType> getTypes();
+
+    /**
+     * Get the (primary) event type this handler is for.
+     *
+     * @return the first event type in the set returned by {@link #getTypes()}
+     * @deprecated Use {@link #getTypes()} instead. This method exists for backward
+     *             compatibility and returns the first element of the types set.
+     */
+    @Deprecated
+    default EventType getType() {
+        return getTypes().iterator().next();
+    }
 
     /**
      * Get the event keys this handler is for.

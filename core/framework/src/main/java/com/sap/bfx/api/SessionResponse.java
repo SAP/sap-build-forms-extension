@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.sap.bfx.callback.CallbackResult;
 import com.sap.bfx.callback.CallbackService;
+import com.sap.bfx.callback.EventHandler;
 import com.sap.bfx.callback.operation.FrontendOperation;
 import com.sap.bfx.callback.operation.ReadonlyOperation;
 import com.sap.bfx.definition.*;
@@ -276,8 +277,15 @@ class SessionResponse {
             }
             // event handlers
             if (eventHandlersMap != null && eventHandlersMap.containsKey(element.getKey())) {
-                var events = eventHandlersMap.get(element.getKey()).getHandlers().stream()
-                                             .map(it -> it.getType().getIdentifier()).toArray(String[]::new);
+                @SuppressWarnings("unchecked")
+                final var handlerStream = (java.util.stream.Stream<EventHandler<?>>) (java.util.stream.Stream<?>)
+                        eventHandlersMap.get(element.getKey()).getHandlers().stream();
+                final var eventList = handlerStream
+                                             .flatMap(it -> it.getTypes().stream())
+                                             .map(EventType::getIdentifier)
+                                             .distinct()
+                                             .toList();
+                final var events = eventList.toArray(new String[0]);
                 gen.writeFieldName("events");
                 gen.writeArray(events, 0, events.length);
             }

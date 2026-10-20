@@ -133,6 +133,13 @@ public class CallbackService {
         final var version =
                 ctx.getScenarioDefinition() != null ? ctx.getScenarioDefinition().getVersion() : VersionSelector.IGNORE;
 
+        // Propagate the triggering EventType onto the context so that handlers
+        // registered for multiple event types can distinguish which one fired
+        // via ctx.getEventType().
+        if (ctx instanceof ContextImpl<?> ctxImpl) {
+            ctxImpl.setEventType(type);
+        }
+
         var result = (previous == null) ? new CallbackResult() : previous;
         var ehm = eventHandlerMap.get(version);
         if (ehm != null && ehm.containsKey(sourceKey)) {
@@ -255,14 +262,15 @@ public class CallbackService {
                     for (var version : versions) {
                         final var sd = scenarioService.findDefinitionByVersion(version).get();
                         final var ed = sd.findElementByKey((String) key);
-                        if ((ed != null && evt.match(ed.getKey(), evt.getType(), version)) ||
-                                evt.getType().equals(EventType.TriggerEvent)) {
+                        if ((ed != null && evt.getTypes().stream()
+                                .anyMatch(t -> evt.match(ed.getKey(), (EventType) t, version))) ||
+                                evt.getTypes().contains(EventType.TriggerEvent)) {
                             // this event handler matches for the given version. Storing it in the
                             // event-handler-map
                             var ehm = eventHandlerMap.computeIfAbsent(version, k -> new HashMap<>());
                             var eventInfo = ehm.computeIfAbsent((String) key, k -> new EventHandlerInfo(version, ed));
                             eventInfo.add(evt);
-                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", evt.getType(), key, version,
+                            log.info("  Event '{}' for '{}' in version '{}' added -> '{}'", evt.getTypes(), key, version,
                                     evt.getClass().getName());
                         }
                     }

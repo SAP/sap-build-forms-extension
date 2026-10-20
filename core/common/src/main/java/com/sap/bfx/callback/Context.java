@@ -1,5 +1,6 @@
 package com.sap.bfx.callback;
 
+import com.sap.bfx.definition.EventType;
 import com.sap.bfx.definition.ScenarioDefinition;
 import com.sap.bfx.p13n.Settings;
 import com.sap.bfx.security.User;
@@ -189,4 +190,25 @@ public interface Context<AC extends AccessClass> {
      * @return
      */
     String getTaskInstanceId();
+
+    /**
+     * Returns the event type that triggered the current event handler invocation.
+     *
+     * <p>This is populated by the framework immediately before dispatching the
+     * {@code before}/{@code on}/{@code after} phases of an {@link EventHandler}, so
+     * handlers registered for multiple event types can distinguish which one fired:
+     *
+     * <pre>{@code
+     * switch (ctx.getEventType()) {
+     *     case Action -> { ... }
+     *     case Change -> { ... }
+     * }
+     * }</pre>
+     *
+     * <p><b>Note:</b> this method returns {@code null} inside lifecycle-hook contexts
+     * (those use {@link com.sap.bfx.callback.LifecycleHookType} instead).
+     *
+     * @return the {@link EventType} of the current event, or {@code null} in lifecycle hooks
+     */
+    EventType getEventType();
 }
