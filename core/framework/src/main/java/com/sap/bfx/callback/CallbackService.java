@@ -262,7 +262,7 @@ public class CallbackService {
                     for (var version : versions) {
                         final var sd = scenarioService.findDefinitionByVersion(version).get();
                         final var ed = sd.findElementByKey((String) key);
-                        if ((ed != null && evt.getTypes().stream()
+                        if ((ed != null && evt.getTypes((String) key).stream()
                                 .anyMatch(t -> evt.match(ed.getKey(), (EventType) t, version))) ||
                                 evt.getTypes().contains(EventType.TriggerEvent)) {
                             // this event handler matches for the given version. Storing it in the

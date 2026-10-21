@@ -65,13 +65,32 @@ public interface EventHandler<AC extends AccessClass> {
     /**
      * Get the set of event types this handler is registered for.
      *
-     * <p>A handler may respond to more than one event type (e.g. both {@code Action} and
-     * {@code Change}). The current event type that triggered a specific invocation is
-     * available via {@link Context#getEventType()}.
+     * <p>When the handler was constructed with an {@link EventBindings} or with multiple
+     * identifiers carrying different type sets, this method returns the <em>union</em> of all
+     * event types across every binding. To query the types bound to a specific identifier use
+     * {@link #getTypes(String)}.
      *
-     * @return the set of event types
+     * <p>The current event type that triggered a specific invocation is available via
+     * {@link Context#getEventType()}.
+     *
+     * @return the union of all event types across all bindings
      */
     Set<EventType> getTypes();
+
+    /**
+     * Get the event types bound to a specific element-identifier key.
+     *
+     * <p>For handlers that bind different event types per identifier (via {@link EventBindings}),
+     * this returns only the types registered for {@code key}. For handlers with a flat type set
+     * (single identifier, or multiple identifiers all sharing the same types) the default
+     * implementation returns the same set as {@link #getTypes()}.
+     *
+     * @param key the element-identifier string (as returned by {@link com.sap.bfx.utils.Identifier#getIdentifier()})
+     * @return the event types bound to that key, or an empty set if the key is not registered
+     */
+    default Set<EventType> getTypes(final String key) {
+        return getTypes();
+    }
 
     /**
      * Get the (primary) event type this handler is for.
