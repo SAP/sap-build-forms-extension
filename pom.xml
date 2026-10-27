@@ -57,7 +57,7 @@
         <jib-maven-plugin.base-image>eclipse-temurin:17</jib-maven-plugin.base-image>
         <jib-maven-plugin.version>3.4.4</jib-maven-plugin.version>
         <logback.version>1.5.38</logback.version>
-        <lombok.version>1.18.42</lombok.version>
+        <lombok.version>1.18.48</lombok.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
