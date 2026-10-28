@@ -7,10 +7,15 @@ import com.sap.bfx.utils.Identifier;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
 public interface DataApi extends AccessClass {
+
+    //-----------------------------------------------------------------------------------------------------------------
+    // Mixin handling
+    Map<Identifier, Map<Identifier, Identifier>> getMixinMap();
 
     //-----------------------------------------------------------------------------------------------------------------
     // Iterators etc.
@@ -22,21 +27,37 @@ public interface DataApi extends AccessClass {
 
     String addRow(final Identifier id, final Context<? extends AccessClass> ctx);
 
+    String addRow(final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx);
+
     String addRow(final String rowId, final Identifier id, final Context<? extends AccessClass> ctx);
+
+    String addRow(final String rowId, final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx);
 
     void deleteRow(final String rowId);
 
     void deleteAll(final String rowId, final Identifier id);
 
+    void deleteAll(final String rowId, final Identifier prefixId, final Identifier id);
+
     void deleteAll(final Identifier id);
+
+    void deleteAll(final Identifier prefixId, final Identifier id);
 
     void filter(final Identifier id, final Predicate<String> predicate);
 
+    void filter(final Identifier prefixId, final Identifier id, final Predicate<String> predicate);
+
     void filter(final String rowId, final Identifier id, final Predicate<String> predicate);
+
+    void filter(final String rowId, final Identifier prefixId, final Identifier id, final Predicate<String> predicate);
 
     List<String> getRows(final String rowId, final Identifier id);
 
+    List<String> getRows(final String rowId, final Identifier prefixId, final Identifier id);
+
     List<String> getRows(final Identifier id);
+
+    List<String> getRows(final Identifier prefixId, final Identifier id);
 
     boolean isSelected(final String rowId);
 
@@ -44,19 +65,35 @@ public interface DataApi extends AccessClass {
 
     List<String> getSelected(final String rowId, final Identifier id);
 
+    List<String> getSelected(final String rowId, final Identifier prefixId, final Identifier id);
+
     List<String> getSelected(final Identifier id);
+
+    List<String> getSelected(final Identifier prefixId, final Identifier id);
 
     void forEach(final String rowId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx);
 
+    void forEach(final String rowId, final Identifier prefixId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx);
+
     void forEach(final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx);
+
+    void forEach(final Identifier prefixId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx);
 
     int getPage(final String rowId, final Identifier id);
 
+    int getPage(final String rowId, final Identifier prefixId, final Identifier id);
+
     int getPageSize(final String rowId, final Identifier id);
+
+    int getPageSize(final String rowId, final Identifier prefixId, final Identifier id);
 
     void setPage(final String rowId, final Identifier id, final int page);
 
+    void setPage(final String rowId, final Identifier prefixId, final Identifier id, final int page);
+
     void setPageSize(final String rowId, final Identifier id, final int pageSize);
+
+    void setPageSize(final String rowId, final Identifier prefixId, final Identifier id, final int pageSize);
 
     //-----------------------------------------------------------------------------------------------------------------
     // Getting values

@@ -5,6 +5,7 @@ import com.sap.bfx.definition.Severity;
 import com.sap.bfx.exception.FormsCoreException;
 import com.sap.bfx.session.*;
 import com.sap.bfx.utils.Identifier;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -17,6 +18,7 @@ import java.util.function.Predicate;
 @Slf4j
 public class DataApiImpl implements DataApi {
     private final Form form;
+    @Getter
     private final Map<Identifier, Map<Identifier, Identifier>> mixinMap;
 
     /**
@@ -958,6 +960,19 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
+     * Adds a new row to a mixin table field.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param ctx       the context
+     * @return the new row identifier, or null if not added
+     */
+    @Override
+    public String addRow(final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx) {
+        return addRow(mixinMap.get(prefixId).get(id), ctx);
+    }
+
+    /**
      * Adds a new row to a table field.
      *
      * @param rowId the parent row identifier
@@ -972,12 +987,26 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
+     * Adds a new row to a mixin table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param ctx       the context
+     * @return the new row identifier, or null if not added
+     */
+    @Override
+    public String addRow(final String rowId, final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx) {
+        return addRow(rowId, mixinMap.get(prefixId).get(id), ctx);
+    }
+
+    /**
      * Deletes a row from the form.
      *
      * @param rowId the row identifier
      */
     @Override
-    public void deleteRow(String rowId) {
+    public void deleteRow(final String rowId) {
         FormUtils.deleteRow(form, rowId);
     }
 
@@ -987,8 +1016,19 @@ public class DataApiImpl implements DataApi {
      * @param id the table field identifier
      */
     @Override
-    public void deleteAll(Identifier id) {
+    public void deleteAll(final Identifier id) {
         this.deleteAll(ElementRow.ROOT, id);
+    }
+
+    /**
+     * Deletes all rows from a mixin table field.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     */
+    @Override
+    public void deleteAll(final Identifier prefixId, final Identifier id) {
+        deleteAll(mixinMap.get(prefixId).get(id));
     }
 
     /**
@@ -998,8 +1038,20 @@ public class DataApiImpl implements DataApi {
      * @param id    the table field identifier
      */
     @Override
-    public void deleteAll(String rowId, Identifier id) {
+    public void deleteAll(final String rowId, final Identifier id) {
         FormUtils.deleteAll(form, rowId, id.getIdentifier());
+    }
+
+    /**
+     * Deletes all rows from a mixin table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     */
+    @Override
+    public void deleteAll(final String rowId, final Identifier prefixId, final Identifier id) {
+        deleteAll(rowId, mixinMap.get(prefixId).get(id));
     }
 
     /**
@@ -1011,6 +1063,18 @@ public class DataApiImpl implements DataApi {
     @Override
     public void filter(final Identifier id, final Predicate<String> predicate) {
         filter(ElementRow.ROOT, id, predicate);
+    }
+
+    /**
+     * Filters rows in a mixin table field using the given predicate.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param predicate the predicate to filter rows
+     */
+    @Override
+    public void filter(final Identifier prefixId, final Identifier id, final Predicate<String> predicate) {
+        filter(mixinMap.get(prefixId).get(id), predicate);
     }
 
     /**
@@ -1026,6 +1090,19 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
+     * Filters rows in a mixin table field using the given predicate.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param predicate the predicate to filter rows
+     */
+    @Override
+    public void filter(final String rowId, final Identifier prefixId, final Identifier id, final Predicate<String> predicate) {
+        filter(rowId, mixinMap.get(prefixId).get(id), predicate);
+    }
+
+    /**
      * Gets the list of row identifiers for a table field.
      *
      * @param rowId the parent row identifier
@@ -1033,8 +1110,21 @@ public class DataApiImpl implements DataApi {
      * @return list of row identifiers
      */
     @Override
-    public List<String> getRows(String rowId, Identifier id) {
+    public List<String> getRows(final String rowId, final Identifier id) {
         return FormUtils.getRows(form, rowId, id.getIdentifier());
+    }
+
+    /**
+     * Gets the list of row identifiers for a mixin table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return list of row identifiers
+     */
+    @Override
+    public List<String> getRows(final String rowId, final Identifier prefixId, final Identifier id) {
+        return getRows(rowId, mixinMap.get(prefixId).get(id));
     }
 
     /**
@@ -1044,8 +1134,20 @@ public class DataApiImpl implements DataApi {
      * @return list of row identifiers
      */
     @Override
-    public List<String> getRows(Identifier id) {
+    public List<String> getRows(final Identifier id) {
         return FormUtils.getRows(form, ElementRow.ROOT, id.getIdentifier());
+    }
+
+    /**
+     * Gets the list of row identifiers for a mixin table field.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return list of row identifiers
+     */
+    @Override
+    public List<String> getRows(final Identifier prefixId, final Identifier id) {
+        return getRows(mixinMap.get(prefixId).get(id));
     }
 
     /**
@@ -1055,7 +1157,7 @@ public class DataApiImpl implements DataApi {
      * @return true if selected, false otherwise
      */
     @Override
-    public boolean isSelected(String rowId) {
+    public boolean isSelected(final String rowId) {
         return FormUtils.isSelected(form, rowId);
     }
 
@@ -1066,7 +1168,7 @@ public class DataApiImpl implements DataApi {
      * @param value true if selected, false otherwise
      */
     @Override
-    public void setSelected(String rowId, final boolean value) {
+    public void setSelected(final String rowId, final boolean value) {
         FormUtils.setSelected(form, rowId, value);
     }
 
@@ -1083,6 +1185,19 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
+     * Gets the list of selected row identifiers for a mixin table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return list of selected row identifiers
+     */
+    @Override
+    public List<String> getSelected(String rowId, final Identifier prefixId, Identifier id) {
+        return getSelected(rowId, mixinMap.get(prefixId).get(id));
+    }
+
+    /**
      * Gets the list of selected row identifiers for a table field.
      *
      * @param id the table field identifier
@@ -1094,6 +1209,18 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
+     * Gets the list of selected row identifiers for a mixin table field.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return list of selected row identifiers
+     */
+    @Override
+    public List<String> getSelected(final Identifier prefixId, final Identifier id) {
+        return getSelected(mixinMap.get(prefixId).get(id));
+    }
+
+    /**
      * Iterates over all rows in a table field using the given visitor and context.
      *
      * @param rowId   the parent row identifier
@@ -1102,8 +1229,22 @@ public class DataApiImpl implements DataApi {
      * @param ctx     the context
      */
     @Override
-    public void forEach(String rowId, Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
+    public void forEach(final String rowId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
         FormUtils.forEach(form, rowId, id.getIdentifier(), visitor, ctx);
+    }
+
+    /**
+     * Iterates over all rows in a mixin table field using the given visitor and context.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param visitor   the row visitor
+     * @param ctx       the context
+     */
+    @Override
+    public void forEach(final String rowId, final Identifier prefixId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
+        forEach(rowId, mixinMap.get(prefixId).get(id), visitor, ctx);
     }
 
     /**
@@ -1114,19 +1255,32 @@ public class DataApiImpl implements DataApi {
      * @param ctx     the context
      */
     @Override
-    public void forEach(Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
+    public void forEach(final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
         FormUtils.forEach(form, ElementRow.ROOT, id.getIdentifier(), visitor, ctx);
+    }
+
+    /**
+     * Iterates over all rows in a mixin table field using the given visitor and context.
+     *
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param visitor   the row visitor
+     * @param ctx       the context
+     */
+    @Override
+    public void forEach(final Identifier prefixId, final Identifier id, RowVisitor visitor, Context<? extends AccessClass> ctx) {
+        forEach(mixinMap.get(prefixId).get(id), visitor, ctx);
     }
 
     /**
      * Gets the current page for a table field.
      *
-     * @param rowId
-     * @param id
-     * @return
+     * @param rowId the parent row identifier
+     * @param id    the table field identifier
+     * @return the page number
      */
     @Override
-    public int getPage(String rowId, Identifier id) {
+    public int getPage(final String rowId, final Identifier id) {
         final var element = FormUtils.findElementByRowAndKey(form, rowId, id.getIdentifier());
         if (element != null && element.getValue() instanceof Table table) {
             return table.getPos();
@@ -1135,14 +1289,27 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
-     * Gets the page size for a table field.
+     * Gets the current page for a mixin table field.
      *
-     * @param rowId
-     * @param id
-     * @return
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return the page number
      */
     @Override
-    public int getPageSize(String rowId, Identifier id) {
+    public int getPage(final String rowId, final Identifier prefixId, final Identifier id) {
+        return getPage(rowId, mixinMap.get(prefixId).get(id));
+    }
+
+    /**
+     * Gets the page size for a table field.
+     *
+     * @param rowId the parent row identifier
+     * @param id    the table field identifier
+     * @return the page size
+     */
+    @Override
+    public int getPageSize(final String rowId, final Identifier id) {
         final var element = FormUtils.findElementByRowAndKey(form, rowId, id.getIdentifier());
         if (element != null && element.getValue() instanceof Table table) {
             return table.getPageSize();
@@ -1151,14 +1318,27 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
-     * Sets the page for a table field.
+     * Gets the page size for a mixin table field.
      *
-     * @param rowId
-     * @param id
-     * @param page
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @return  the page size
      */
     @Override
-    public void setPage(String rowId, Identifier id, int page) {
+    public int getPageSize(final String rowId, final Identifier prefixId, final Identifier id) {
+        return getPageSize(rowId, mixinMap.get(prefixId).get(id));
+    }
+
+    /**
+     * Sets the page for a table field.
+     *
+     * @param rowId the parent row identifier
+     * @param id    the table field identifier
+     * @param page  the page number
+     */
+    @Override
+    public void setPage(final String rowId, final Identifier id, final int page) {
         final var element = FormUtils.findElementByRowAndKey(form, rowId, id.getIdentifier());
         if (element != null && element.getValue() instanceof Table table) {
             table.setPos(page);
@@ -1169,14 +1349,27 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
-     * Sets the page size for a table field.
+     * Sets the page for a mixin table field.
      *
-     * @param rowId
-     * @param id
-     * @param pageSize
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param page      the page number
      */
     @Override
-    public void setPageSize(String rowId, Identifier id, int pageSize) {
+    public void setPage(final String rowId, final Identifier prefixId, final Identifier id, final int page) {
+        setPage(rowId, mixinMap.get(prefixId).get(id), page);
+    }
+
+    /**
+     * Sets the page size for a table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param id        the table field identifier
+     * @param pageSize  that page size
+     */
+    @Override
+    public void setPageSize(final String rowId, final Identifier id, final int pageSize) {
         final var element = FormUtils.findElementByRowAndKey(form, rowId, id.getIdentifier());
         if (element != null && element.getValue() instanceof Table table) {
             table.setPageSize(pageSize);
@@ -1184,5 +1377,18 @@ public class DataApiImpl implements DataApi {
         } else {
             throw new FormsCoreException("Element not found or not a table: " + id.getIdentifier());
         }
+    }
+
+    /**
+     * Sets the page size for a mixin table field.
+     *
+     * @param rowId     the parent row identifier
+     * @param prefixId  the mixin prefix identifier
+     * @param id        the table field identifier
+     * @param pageSize  the page size
+     */
+    @Override
+    public void setPageSize(final String rowId, final Identifier prefixId, final Identifier id, final int pageSize) {
+        setPageSize(rowId, mixinMap.get(prefixId).get(id), pageSize);
     }
 }
