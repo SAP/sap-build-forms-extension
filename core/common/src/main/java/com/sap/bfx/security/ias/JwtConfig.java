@@ -7,7 +7,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
@@ -49,7 +48,6 @@ public class JwtConfig {
      * @return JwtDecoder instance
      */
     @Bean
-    @Primary
     public JwtDecoder jwtDecoder() {
         if (StringUtils.isBlank(idpConfig.getUrl())) {
             try {
@@ -60,13 +58,8 @@ public class JwtConfig {
             }
         }
 
-        // Build decoder using explicit JWKS URI to avoid issuer mismatch:
-        // IAS OIDC discovery returns issuer without https:// scheme prefix,
-        // while idpConfig.getUrl() includes the scheme. withIssuerLocation()
-        // validates the two match — they don't, causing a startup failure.
-        // We skip auto-discovery and use a known JWKS URI directly instead.
-        final var jwksUri = idpConfig.getUrl() + "/oauth2/certs";
-        final var decoder = NimbusJwtDecoder.withJwkSetUri(jwksUri).build();
+        // Build decoder using OIDC Discovery (fetches JWKS URI automatically)
+        final var decoder = NimbusJwtDecoder.withIssuerLocation(idpConfig.getUrl()).build();
 
         // ── Audience validator: token must target this application ──────────
         OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(JwtClaimNames.AUD,
@@ -74,7 +67,8 @@ public class JwtConfig {
 
         // ── Combine standard validators with audience validator ─────────────
         OAuth2TokenValidator<Jwt> combinedValidator =
-                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefault(), audienceValidator);
+                new DelegatingOAuth2TokenValidator<>(JwtValidators.createDefaultWithIssuer(idpConfig.getUrl()),
+                        audienceValidator);
 
         decoder.setJwtValidator(combinedValidator);
         return decoder;

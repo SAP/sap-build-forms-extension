@@ -77,11 +77,7 @@ public final class SecurityUtils {
      * @return the SecuritySession
      */
     public static SecuritySession getSecuritySession() {
-        final var auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
-            return SecuritySession.createDummy();
-        }
-        final var credentials = auth.getCredentials();
+        final var credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
         if (credentials instanceof SecuritySession securitySession) {
             return securitySession;
         }

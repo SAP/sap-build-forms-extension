@@ -21,7 +21,6 @@ public class SecuritySessionService {
 
     private JwtDecoder jwtDecoder;
     private RedisTemplate<String, SecuritySession> redis;
-    private final ApplicationContext appCtx;
 
     /**
      * Constructs a new SecuritySessionRepository with the provided RedisTemplate and JwtDecoder.
@@ -30,32 +29,24 @@ public class SecuritySessionService {
      */
     @Autowired
     public SecuritySessionService(ApplicationContext appCtx) {
-        // Store context for lazy bean resolution — do NOT resolve beans here,
-        // as AMS auto-configuration forces early initialisation before all beans are ready.
-        this.appCtx = appCtx;
-    }
-
-    /**
-     * Lazily resolve the JwtDecoder and RedisTemplate on first use.
-     * This avoids startup ordering issues introduced by spring-boot-starter-ams.
-     */
-    private void ensureInitialized() {
+        try {
+            this.jwtDecoder = appCtx.getBean(JwtDecoder.class);
+        } catch (Exception ignored) {
+        }
         if (this.jwtDecoder == null) {
-            try {
-                this.jwtDecoder = appCtx.getBean(JwtDecoder.class);
-            } catch (Exception ignored) {
-            }
-            if (this.jwtDecoder == null && IasEnabledCondition.matches(appCtx.getEnvironment())) {
-                throw ExceptionUtils.from(
-                        "no jwt decoder found, but IAS is enabled. Please check your configuration.");
+            // jwtDecoder is necessary for IAS authentication, so we check with the condition if this is enabled
+            if (IasEnabledCondition.matches(appCtx.getEnvironment())) {
+                throw ExceptionUtils.from("no jwt decoder found, but IAS is enabled. Please check your configuration.");
             }
         }
+
+        try {
+            this.redis = appCtx.getBean("security-session-redis-template", RedisTemplate.class);
+        } catch (Exception ignored) {
+        }
         if (this.redis == null) {
-            try {
-                this.redis = appCtx.getBean("security-session-redis-template", RedisTemplate.class);
-            } catch (Exception ignored) {
-            }
-            if (this.redis == null && IasEnabledCondition.matches(appCtx.getEnvironment())) {
+            // redis is necessary for IAS authentication, so we check with the condition if this is enabled
+            if (IasEnabledCondition.matches(appCtx.getEnvironment())) {
                 throw ExceptionUtils.from(
                         "no redis template for request cache found, but IAS is enabled. Please check your configuration.");
             }
@@ -70,7 +61,6 @@ public class SecuritySessionService {
      * @throws JwtException if the JWT token in the session is invalid or cannot be decoded
      */
     public SecuritySession findSessionById(final String sessionId) throws JwtException {
-        ensureInitialized();
         final var session = redis.boundValueOps(sessionId).get();
         if (session != null) {
             session.decodeToken(jwtDecoder);
@@ -84,7 +74,6 @@ public class SecuritySessionService {
      * @param session the SecuritySession to save
      */
     public void saveSession(final SecuritySession session) {
-        ensureInitialized();
         final var timeout = Duration.between(Instant.now(), session.getToken().getExpiresAt());
         // reduce the timeout to ensure that token is valid for short time after it is taken from repo
         timeout.minus(Duration.ofSeconds(2));
@@ -99,7 +88,6 @@ public class SecuritySessionService {
      * @return the deleted SecuritySession, or null if no session was found for the given ID
      */
     public SecuritySession deleteSession(final String sessionId) {
-        ensureInitialized();
         final var session = redis.boundValueOps(sessionId).getAndDelete();
         if (session != null) {
             session.decodeToken(jwtDecoder);

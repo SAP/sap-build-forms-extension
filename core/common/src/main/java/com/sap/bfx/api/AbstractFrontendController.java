@@ -165,7 +165,6 @@ public abstract class AbstractFrontendController {
                 (Strings.CS.endsWith(req.getRequestURI(), "login.html")) ? "login.html.ftlh" : "index.html.ftlh";
 
         final var values = new HashMap<String, Object>();
-        values.put(NM_HAS_TOKEN, false);
         values.put(NM_FAVICON, favicon);
         values.put(NM_INDEX_JS, jsIndex);
         values.put(NM_INDEX_CSS, cssIndex);
