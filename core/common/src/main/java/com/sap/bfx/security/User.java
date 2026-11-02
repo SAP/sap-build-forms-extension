@@ -5,6 +5,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Collection;
+import java.util.List;
 
 @Data
 public class User {
@@ -27,6 +28,15 @@ public class User {
     private String[] phonesNumbers;
     private Address[] addresses;
     private Collection<GrantedAuthority> authorities;
+    /**
+     * Full AMS policy names assigned to this user at login time (e.g.
+     * {@code "SBFX_StartProcess"}, {@code "SBFX_StartProcess_ScenarioA"}).
+     * Stored as strings so the field is Redis-serializable.
+     * Used by {@link com.sap.bfx.security.ias.IasSecurityService} to rebuild an
+     * {@code Authorizations} instance per request without re-parsing the id-token.
+     * Never null after a successful login; empty list if assignment lookup fails.
+     */
+    private List<String> assignedPolicyNames;
 
     @Data
     public static class UserName {

@@ -73,6 +73,7 @@
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
         <sap-cloud-sdk.version>5.28.0</sap-cloud-sdk.version>
         <sap-cloud-security.version>3.7.6</sap-cloud-security.version>
+        <sap-cloud-security-ams.version>4.5.1</sap-cloud-security-ams.version>
         <sap-cloud-connectivity.version>5.28.0</sap-cloud-connectivity.version>
         <sap-cloud-openapi-core.version>5.28.0</sap-cloud-openapi-core.version>
         <spring-boot.version>3.5.16</spring-boot.version>

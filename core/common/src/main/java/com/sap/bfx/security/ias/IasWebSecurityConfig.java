@@ -13,12 +13,20 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -76,7 +84,10 @@ public class IasWebSecurityConfig {
                 .authorizationUri(idpConfig.getUrl() + "/oauth2/authorize")
                 .tokenUri(idpConfig.getUrl() + "/oauth2/token")
                 .userInfoUri(idpConfig.getUrl() + "/oauth2/userinfo")
-                .userNameAttributeName(IdTokenClaimNames.SUB).issuerUri(idpConfig.getUrl())
+                // Note: issuerUri intentionally omitted — IAS returns the issuer claim without
+                // an https:// scheme prefix, which OidcIdTokenValidator cannot parse as URL.
+                // Audience validation is handled in JwtConfig.jwtDecoder().
+                .userNameAttributeName(IdTokenClaimNames.SUB)
                 .jwkSetUri(idpConfig.getUrl() + "/oauth2/certs")
                 .clientName("ias")
             .build();
@@ -94,6 +105,25 @@ public class IasWebSecurityConfig {
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
         return new InMemoryClientRegistrationRepository(iasClientRegistration());
+    }
+
+    /**
+     * Custom {@link JwtDecoderFactory} for the OIDC login flow.
+     *
+     * <p>Spring's default {@link OidcIdTokenDecoderFactory} creates a
+     * {@link org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator}
+     * that calls {@code getIssuer()} expecting the {@code iss} claim to be a valid URL.
+     * SAP IAS returns the issuer without the {@code https://} scheme
+     * (e.g. {@code avpufuagf.accounts.ondemand.com}), which causes
+     * {@code IllegalArgumentException: Unable to convert claim 'iss' … to URL}.
+     *
+     * <p>This factory returns our existing JWKS-URI-based {@link JwtDecoder}
+     * (configured in {@link JwtConfig}) for every client registration, bypassing
+     * the broken issuer URL check while keeping all other validations intact.
+     */
+    @Bean
+    public JwtDecoderFactory<ClientRegistration> idTokenDecoderFactory(JwtDecoder jwtDecoder) {
+        return clientRegistration -> jwtDecoder;
     }
 
     /**

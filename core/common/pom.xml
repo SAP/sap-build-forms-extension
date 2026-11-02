@@ -13,6 +13,19 @@
         <version>1.2.0-SNAPSHOT</version>
     </parent>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- AMS BOM — aligns all com.sap.cloud.security.ams artifact versions -->
+            <dependency>
+                <groupId>com.sap.cloud.security.ams</groupId>
+                <artifactId>ams-bom</artifactId>
+                <version>4.5.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>javax.annotation</groupId>
@@ -118,6 +131,35 @@
             <groupId>com.sap.cloud.security</groupId>
             <artifactId>java-api</artifactId>
             <version>${sap-cloud-security.version}</version>
+        </dependency>
+        <!-- AMS runtime — policy-based authorization (replaces SCIM group lookup) -->
+        <dependency>
+            <groupId>com.sap.cloud.security.ams</groupId>
+            <artifactId>spring-boot-starter-ams</artifactId>
+            <exclusions>
+                <!-- AMS 4.x pulls java-security:4.1.0 which targets Spring Boot 4.x.
+                     We stay on Spring Boot 3.x / sap-cloud-security 3.7.6, so we
+                     exclude the transitive java-security from AMS and rely on the
+                     3.7.6 version already on the classpath. -->
+                <exclusion>
+                    <groupId>com.sap.cloud.security</groupId>
+                    <artifactId>java-security</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.12.0</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
