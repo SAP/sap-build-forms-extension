@@ -67,6 +67,7 @@ public class TemplateService extends AbstractProcessor {
     final private static DataTypeInfo DATA_TYPE_INFO_TIME = new DataTypeInfo("java.time.LocalTime");
     final private static DataTypeInfo DATA_TYPE_INFO_DATETIME = new DataTypeInfo("java.time.LocalDateTime");
     final private static DataTypeInfo DATA_TYPE_INFO_BOOLEAN = new DataTypeInfo("Boolean");
+    final private static DataTypeInfo DATA_TYPE_INFO_LINK = new DataTypeInfo("LinkData");
 
     private final Configuration templateCfg;
 
@@ -502,7 +503,7 @@ public class TemplateService extends AbstractProcessor {
      */
     private DataTypeInfo getDataTypeClassName(final String accessClassName, final ElementDefinition ed) {
         return switch (ed.getType()) {
-            case Select, MultiSelect, Radio, Button, Text, TextEdit, Image, PdfViewer -> DATA_TYPE_INFO_STRING;
+            case Alert, Icon, Select, MultiSelect, Radio, Button, Text, TextEdit, Image, PdfViewer -> DATA_TYPE_INFO_STRING;
             case Attachment -> DATA_TYPE_INFO_ATTACHMENT;
             case DateRangePicker -> DATA_TYPE_INFO_DATERANGE;
             case Input -> switch (ed.getDataType()) {
@@ -519,6 +520,7 @@ public class TemplateService extends AbstractProcessor {
             case Table -> new DataTypeInfo(accessClassName + ed.getName()/*, accessClassName + ed.getName() + "Type"*/);
             case Currency -> DATA_TYPE_INFO_CURRENCY;
             case DocForm -> DATA_TYPE_INFO_DOCFORM;
+            case Link -> DATA_TYPE_INFO_LINK;
             default -> DATA_TYPE_INFO_BOOLEAN;
         };
     }

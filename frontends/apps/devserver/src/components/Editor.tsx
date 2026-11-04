@@ -585,6 +585,7 @@ export default function () {
                                     <Input
                                         placeholder={treeItemsShown?.name}
                                         value={treeItemsShown?.name}
+                                        disabled={isReadOnly}
                                         onChange={(e) => {
                                             editBaseData({
                                                 scenarioMixinName: scenarioMixin,

@@ -235,6 +235,7 @@ public class MixinService extends AbstractProcessor {
                 if (it.getElements() != null && !it.getElements().isEmpty()) {
                     queue.add(it.getElements());
                 }
+                enqueueFooterElements(it, queue);
 
                 if (rootLevel) {
                     // for root level set the sort of the element to the mixin one because they should
@@ -286,6 +287,35 @@ public class MixinService extends AbstractProcessor {
         }
 
         return true;
+    }
+
+    /**
+     * Enqueues footer toolbar button lists (leftElements / rightElements) for any element type that carries a
+     * ToolbarElementDefinition footer. This is needed so that footer buttons also get the mixin instance name
+     * prefix applied during mixin inlining.
+     */
+    private static void enqueueFooterElements(final ElementDefinition it,
+                                              final ConcurrentLinkedQueue<List<ElementDefinition>> queue) {
+        ToolbarElementDefinition footer = null;
+        if (it instanceof DialogElementDefinition ded) {
+            footer = ded.getFooter();
+        } else if (it instanceof WizardElementDefinition wed) {
+            footer = wed.getFooter();
+        } else if (it instanceof FormElementDefinition fed) {
+            footer = fed.getFooter();
+        } else if (it instanceof DocFormElementDefinition dfd) {
+            footer = dfd.getFooter();
+        } else if (it instanceof SearchHelpElementDefinition shed) {
+            footer = shed.getFooter();
+        }
+        if (footer != null) {
+            if (footer.getLeftElements() != null && !footer.getLeftElements().isEmpty()) {
+                queue.add(footer.getLeftElements());
+            }
+            if (footer.getRightElements() != null && !footer.getRightElements().isEmpty()) {
+                queue.add(footer.getRightElements());
+            }
+        }
     }
 
     /**
