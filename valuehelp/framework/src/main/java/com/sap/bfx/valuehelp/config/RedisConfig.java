@@ -1,6 +1,7 @@
 package com.sap.bfx.valuehelp.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,7 +36,7 @@ public class RedisConfig {
     public RedisConfig() {
     }
 
-    @Bean
+    @Bean("locking-redis-factory")
     public LettuceConnectionFactory jedisConnectionFactory() {
         RedisStandaloneConfiguration redisConfiguration = new RedisStandaloneConfiguration(redisHost, redisPort);
         redisConfiguration.setPassword(redisPassword);
@@ -45,7 +46,7 @@ public class RedisConfig {
     }
 
     @Bean
-    public ExpirableLockRegistry lockRegistry(RedisConnectionFactory redisConnectionFactory) {
+    public ExpirableLockRegistry lockRegistry(@Qualifier("locking-redis-factory") RedisConnectionFactory redisConnectionFactory) {
         return new RedisLockRegistry(redisConnectionFactory,
                 "FORMS_LOCKS",
                 lockExpire.toMillis());

@@ -22,7 +22,7 @@ public class IasConnectionConfig {
     private String oidcClientId;
     @Value("${forms.security.ias.scim.clientId:#{null}}")
     private String scimClientId;
-    @Value("${forms.security.ias.scim.clientSecret:#) {null}}")
+    @Value("${forms.security.ias.scim.clientSecret:#{null}}")
     private String scimClientSecret;
 
 }

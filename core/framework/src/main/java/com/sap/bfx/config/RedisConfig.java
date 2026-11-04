@@ -39,7 +39,7 @@ public class RedisConfig {
      *
      * @return a configured RedisConnectionFactory
      */
-    @Bean
+    @Bean("session-redis-factory")
     public RedisConnectionFactory jedisConnectionFactory() {
         RedisStandaloneConfiguration redisConfiguration = new RedisStandaloneConfiguration(redisHost, redisPort);
         redisConfiguration.setPassword(redisPassword);

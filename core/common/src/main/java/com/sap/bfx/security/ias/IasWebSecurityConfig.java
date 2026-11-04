@@ -45,10 +45,13 @@ public class IasWebSecurityConfig {
     /**
      * Constructor for OidcSecurityConfig.
      *
-     * @param securitySessionService the SecuritySessionService used to manage security sessions
+     * @param requestCache the RedisRequestCache for caching requests
+     * @param authRequestRepo the RedisAuthorizationRequestRepository for storing authorization requests
+     * @param successHandler the AuthenticationSuccessHandler for handling successful authentication
+     * @param idpConfig the IasConnectionConfig containing IAS connection details
      */
     @Autowired
-    public IasWebSecurityConfig(SecuritySessionService securitySessionService, RedisRequestCache requestCache,
+    public IasWebSecurityConfig(RedisRequestCache requestCache,
                                 RedisAuthorizationRequestRepository authRequestRepo,
                                 AuthenticationSuccessHandler successHandler, IasConnectionConfig idpConfig) {
         this.successHandler = successHandler;
