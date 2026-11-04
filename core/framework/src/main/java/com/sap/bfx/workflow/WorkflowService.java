@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @Slf4j
 public class WorkflowService extends AbstractAdapterHandlingService<WorkflowAdapter> {
@@ -292,6 +294,15 @@ public class WorkflowService extends AbstractAdapterHandlingService<WorkflowAdap
     public Pair<String, String> getRootWfInstIdEnvIdByWfInstId(final String adapterName, final String technicalDestinationName, final String workflowInstanceId) {
         final var adapter = this.getAdapter(adapterName);
         return adapter.getRootWfInstIdEnvIdByWfInstId(technicalDestinationName, workflowInstanceId);
+    }
+
+    public List<TaskInstance> getTasksByWfInstId(final String technicalDestinationName, final String workflowInstanceId) {
+        return getTasksByWfInstId(null, technicalDestinationName, workflowInstanceId);
+    }
+
+    public List<TaskInstance> getTasksByWfInstId(final String adapterName, final String technicalDestinationName, final String workflowInstanceId) {
+        final var adapter = this.getAdapter(adapterName);
+        return adapter.getTasksByWfInstId(technicalDestinationName, workflowInstanceId);
     }
 
 }

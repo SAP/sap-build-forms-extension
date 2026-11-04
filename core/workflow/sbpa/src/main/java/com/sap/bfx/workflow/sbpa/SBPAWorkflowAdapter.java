@@ -3,6 +3,7 @@ package com.sap.bfx.workflow.sbpa;
 import com.sap.cloud.sdk.cloudplatform.connectivity.HttpDestination;
 import com.sap.cloud.sdk.services.openapi.core.OpenApiResponse;
 import com.sap.bfx.btp.ConnectivityUtils;
+import com.sap.bfx.security.SecurityUtils;
 import com.sap.bfx.workflow.WorkflowAdapter;
 import com.sap.bfx.workflow.TaskInputContext;
 import com.sap.bfx.workflow.TaskInstance;
@@ -13,6 +14,7 @@ import com.sap.openapi.sbpaworkflow.model.UpdateTaskInstancePayload;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstance;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstanceStartPayload;
 import com.sap.openapi.sbpaworkflow.model.WorkflowInstanceUpdatePayload;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -26,6 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Component
+@Slf4j
 public class SBPAWorkflowAdapter implements WorkflowAdapter {
 
     private LRUMap<String, Pair<String, String>> wfDefNameToWfDefIdEnvId = new LRUMap<>(1000);
@@ -147,7 +150,7 @@ public class SBPAWorkflowAdapter implements WorkflowAdapter {
             case READY:
                 return (initSession) ? true : false;
             case RESERVED:
-                return sbpaTaskInstance.getProcessor().matches(currentUser);
+                return sbpaTaskInstance.getProcessor().equals(currentUser);
             default:
                 throw new RuntimeException("Task status is unknown for task " + taskInstanceId);
         }
@@ -245,5 +248,20 @@ public class SBPAWorkflowAdapter implements WorkflowAdapter {
             findAndFillWfDefId(technicalDestinationName, null, wfInstance.getDefinitionId());
         }
         return new ImmutablePair<>(wfInstance.getId(), wfDefIdToEnvId.get(wfInstance.getDefinitionId()));
+    }
+
+    @Override
+    public List<TaskInstance> getTasksByWfInstId(String technicalDestinationName, String workflowInstanceId) {
+        HttpDestination technicalDestination = ConnectivityUtils.getHttpDestination(technicalDestinationName);
+        UserTaskInstancesApi utiApi = new UserTaskInstancesApi(technicalDestination);
+        List<com.sap.openapi.sbpaworkflow.model.TaskInstance> sbpaTasks = utiApi.v1TaskInstancesGet(
+                null, null, null, null, null, null,
+                workflowInstanceId,
+                null, null, null, null, null, null,
+                null, null, null, null, null, null,
+                null, null, null, null, null, null,
+                null, null, null, null, null, null,
+                null, null, null, null, null);
+        return sbpaTasks.stream().map(this::mapToTaskInstance).collect(Collectors.toList());
     }
 }

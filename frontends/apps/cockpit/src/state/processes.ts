@@ -7,7 +7,7 @@ import { backend } from "./backend"
 import { Settings } from "./visual"
 
 /**
- * 
+ *
  */
 export interface Process {
     id: string,
@@ -27,6 +27,30 @@ export interface Process {
     cancelable: boolean,
     templatable: boolean,
     showState: string
+}
+
+/**
+ *
+ */
+export interface TaskInstance {
+    id: string,
+    activityId?: string,
+    workflowInstanceId?: string,
+    workflowDefinitionId?: string,
+    definitionId?: string,
+    subject?: string,
+    description?: string,
+    status?: string,
+    processor?: string,
+    recipientUsers?: string[],
+    recipientGroups?: string[],
+    priority?: string,
+    dueDate?: string,
+    createdBy?: string,
+    createdAt?: string,
+    claimedAt?: string,
+    completedAt?: string,
+    lastChangedAt?: string,
 }
 
 /**
@@ -99,6 +123,7 @@ interface ProcessState {
     page: number,
     pageSize: number,
     filter: FilterParams,
+    tasks: TaskInstance[],
 
     initFilter: (settings: Settings) => void,
     setFilter: (filter: FilterParams) => void,
@@ -113,6 +138,7 @@ interface ProcessState {
     useAsTemplate: (messages: MessageIntf, processId: string) => Promise<{ newProcessId: string; variant: string } | Error>,
     checkCancelable: (messages: MessageIntf, processId: string) => Promise<boolean>,
     checkTemplatable: (messages: MessageIntf, processId: string) => Promise<boolean>,
+    getTasks: (messages: MessageIntf, processId: string) => Promise<void>,
 }
 
 /**
@@ -124,6 +150,7 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
     page: 1,
     pageSize: PAGE_SIZES[0],
     filter: { profiles: ["my_requests"] },
+    tasks: [],
 
     initFilter(settings: Settings) {
         const f: FilterParams = {}
@@ -264,6 +291,16 @@ export const useProcessStore = create<ProcessState>((set, get) => ({
         }
         handleError(res, "checkTemplatable", messages)
         return false
+    },
+
+    async getTasks(messages: MessageIntf, processId: string): Promise<void> {
+        const res = await backend.callDirect(messages, `/v1/processes/${processId}/tasks`, "GET", undefined)
+        if (apiOk(res.status)) {
+            set({ tasks: (res.data as TaskInstance[]) ?? [] })
+        } else {
+            handleError(res, "getTasks", messages)
+            set({ tasks: [] })
+        }
     },
 
 }))

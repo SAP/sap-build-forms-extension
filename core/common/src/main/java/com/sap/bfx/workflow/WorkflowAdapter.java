@@ -1,5 +1,7 @@
 package com.sap.bfx.workflow;
 
+import java.util.List;
+
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.sap.bfx.callback.Adapter;
@@ -109,5 +111,15 @@ public interface WorkflowAdapter extends Adapter {
     Pair<String, String> getWfInstIdEnvIdByTaskInstId(final String technicalDestinationName, final String destinationName, final String taskInstanceId);
 
     Pair<String, String> getRootWfInstIdEnvIdByWfInstId(final String technicalDestinationName, final String workflowInstanceId);
+
+    /**
+     * Retrieves all task instances for a given workflow instance ID.
+     * Uses a technical destination (admin credentials) to fetch all tasks regardless of current user.
+     *
+     * @param technicalDestinationName the technical destination name with admin permissions
+     * @param workflowInstanceId       the workflow instance ID
+     * @return list of task instances for the workflow instance
+     */
+    List<TaskInstance> getTasksByWfInstId(final String technicalDestinationName, final String workflowInstanceId);
 
 }

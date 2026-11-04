@@ -7,6 +7,8 @@ import com.sap.bfx.cockpit.callback.CockpitAdapter;
 import com.sap.bfx.cockpit.callback.FrontendParams;
 import com.sap.bfx.cockpit.callback.FrontendSettings;
 import com.sap.bfx.cockpit.callback.SearchParams;
+import com.sap.bfx.workflow.TaskInstance;
+import com.sap.bfx.workflow.WorkflowAdapter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,12 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
      */
     @Value("#{${forms.cockpit.scenario-urls:{}}}")
     private Map<String, String> configuredScenarioUrls;
+
+    @Value("${forms.workflow.runtime.technicalDestination:SBPA_WORKFLOW_REST_TECHNICAL}")
+    private String workflowTechnicalDestinationName;
+
+    @Autowired(required = false)
+    private WorkflowAdapter workflowAdapter;
 
     /**
      *
@@ -175,5 +183,22 @@ public class CockpitService extends AbstractAdapterHandlingService<CockpitAdapte
         } catch (Exception e) {
             log.warn("Cannot read scenario URLs from destinations", e);
         }
+    }
+
+    /**
+     * Returns all SBPA workflow task instances for the given process.
+     * Assumes the scenario app stored the SBPA workflow instance ID in {@code process.refId}
+     * via {@code formsApi.setFormRefId(wfInstanceId)} after starting the workflow.
+     * Returns an empty list when refId is blank, or when no WorkflowAdapter is available.
+     *
+     * @param processId the process ID
+     * @return list of task instances, or empty list
+     */
+    public List<TaskInstance> getWorkflowTasks(String processId) {
+        if (workflowAdapter == null) return List.of();
+        final ProcessAbstract process = findProcessById(processId)
+                .orElseThrow(() -> new com.sap.bfx.exception.NotFoundException("cannot find process with id '" + processId + "'"));
+        if (StringUtils.isBlank(process.getRefId())) return List.of();
+        return workflowAdapter.getTasksByWfInstId(workflowTechnicalDestinationName, process.getRefId());
     }
 }

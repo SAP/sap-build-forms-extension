@@ -10,6 +10,7 @@ import com.sap.bfx.cockpit.service.ProcessPage;
 import com.sap.bfx.exception.BadRequestException;
 import com.sap.bfx.exception.NotFoundException;
 import com.sap.bfx.security.SecurityUtils;
+import com.sap.bfx.workflow.TaskInstance;
 import org.apache.commons.lang3.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -246,6 +247,19 @@ public class ProcessesController {
             log.warn("templatable endpoint unavailable at {}: {}", url, e.getMessage());
             return ResponseEntity.ok().body("{\"enabled\":false}");
         }
+    }
+
+    /**
+     * Get all SBPA workflow task instances for a process.
+     * Uses the process's refId as the workflow instance ID and a technical destination.
+     * Returns an empty list for processes without a workflow instance.
+     */
+    @GetMapping(value = "/{id}/tasks", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public List<TaskInstance> getTasks(@PathVariable("id") String id) {
+        if (StringUtils.isBlank(id)) throw new BadRequestException("missing process-id");
+        return service.getWorkflowTasks(id);
     }
 
 //    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
