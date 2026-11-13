@@ -22,7 +22,11 @@ public interface DataApi extends AccessClass {
 
     String addRow(final Identifier id, final Context<? extends AccessClass> ctx);
 
+    String addRow(final Identifier prefix, final Identifier id, final Context<? extends AccessClass> ctx);
+
     String addRow(final String rowId, final Identifier id, final Context<? extends AccessClass> ctx);
+
+    String addRow(final String rowId, final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx);
 
     void deleteRow(final String rowId);
 
