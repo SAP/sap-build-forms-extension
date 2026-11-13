@@ -125,15 +125,6 @@ public class MetadataService extends AbstractProcessor {
         return scenarioDefinitionMap.values();
     }
 
-//    /**
-//     * Returns a set of all scenario definition versions currently stored in the service.
-//     *
-//     * @return a set of Integer values representing the scenario definition versions
-//     */
-//    public Set<Integer> getScenarioDefinitionVersions() {
-//        return scenarioDefinitionMap.keySet();
-//    }
-
     /**
      * Scans the given root path for scenario definition meta-data files and reads them into the service. The method will
      * look for files with the name pattern 'definition.{version}.yaml' and 'texts_def_{locale}.{version}.properties'.

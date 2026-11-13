@@ -12,6 +12,7 @@ import lombok.Data;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.file.PathUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -181,7 +182,7 @@ public class TemplateService extends AbstractProcessor {
                 ae.put(NM_RETURN_DIALOG_DATA_TYPE, info.getDialogReturnType());
                 ae.put(NM_TYPE_DIALOG_DATA_TYPE, info.getDialogType());
             }
-            // For Dialogs we set the according flag to true
+            // For dialogs, we set the according flag to true
             if (UIElementType.Dialog.equals(ed.getType())) {
                 ae.put(NM_HAS_DIALOG, true);
                 ae.put(NM_RETURN_DIALOG_DATA_TYPE, info.getDialogReturnType());
@@ -328,6 +329,33 @@ public class TemplateService extends AbstractProcessor {
         for (int i = 0; i < 2; i++) {
             final var template = templateCfg.getTemplate(i == 0 ? "FieldAccessor.ftlh" : "FieldEnum.ftlh");
             for (var it : params.values()) {
+//                if (i == 1) {
+//                    this.log.info("Generating FieldEnum for '" + it.get(NM_CLASS) + "'");
+//                    if (Strings.CS.equals((String) it.get(NM_CLASS), "Customer1OtherAddressShZip")) {
+//                        if (it.get(NM_ELEMENTS) instanceof Map) {
+//                            final var elements = (Map<String, List<Pair<String, String>>>) it.get(NM_ELEMENTS);
+//                            log.info("-- MAP:");
+//                            for (final var element : elements.keySet()) {
+//                                this.log.info("---- Key: '" + element + "'");
+//                                for (final var pair : elements.get(element)) {
+//                                    this.log.info("------ Element: " + ((String) pair.getLeft()) + ", " + ((String) pair.getRight()));
+//                                }
+//                            }
+//                        } else if (it.get(NM_ELEMENTS) instanceof List elements) {
+//                            this.log.info("-- LIST:");
+//                            for (final var element : elements) {
+//                                if (element instanceof Pair pair) {
+////                                final var pair = (Pair<String, String>) element;
+//                                    this.log.info("---- Element: " + ((String) pair.getLeft()) + ", " + ((String) pair.getRight()));
+//                                } else if (element instanceof Map map) {
+//                                    this.log.info("---- Element: " + map.toString());
+//                                } else {
+//                                    throw new RuntimeException("Unexpected element type: " + element.getClass().getName());
+//                                }
+//                            }
+//                        }
+//                    }
+//                }
                 try (var writer = this.openFile(targetPath + File.separator + it.get(NM_BASE_PACKAGE) + ".metadata",
                         it.get(NM_CLASS) + (i == 0 ? "Fields.java" : "FieldsEnum.java"))) {
                     template.process(it, writer);
@@ -392,6 +420,7 @@ public class TemplateService extends AbstractProcessor {
 
                 for (var it : sd.getMixins().values()) {
                     for (var mixinInfo : it) {
+
                         final var name = "Mixin" + IdentifierUtils.toPascalCase(
                                 ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) + sd.getVersion() +
                                 "Fields";
@@ -406,13 +435,30 @@ public class TemplateService extends AbstractProcessor {
                             final var prefixLength = StringUtils.length(mixinInfo.getMixin().getName());
                             final var elements = new ArrayList<Pair<String, String>>();
                             p.put(NM_ELEMENTS, elements);
-                            mixinInfo.getElements().forEach(e -> {
-                                final var n = StringUtils.substring(e.getName(), prefixLength);
-                                elements.add(new ImmutablePair<>(n, DigestUtils.md5Hex(n)));
-                            });
+
+                            final var elementsStack = new Stack<List<ElementDefinition>>();
+                            elementsStack.push(mixinInfo.getElements());
+                            while (!elementsStack.isEmpty()) {
+                                final var currentElements = elementsStack.pop();
+                                for (var e : currentElements) {
+//                                    log.info("-- Pushing element '" + e.getName() + "' to list of elements for mixin '" +
+//                                            mixinInfo.getMixin().getName() + "'");
+                                    final var n = StringUtils.substring(e.getName(), prefixLength);
+                                    elements.add(new ImmutablePair<>(n, DigestUtils.md5Hex(n)));
+                                    if (e.getElements() != null && !e.getElements().isEmpty()) {
+//                                        log.info("-- Pushing nested elements for '" + e.getName() + "' to stack");
+                                        elementsStack.push(e.getElements());
+                                    }
+                                }
+                            }
+//                            mixinInfo.getElements().forEach(e -> {
+//                                final var n = StringUtils.substring(e.getName(), prefixLength);
+//                                elements.add(new ImmutablePair<>(n, DigestUtils.md5Hex(n)));
+//                            });
                         }
                     }
                 }
+//                log.info(">> Values: " + params.values());
 
                 for (var i = 0; i < 2; i++) {
                     final var template = templateCfg.getTemplate(i == 0 ? "MixinAccessor.ftlh" : "MixinEnum.ftlh");
@@ -438,6 +484,11 @@ public class TemplateService extends AbstractProcessor {
                         "Mixin" + IdentifierUtils.toPascalCase(sd.getAccessObjectName()) + sd.getVersion() + "Mapping");
                 m.put(NM_BASE_PACKAGE, sd.getBasePackage());
 
+                /* TODO(ML) - It's no enough to include the direct elements of the mixin, we need to
+                    include also the nested elements, e.g. for tables, search-helps and dialogs. It will
+                    become tricky if we also need a different access-class...
+                */
+
                 // Elements map contains an item for each mixin found in the definition (even recursive elements)
                 final var em = new HashMap<String, List<Pair<String, String>>>();
                 m.put(NM_ELEMENTS, em);
@@ -448,19 +499,31 @@ public class TemplateService extends AbstractProcessor {
                     for (var mixinInfo : it) {
                         final var l = new ArrayList<Pair<String, String>>();
                         em.put(key + "Fields." + mixinInfo.getMixin().getName(), l);
-                        mixinInfo.getElements().forEach(e -> {
-                            final var mixinName = "Mixin" + IdentifierUtils.toPascalCase(
-                                    ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) +
-                                    sd.getVersion() + "Fields." + StringUtils.substring(e.getName(),
-                                    StringUtils.length(mixinInfo.getMixin().getName()));
+
+                        final var elementsStack = new Stack<MixinMappingInfo>();
+                        elementsStack.push(new MixinMappingInfo(mixinInfo.getElements(), mixinInfo.getClassName()));
+
+                        while (!elementsStack.isEmpty()) {
+                            final var info = elementsStack.pop();
+                            info.elements().forEach(e -> {
+                                final var mixinName = "Mixin" + IdentifierUtils.toPascalCase(
+                                        ((MetaFileElementDefinition) mixinInfo.getMixin()).getMixinName()) +
+                                        sd.getVersion() + "Fields." + StringUtils.substring(e.getName(),
+                                        StringUtils.length(mixinInfo.getMixin().getName()));
 
 //                            this.log.info("Calling findAccessClassForElement with elements=" + sd.getElements() +
 //                                    ", className=" + sd.getAccessObjectName() + sd.getVersion() + ", element=" + e);
-                            var mixedFieldName = mixinInfo.getClassName() + "Fields." + e.getName();
+                                var mixedFieldName = info.mixinClsName() + "Fields." + e.getName();
 //                            this.log.info("=> " + mixedFieldName);
 
-                            l.add(new ImmutablePair<>(mixinName, mixedFieldName));
-                        });
+                                l.add(new ImmutablePair<>(mixinName, mixedFieldName));
+
+                                if (e.getElements() != null && !e.getElements().isEmpty()) {
+                                    elementsStack.push(new MixinMappingInfo(e.getElements(),
+                                            info.mixinClsName() + e.getName()));
+                                }
+                            });
+                        }
                     }
                 }
 
@@ -571,4 +634,12 @@ public class TemplateService extends AbstractProcessor {
             this.dialogType = dialogType;
         }
     }
+
+    /**
+     * Record representing the mapping information for a mixin. It contains the element definition, the collection of
+     * element definitions associated with the mixin, and the class name of the mixin.
+     */
+    private static record MixinMappingInfo(
+            Collection<ElementDefinition> elements,
+            String mixinClsName) {}
 }

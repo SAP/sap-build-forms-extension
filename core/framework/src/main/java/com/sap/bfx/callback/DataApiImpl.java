@@ -960,16 +960,16 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
-     * Adds a new row to a mixin table field.
+     * Adds a new row to a table field.
      *
-     * @param prefixId  the mixin prefix identifier
-     * @param id        the table field identifier
-     * @param ctx       the context
+     * @param prefixId the parent row identifier
+     * @param id     the table field identifier
+     * @param ctx    the context
      * @return the new row identifier, or null if not added
      */
     @Override
     public String addRow(final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx) {
-        return addRow(mixinMap.get(prefixId).get(id), ctx);
+        return addRow(ElementRow.ROOT, prefixId, id, ctx);
     }
 
     /**
@@ -987,17 +987,18 @@ public class DataApiImpl implements DataApi {
     }
 
     /**
-     * Adds a new row to a mixin table field.
+     * Adds a new row to a table field.
      *
-     * @param rowId     the parent row identifier
-     * @param prefixId  the mixin prefix identifier
-     * @param id        the table field identifier
-     * @param ctx       the context
+     * @param rowId  the parent row identifier
+     * @param prefixId the mixin prefix identifier
+     * @param id     the table field identifier
+     * @param ctx    the context
      * @return the new row identifier, or null if not added
      */
     @Override
     public String addRow(final String rowId, final Identifier prefixId, final Identifier id, final Context<? extends AccessClass> ctx) {
-        return addRow(rowId, mixinMap.get(prefixId).get(id), ctx);
+        final var row = FormUtils.addRow(form, rowId, mixinMap.get(prefixId).get(id).getIdentifier(), ctx);
+        return row == null ? null : row.getRowId();
     }
 
     /**
