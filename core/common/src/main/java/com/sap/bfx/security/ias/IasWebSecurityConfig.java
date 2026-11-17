@@ -19,6 +19,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.IdTokenClaimNames;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -67,6 +68,7 @@ public class IasWebSecurityConfig {
      */
     @Bean
     public ClientRegistration iasClientRegistration() {
+        log.info("IAS based Security enabled.");
 // @formatter:off
         final var result = ClientRegistration
             .withRegistrationId("ias")
@@ -81,6 +83,7 @@ public class IasWebSecurityConfig {
                 .userInfoUri(idpConfig.getUrl() + "/oauth2/userinfo")
                 .userNameAttributeName(IdTokenClaimNames.SUB).issuerUri(idpConfig.getUrl())
                 .jwkSetUri(idpConfig.getUrl() + "/oauth2/certs")
+                .issuerUri(idpConfig.getUrl())
                 .clientName("ias")
             .build();
 // @formatter:on
@@ -134,6 +137,7 @@ public class IasWebSecurityConfig {
                     // the original URL
                     config.successHandler(successHandler);
                 })
+                .oauth2ResourceServer(config -> config.jwt(Customizer.withDefaults()))
                 // this is necessary to find the correct URL to redirect the request after authentication is done
                 .requestCache(Customizer.withDefaults()).requestCache(config -> config
                         .requestCache(requestCache))
@@ -155,7 +159,8 @@ public class IasWebSecurityConfig {
 
 
                 // this filter reaads the JWT token from Cookie and uses it to provide user information
-                .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(new JwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(new JwtAuthenticationFilter(), BearerTokenAuthenticationFilter.class);
 
                 // change result in case of api calls
 //               http.exceptionHandling(config ->

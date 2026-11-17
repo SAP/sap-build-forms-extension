@@ -1,10 +1,12 @@
 package com.sap.bfx.security;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
@@ -16,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Conditional(NoSecurityCondition.class)
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class NoSecurityWebSecurityConfig {
 
     /**
@@ -27,8 +30,11 @@ public class NoSecurityWebSecurityConfig {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        log.info("No-Security enabled.");
 // @formatter:off
-        http.authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll());
+        http.authorizeHttpRequests(authorize ->
+                authorize.anyRequest().permitAll())
+            .csrf(AbstractHttpConfigurer::disable);
 // @formatter:on
         return http.build();
     }

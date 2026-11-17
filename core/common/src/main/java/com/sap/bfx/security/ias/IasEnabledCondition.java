@@ -30,9 +30,9 @@ public class IasEnabledCondition implements Condition {
                 StringUtils.isNotBlank(oidcClientSecret);
 
         if (match) {
-            log.info("OidcEnabledCondition match");
+            log.debug("IasEnabledCondition match");
         } else {
-            log.warn("OidcEnabledCondition not match");
+            log.debug("IasEnabledCondition not match");
         }
         return match;
     }
