@@ -38,8 +38,12 @@ export default function (props: ControlProps) {
                         headerText={headerText}
                         open={true}
                         stretch={!hasSize}
-                        style={hasSize ? { height: def.size?.height, width: def.size?.width } : undefined}
-                        footer={<ToolbarControl {...props} def={def.footer!} />}
+                        style={
+                            hasSize
+                                ? { height: def.size?.height, width: def.size?.width }
+                                : undefined
+                        }
+                        footer={<ToolbarControl {...props} def={def.footer!} slot="footer" />}
                         onClose={() =>
                             dispatch(
                                 update({

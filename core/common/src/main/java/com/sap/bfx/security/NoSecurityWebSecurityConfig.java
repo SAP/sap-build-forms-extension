@@ -1,5 +1,6 @@
 package com.sap.bfx.security;
 
+import com.sap.bfx.security.ias.SpaCsrfTokenRequestHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -8,6 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
  * Security configuration for the application when no security is enabled.
@@ -34,7 +36,9 @@ public class NoSecurityWebSecurityConfig {
 // @formatter:off
         http.authorizeHttpRequests(authorize ->
                 authorize.anyRequest().permitAll())
-            .csrf(AbstractHttpConfigurer::disable);
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler()));
 // @formatter:on
         return http.build();
     }

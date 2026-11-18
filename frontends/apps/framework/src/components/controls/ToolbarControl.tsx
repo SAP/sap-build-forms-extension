@@ -22,7 +22,15 @@ export default function (props: ControlProps) {
         for (const child of def.leftElements) {
             const element = FormService.findElementByRowAndKey(rowId, child.key, form)
             if (element?.vi) {
-                start.push(<Control {...props} withContainer={false} insideToolbar key={child.key} def={child} />)
+                start.push(
+                    <Control
+                        {...props}
+                        withContainer={false}
+                        insideToolbar
+                        key={child.key}
+                        def={child}
+                    />,
+                )
             }
         }
     }
@@ -31,7 +39,15 @@ export default function (props: ControlProps) {
         for (const child of def.elements) {
             const element = FormService.findElementByRowAndKey(rowId, child.key, form)
             if (element?.vi) {
-                center.push(<Control {...props} withContainer={false} insideToolbar key={child.id} def={child} />)
+                center.push(
+                    <Control
+                        {...props}
+                        withContainer={false}
+                        insideToolbar
+                        key={child.id}
+                        def={child}
+                    />,
+                )
             }
         }
     }
@@ -40,7 +56,15 @@ export default function (props: ControlProps) {
         for (const child of def.rightElements) {
             const element = FormService.findElementByRowAndKey(rowId, child.key, form)
             if (element?.vi) {
-                end.push(<Control {...props} withContainer={false} insideToolbar key={child.key} def={child} />)
+                end.push(
+                    <Control
+                        {...props}
+                        withContainer={false}
+                        insideToolbar
+                        key={child.key}
+                        def={child}
+                    />,
+                )
             }
         }
     }
@@ -50,11 +74,23 @@ export default function (props: ControlProps) {
     }
 
     return (
-        <Toolbar style={{ width: "100%" }} design="Solid" >
-            {start}
-            {center}
-            <ToolbarSpacer />
-            {end}
-        </Toolbar>
+        <>
+            {props.slot && (
+                <Toolbar style={{ width: "100%" }} design="Solid" slot={props.slot}>
+                    {start}
+                    {center}
+                    <ToolbarSpacer />
+                    {end}
+                </Toolbar>
+            )}
+            {!props.slot && (
+                <Toolbar style={{ width: "100%" }} design="Solid">
+                    {start}
+                    {center}
+                    <ToolbarSpacer />
+                    {end}
+                </Toolbar>
+            )}
+        </>
     )
 }

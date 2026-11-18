@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 /**
  * A handler for CSRF Token
  */
-final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
+public final class SpaCsrfTokenRequestHandler implements CsrfTokenRequestHandler {
     private final CsrfTokenRequestHandler plain = new CsrfTokenRequestAttributeHandler();
     private final CsrfTokenRequestHandler xor = new XorCsrfTokenRequestAttributeHandler();
 
